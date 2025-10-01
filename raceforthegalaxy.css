@@ -1,0 +1,1473 @@
+/* Testlayout stylesheet */
+
+
+/************* RFTG BGA gameui theme ************************/
+
+html.new_design {
+    background-image: url('img/back.jpg');
+}
+.new_design .roundedbox,
+.new_design .roundedbox .roundedbox_main,
+.new_design .roundedbox .roundedbox_topmain,
+.new_design .roundedbox .roundedbox_bottommain,
+.new_design .roundedbox .roundedbox_topleft,
+.new_design .roundedbox .roundedbox_topright,
+.new_design .roundedbox .roundedbox_bottomleft,
+.new_design .roundedbox .roundedbox_bottomright,
+.new_design .player-board
+{
+    background-color: #dadbdf;
+}
+.new_design #page-title a:link {
+    color: white;
+}
+.new_design a:link {
+    color: black;
+}
+.new_design .notouch-device a:hover {
+    color: white;
+}
+.new_design a.bgabutton_blue:link {
+    color: white;
+}
+
+.new_design .whiteblock {
+    background-image: url('img/backtexture.jpg');
+}
+
+.new_design #game_play_area h3 {
+    background-color: black;
+    color: white;
+    margin-left: -10px;
+    margin-right: 100px;
+    margin-bottom: 10px;
+    padding-left: 15px;
+    padding-top: 10px;
+    margin-top: -5px;
+    width: 400px;
+    padding-bottom: 10px;
+    text-transform: uppercase;
+    border-radius: 0px 20px 20px 0px;
+    display: inline-block;
+}
+
+.new_design #seemorelogs {
+    background-image: none;
+}
+
+/**********************************************************/
+
+.phasechoice .bgabutton {
+    font-size: 12px;
+}
+
+.damage {
+    position: absolute;
+    background-image: url('img/damage.png');
+    display: none;
+}
+.damaged .damage {
+    display: block;
+}
+
+
+.new_design .cardcross {
+    background-image: url('img/cardcross.svg');
+    display: none;
+}
+.new_design .paymentMode .stockitem:hover .cardcross,
+.new_design .paymentMode .stockitem_selected .cardcross,
+.new_design .paymentMode .card:hover .cardcross,
+.new_design .paymentMode .selectedCard .cardcross,
+.paymentMode.paymentModeScavenger .stockitem:hover .scavengericon,
+.paymentMode.paymentModeScavenger .stockitem_selected.scavenger_selected .scavengericon
+{
+    display:block;
+}
+.new_design .paymentMode .stockitem:hover .cardcross,
+.new_design .paymentMode .card:hover .cardcross
+{
+    opacity: 0.5;
+}
+.new_design .paymentMode .stockitem_selected:hover .cardcross,
+.new_design .paymentMode .selectedCard .cardcross,
+.paymentMode.paymentModeScavenger .scavenger_selected .scavengericon
+{
+    opacity: 1;
+}
+
+.scavengericon {
+    background-image: url('img/cardcross.svg');
+    position: absolute;
+    cursor: pointer;
+    display: none;
+    opacity: 0.7;
+}
+.scavengericon:hover {
+    opacity: 1;
+}
+
+#scavengercount {
+    position: absolute;
+    display: flex;
+    bottom: 5px;
+    background-image: url('img/cardcross.svg');
+    justify-content: center;
+    align-items: center;
+    visibility: hidden;
+}
+.tableau_panel #scavengercount {
+    visibility: visible;
+}
+
+/**** tooltips ****/
+
+.cardtooltip {
+    max-width: 262px;
+}
+
+.militarytooltip {
+	display: inline-block;
+}
+
+/** cards **/
+.card_wrapper {
+    position: relative;
+    float: left;
+    margin: 2px;
+}
+.card, .card_tooltip {
+    position: relative;
+}
+.card {
+    cursor: pointer;
+}
+
+.cardname, .cardname_tooltip {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.card_name_black .cardname, .card_name_black .cardname_tooltip {
+    color: black;
+}
+.card_name_white .cardname, .card_name_white .cardname_tooltip {
+    color: white;
+    text-shadow: 1px 1px black;
+}
+
+.card_name_black .keyword,
+.six_dev .keyword,
+.six_dev_scoring_text .keyword {
+    text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
+}
+
+.alien { color: #fdff4f }
+.uplift { color: #6cc121 }
+.imperium { color: #643b65 }
+.rebel { color: #cc1915 }
+.terraforming { color: #b2896d }
+.xeno { color: #4a6ab0 }
+.antixeno { color: #a4b4d4 }
+
+.good {
+    display:flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/********** tiny **********/
+.card_size_tiny .card,
+.card_size_tiny .card_wrapper,
+.card_size_tiny .cardcross {
+    width: 112.43px;
+    height: 160px;
+    border-radius: 4px;
+}
+.card_size_tiny .card,
+.card_size_tiny .card_wrapper {
+    background-size: auto 1600px;
+}
+.card_size_tiny .cardcross {
+    background-size: 112.43px;
+}
+.card_size_tiny .tableau_panel .cardcross {
+    background-position: 0px -160px;
+}
+
+.card_size_tiny .cardname {
+    left: 39px;
+    top: 7px;
+    width: 70px;
+    height: 24px;
+    font-size: 7px;
+}
+.card_size_tiny .good_place,
+.card_size_tiny .good_wrap,
+.card_size_tiny .good,
+.card_size_tiny .goodsell {
+    position: absolute;
+    width: 40px;
+    height: 64px;
+    background-size: auto 64px;
+    font-size: 16px;
+}
+.card_size_tiny .good2 { background-position: -40px 0px;  }
+.card_size_tiny .good3 { background-position: -80px 0px;  }
+.card_size_tiny .good4 { background-position: -120px 0px;  }
+.card_size_tiny .selectedGood { border-radius: 11px; }
+
+.card_size_tiny .scavengericon {
+    width: 112.43px;
+    height: 45px;
+    background-size: 112.43px;
+    background-position: -0px -321px;
+    bottom: 4px;
+}
+
+.card_size_tiny #scavengercount {
+    left: 38px;
+    width: 38px;
+    height: 38px;
+    background-position: -41px -275px;
+    font-size: 16px;
+    background-size: 96px;
+}
+
+.card_size_tiny .damage {
+    width: 110px;
+    height: 110px;
+    top: 25px;
+    background-size: 110px;
+}
+
+.card_size_tiny .six_dev {
+    right: 8px;
+    top: 34px;
+    font-size: 7px;
+    transform-origin: top right;
+    scale: 75%;
+}
+
+/********** Small **********/
+.card_size_small .card,
+.card_tooltip_size_small .card_tooltip,
+.card_size_small .card_wrapper,
+.card_size_small .cardcross {
+    width: 133.5px;
+    height: 190px;
+    border-radius: 5px;
+}
+.card_size_small .card,
+.card_tooltip_size_small .card_tooltip,
+.card_size_small .card_wrapper {
+    background-size: auto 1900px;
+}
+.card_size_small .cardcross {
+    background-size: 133.5px;
+}
+.card_size_small .tableau_panel .cardcross {
+    background-position: 0px -190px;
+}
+
+.card_size_small .cardname,
+.card_tooltip_size_small .cardname_tooltip {
+    left: 45px;
+    top: 8px;
+    width: 84px;
+    height: 29px;
+    font-size: 9px;
+}
+.card_size_small .good_place,
+.card_size_small .good_wrap,
+.card_size_small .good,
+.card_size_small .goodsell {
+    position: absolute;
+    width: 48px;
+    height: 77px;
+    background-size: auto 77px;
+    font-size: 19px;
+}
+.card_size_small .good2 { background-position: -48px 0px;  }
+.card_size_small .good3 { background-position: -96px 0px;  }
+.card_size_small .good4 { background-position: -144px 0px;  }
+.card_size_small .selectedGood { border-radius: 13px; }
+
+.card_size_small .scavengericon {
+    width: 133.5px;
+    height: 54px;
+    background-size: 133.5px;
+    background-position: -0px -382px;
+    bottom: 5px;
+}
+
+.card_size_small #scavengercount {
+    left: 43px;
+    width: 47px;
+    height: 47px;
+    background-position: -49px -326px;
+    font-size: 19px;
+    background-size: 114px;
+}
+
+.card_size_small .damage {
+    width: 132px;
+    height: 132px;
+    top: 29px;
+    background-size: 132px;
+}
+
+.card_size_small .six_dev {
+    right: 10px;
+    top: 40px;
+    font-size: 9px;
+    transform-origin: top right;
+    scale: 85%;
+}
+
+/********** Medium **********/
+.card_size_medium .card,
+.card_tooltip_size_medium .card_tooltip,
+.card_size_medium .card_wrapper,
+.card_size_medium .cardcross {
+    width: 154.6px;
+    height: 220px;
+    border-radius: 6px;
+}
+.card_tooltip_size_medium .card_tooltip,
+.card_size_medium .card_wrapper {
+    background-size: auto 2200px;
+}
+.card_size_medium .cardcross {
+    background-size: 154.6px;
+}
+.card_size_medium .tableau_panel .cardcross {
+    background-position: 0px -220px;
+}
+
+.card_size_medium .cardname,
+.card_tooltip_size_medium .cardname_tooltip {
+    left: 54px;
+    top: 9px;
+    width: 92px;
+    height: 33px;
+    font-size: 10px;
+}
+.card_size_medium .good_place,
+.card_size_medium .good_wrap,
+.card_size_medium .good,
+.card_size_medium .goodsell {
+    position: absolute;
+    width: 55px;
+    height: 88px;
+    background-size: auto 88px;
+    font-size: 26px;
+}
+.card_size_medium .good2 { background-position: -55px 0px;  }
+.card_size_medium .good3 { background-position: -110px 0px;  }
+.card_size_medium .good4 { background-position: -165px 0px;  }
+.card_size_medium .selectedGood { border-radius: 14px; }
+
+.card_size_medium .scavengericon {
+    width: 154.6px;
+    height: 62px;
+    background-size: 154.6px;
+    background-position: -0px -443px;
+    bottom: 6px;
+}
+
+.card_size_medium #scavengercount {
+    left: 51px;
+    width: 53px;
+    height: 53px;
+    background-position: -57px -378px;
+    font-size: 26px;
+    background-size: 132px;
+}
+
+.card_size_medium .damage {
+    width: 153px;
+    height: 153px;
+    top: 33px;
+    background-size: 153px;
+}
+
+.card_size_medium .six_dev {
+    right: 12px;
+    top: 47px;
+    font-size: 9px;
+}
+
+/********** Large **********/
+.card_size_large .card,
+.card_tooltip_size_large .card_tooltip,
+.card_size_large .card_wrapper,
+.card_size_large .cardcross {
+    width: 196.76px;
+    height: 280px;
+    border-radius: 8px;
+}
+.card_size_large .card,
+.card_tooltip_size_large .card_tooltip,
+.card_size_large .card_wrapper {
+    background-size: auto 2800px;
+}
+.card_size_large .cardcross {
+    background-size: 196.76px;
+}
+.card_size_large .tableau_panel .cardcross {
+    background-position: 0px -280px;
+}
+
+.card_size_large .cardname,
+.card_tooltip_size_large .cardname_tooltip {
+    left: 68px;
+    top: 12px;
+    width: 119px;
+    height: 42px;
+    font-size: 13px;
+}
+.card_size_large .good_place,
+.card_size_large .good_wrap,
+.card_size_large .good,
+.card_size_large .goodsell {
+    position: absolute;
+    width: 71px;
+    height: 114px;
+    background-size: auto 114px;
+    font-size: 35px;
+}
+.card_size_large .good2 { background-position: -71px 0px;  }
+.card_size_large .good3 { background-position: -142px 0px;  }
+.card_size_large .good4 { background-position: -213px 0px;  }
+.card_size_large .selectedGood { border-radius: 18px; }
+
+.card_size_large .scavengericon {
+    width: 196.76px;
+    height: 79px;
+    background-size: 196.76px;
+    background-position: -0px -564px;
+    bottom: 8px;
+}
+
+.card_size_large #scavengercount {
+    left: 64px;
+    width: 68px;
+    height: 68px;
+    background-position: -72px -481px;
+    font-size: 35px;
+    background-size: 168px;
+}
+
+.card_size_large .damage {
+    width: 195px;
+    height: 195px;
+    top: 42px;
+    background-size: 195px;
+}
+
+.card_size_large .six_dev {
+    right: 15px;
+    top: 60px;
+    font-size: 10px;
+    transform-origin: top right;
+    scale: 115%;
+}
+
+/********** Huge **********/
+.card_size_huge .card,
+.card_tooltip_size_huge .card_tooltip,
+.card_size_huge .card_wrapper,
+.card_size_huge .cardcross {
+    width: 234px;
+    height: 333px;
+    border-radius: 10px;
+}
+.card_size_huge .tableau_panel .cardcross {
+    background-position: 0px -333px;
+}
+.card_size_huge .cardname,
+.card_tooltip_size_huge .cardname_tooltip {
+    left: 83px;
+    top: 14px;
+    width: 138px;
+    height: 50px;
+    font-size: 15px;
+}
+
+.card_size_huge .good_place,
+.card_size_huge .good_wrap,
+.card_size_huge .good,
+.card_size_huge .goodsell {
+    position: absolute;
+    width: 84px;
+    height: 135px;
+    font-size: 40px;
+}
+.card_size_huge .good2 { background-position: -84px 0px;  }
+.card_size_huge .good3 { background-position: -168px 0px;  }
+.card_size_huge .good4 { background-position: -252px 0px;  }
+.card_size_huge .selectedGood { border-radius: 20px; }
+
+.card_size_huge .scavengericon {
+    width: 234px;
+    height: 94px;
+    background-position: -0px -667px;
+    bottom: 10px;
+}
+
+.card_size_huge #scavengercount {
+    left: 77px;
+    width: 80px;
+    height: 80px;
+    background-position: -85px -572px;
+    font-size: 40px;
+    background-size: 200px;
+}
+
+.card_size_huge .damage {
+    width: 232px;
+    height: 232px;
+    top: 50px;
+}
+
+.card_size_huge .six_dev {
+    right: 18px;
+    top: 71px;
+    font-size: 10px;
+    transform-origin: top right;
+    scale: 119%;
+}
+
+/********************/
+
+.nextCardToPlay {
+    border: red solid 2px;
+}
+/** cards tooltip **/
+
+.cardtt_name, .militarytt {
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+/** phases **/
+
+.phase, .phasechoice {
+    position: relative;
+    float: left;
+    width: 122px;
+    height: auto;
+}
+
+.boosted {
+    display: none;
+}
+
+
+.phase {
+    background-image: url('img/backtexture.jpg');
+    border: 1px solid black;
+    font-size: 80%;
+    text-align: center;
+}
+.current_phase {
+    background-image: none;
+    background-color: #dadbdf;
+}
+.unselected_phase {
+    background-image: url('img/rounded_b_dis.png');
+}
+.phasechoice {
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+    text-align: center;
+    height: 50px;
+    background-image: url('img/backtexture.jpg');
+}
+
+.searchavail .phasechoice {
+    height: 100px;
+}
+.orbavail .phasechoice {
+    height: 75px;
+}
+
+
+.phase_icon {
+    position: absolute;
+    width: 35px;
+    height: 35px;
+    margin: 4px;
+    background-image: url('img/phase.png');
+}
+#phase_icon_develop {   background-position: -35px 0px; }
+#phase_icon_settle {   background-position: -70px 0px; }
+#phase_icon_consume {   background-position: -105px 0px; }
+#phase_icon_produce {   background-position: -140px 0px; }
+.phase_content {
+    position: absolute;
+    left: 43px;
+    top: 3px;
+    width: 79px;
+    font-size: 90%;
+}
+.phase_selected {
+    position: relative;
+    margin-top: 25px;
+    min-height: 20px;
+    width: 122px;
+    font-size: 100%;
+    font-weight: bold;
+}
+.phase_selected span {
+    display: inline-block;
+}
+.phase_offset {
+    width: 43px;
+}
+
+#phasechoice_panel {
+    display: none;
+}
+
+#action_phaseCancel {
+    margin-right: 10px;
+    display: none;
+}
+
+#explore_panel {    display: none;  }
+#scavenger_panel { display: none;  }
+
+#generalinfos {
+    float: left;
+    margin-left: 5px;
+    margin-bottom: 12px;
+    color: white;
+    white-space: nowrap;
+}
+#deck_img {
+    vertical-align: middle;
+    margin-bottom: 4px;
+}
+#vp_remain {
+    margin-top: 10px;
+}
+#vp_nbr_remain_img {
+    margin-bottom: -5px;
+}
+
+#takeover_toggle_warp {
+    float: left;
+}
+.takeover_toggle {
+    height: 56px;
+}
+
+/** goods **/
+.good_place {
+    right: 5px;
+    bottom: 5px;
+}
+.good {
+    left: 0px;
+    top: 0px;
+    background-image: url('img/goods.svg');
+    font-size: 80%;
+}
+.good.goodinline {
+    position: relative;
+    margin: 5px;
+    display: inline-block;
+
+}
+.goodsell {
+    left: 0px;
+    top: 0px;
+    display: none;
+    cursor: pointer;
+}
+.good1 { background-position: 0px 0px;  }
+
+.selectedGood {
+    border: 2px red solid;
+}
+.selectedCard {
+    border: 2px red solid;
+}
+.selectedOrbCard {
+    box-shadow: inset -2px 0 0 red, inset 0 -2px 0 red, inset 2px 0 0 red, inset 0 2px 0 red;
+}
+.orbCardUnder {
+    box-shadow: inset -1px 0 0 red, inset 0 -1px 0 red, inset 1px 0 0 red, inset 0 1px 0 red;
+}
+
+.mercenarySelected, .consumeformilitarySelected, .rdcrashprogramSelected {
+    border: 4px red solid;
+}
+
+/*** board ***/
+
+.rftg_board {
+    margin-top: 5px;
+    margin-left: 5px;
+}
+.rftg_board .imgtext {
+    margin-right: 3px;
+}
+.rftg_board span {
+    margin-right: 5px;
+}
+
+.orb_card_a, .orb_card_b, .artefact_A, .artefact_B  {
+    height: 20px;
+    background-image: url('img/icons.svg');
+    display: inline-block;
+}
+.orb_card_a { width: 13px; background-position: -104px -155px; }
+.orb_card_b { width: 13px; background-position: -117px -155px; }
+.artefact_A { width: 20px; background-position: -130px -155px; }
+.artefact_B { width: 20px; background-position: -150px -155px; }
+
+.milforceicon, .xeno_milforceicon, .milforcebase, .milforcexeno, .milforcerebel, .milforce1, .milforce2, .milforce3, .milforce4, .milforcetemp {
+    width: 20px;
+    height: 21px;
+    background-image: url('img/icons.svg');
+    display: inline-block;
+}
+.milforcebase, .milforcexeno, .milforcerebel, .milforce1, .milforce2, .milforce3, .milforce4, .milforcetemp {
+    margin-bottom: -2px;
+}
+.milforceicon, .milforcebase {  background-position: 0px -176px; }
+.milforcexeno {  background-position: -20px -176px; }
+.milforcerebel {  background-position: -40px -176px; }
+.milforce1 {  background-position: -60px -176px; }
+.milforce2 {  background-position: -80px -176px; }
+.milforce3 {  background-position: -100px -176px; }
+.milforce4 {  background-position: -120px -176px; }
+.xeno_milforceicon {  background-position: -140px -176px; }
+.milforcetemp {  background-position: -160px -176px; width: 43px; }
+
+.tmpmilforcecount, .xenotiebreaker {
+    font-size: 80%;
+    margin-left: -5px;
+}
+
+.boardblock {
+    margin-top: 5px;
+}
+.rebel_vulnerability, .imperium_vulnerability, .efforticon {
+    width: 21px;
+    height: 20px;
+    background-image: url('img/milforce.png');
+    display: inline-block;
+    visibility: hidden;
+}
+.rebel_vulnerability {  background-position: -21px 0px; }
+.pdeck {margin-bottom: -1px;}
+.efforticon { background-position: -42px 0px; }
+
+.xeno_defenseawardicon {
+    width: 21px;
+    height: 21px;
+    background-image: url('img/icons.svg');
+    display: inline-block;
+    background-position: -170px -155px;
+}
+
+.prestige_search {
+    width: 20px;
+    height: 20px;
+    background-image: url('img/prestige_search.png');
+    display: inline-block;
+    visibility: hidden;
+}
+
+.xeno_block {
+    display: none;
+}
+.rftg_xeno_invasion .xeno_block {
+    display: block;
+}
+.rftg_xeno_invasion .xeno_milforceicon, .rftg_xeno_invasion .efforticon {
+    visibility: visible;
+}
+
+.rftg_infoblock {
+    display: inline-block;
+}
+#xeno_infos { display: none;    }
+.rftg_xeno_invasion #xeno_infos {
+    display: inline-block;
+    margin-left: 20px;
+}
+
+#invasion_infos {   display: none; }
+.rftg_xeno_invasion #invasion_infos {   display: block; }
+
+#phasechoicebtn_9 { display: none;  }
+.rftg_xeno_invasion #phasechoicebtn_9 { display: inline;    }
+
+#xeno_repulse_track {
+	display: block;
+	width: 600px;
+	height: 417px;
+	position: relative;
+	background-image: url('img/xeno_repulse_track.jpg');
+}
+
+.admiral_disk {
+    position: absolute;
+	width: 50px;
+    height: 44px;
+    background-image: url('img/admiral_disk.svg');
+    display: inline-block;
+}
+
+.admiral_ff0000 { background-position: 0px -44px; }
+.admiral_008000 { background-position: 0px -88px; }
+.admiral_ffa500 { background-position: 0px -132px; }
+.admiral_000000 { background-position: 0px -176px; }
+.admiral_ffffff { background-position: 0px -220px; }
+
+#military_vs_xeno_arrow {
+	position: absolute;
+	width: 46px;
+    height: 106px;
+	background-image: url('img/military_vs_xeno_arrow.png');
+	display: inline-block;
+}
+#repulse_value_arrow {
+	position: absolute;
+	width: 45px;
+    height: 53px;
+	background-image: url('img/repulse_value_arrow.png');
+	display: inline-block;
+}
+
+.invasionforce {
+    font-weight: bold;
+    color: red;
+}
+
+/*** windfallpower ***/
+.windfallpower {
+    width: 41px;
+    height: 32px;
+    background-image: url('img/windfallproduction.svg');
+    display: inline-block;
+    margin: 5px;
+}
+.windfallpower1 {    background-position: 0px -32px; }
+.windfallpower2 {    background-position: 0px -64px; }
+.windfallpower3 {    background-position: 0px -96px; }
+.windfallpower4 {    background-position: 0px -128px; }
+.windfallpowerproduceifdiscard {    background-position: 0px -160px; }
+.windfallpowerwindfallproduceifdiscard4{    background-position: 0px -192px;     width: 52px; }
+.windfallpowerwindfallproduceifdiscard3{    background-position: 0px -224px;     width: 52px; }
+.windfallpowerwindfallproduceifdiscard{    background-position: 0px -256px;     width: 52px; }
+.windfallpowerrepair{    background-position: 0px -288px;     width: 42px; }
+.windfallpowerdrawforeachworld2   { background-position: 0px -320px; width: 46px; cursor: pointer }
+.windfallpowerdrawforeachworld3   { background-position: 0px -352px; width: 46px; cursor: pointer }
+.windfallpowerdrawforxenomilitary { background-position: 0px -384px; width: 63px; cursor: pointer }
+.windfallpowerdrawformilitary     { background-position: 0px -416px; width: 69px; cursor: pointer }
+.windfallpowerdrawforeach1 { background-position: 0px -448px; width: 50px; cursor: pointer }
+.windfallpowerdrawforeach2 { background-position: 0px -480px; width: 50px; cursor: pointer }
+.windfallpowerdrawforeach4 { background-position: 0px -512px; width: 50px; cursor: pointer }
+.windfallpowerdrawforeachtwo { background-position: 0px -544px; width: 56px; cursor: pointer }
+.windfallpowerdrawforeachgoodtype { background-position: 0px -576px; width: 82px; cursor: pointer }
+.tableau_panel {
+    position:relative;
+}
+/*** Gambling world stat table ***/
+#gambling_world_stats td, #gambling_world_stats th {
+    text-align: center;
+    width: 25px;
+    height: 17px;
+}
+#gambling_world_stats th {
+    font-weight: bold;
+}
+/*** Six dev scoring tooltip table ***/
+.six_dev_scoring td {
+    padding: 1px;
+    text-align: center;
+}
+td.six_dev_scoring_text,
+td.six_dev_scoring_name {
+    padding-left: 5px;
+    text-align: left;
+}
+td.six_dev_scoring_name {
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.cardtooltip td.six_dev_scoring_card_only,
+.cardtooltip tr.six_dev_scoring_card_only {
+    display: none;
+}
+
+/*** Six dev scoring card table ***/
+.six_dev {
+    position: absolute;
+    background-color: rgba(255,255,255,0.4);
+    border-style:ridge;
+    border-color: grey;
+    display: none;
+    text-align: center;
+}
+.six_dev td.six_dev_scoring_text,
+.six_dev td.six_dev_scoring_name,
+.six_dev tr.six_dev_scoring_tooltip_only {
+    display: none;
+}
+
+.sixdev_scoring_hover_tap .stockitem:hover .six_dev,
+.sixdev_scoring_hover_tap .card:hover .six_dev,
+.sixdev_scoring_yes .six_dev {
+    display: block;
+}
+/*** icons ***/
+.icon {
+    height: 16px;
+    background-image: url('img/icons.svg');
+    display: inline-block;
+}
+
+.three_vp_chips {
+    width: 31.073px;
+    height: 9px;
+}
+
+.different_kinds {
+    width: 53.405px;
+    height: 12px;
+    background-position: 0px -11px;
+}
+
+.military_world {
+    width: 13px;
+    height: 13px;
+    background-position: 0px -24px;
+}
+.rebel_military_world {
+    width: 13px;
+    height: 13px;
+    background-position: -13px -24px;
+}
+.civil_world {
+    width: 13px;
+    height: 13px;
+    background-position: -26px -24px;
+}
+
+.world {
+    width: 14px;
+    height: 14px;
+    background-position: 0px -38px;
+}
+.blue_production {
+    width: 14px;
+    height: 14px;
+    background-position: -14px -38px;
+}
+.brown_production {
+    width: 14px;
+    height: 14px;
+    background-position: -28px -38px;
+}
+.green_production {
+    width: 14px;
+    height: 14px;
+    background-position: -42px -38px;
+}
+.yellow_production {
+    width: 14px;
+    height: 14px;
+    background-position: -56px -38px;
+}
+
+.world_explore {
+    width: 14px;
+    height: 14px;
+    background-position: 0px -53px;
+}
+.world_trade {
+    width: 14px;
+    height: 14px;
+    background-position: -14px -53px;
+}
+.civil_world_trade {
+    width: 14px;
+    height: 14px;
+    background-position: -28px -53px;
+}
+.military_world_trade {
+    width: 14px;
+    height: 14px;
+    background-position: -42px -53px;
+}
+.world_consume {
+    width: 14px;
+    height: 14px;
+    background-position: -56px -53px;
+}
+
+.windfall_world {
+    width: 16px;
+    height: 16px;
+    background-position: 0px -68px;
+}
+.blue_windfall {
+    width: 16px;
+    height: 16px;
+    background-position: -16px -68px;
+}
+.brown_windfall {
+    width: 16px;
+    height: 16px;
+    background-position: -32px -68px;
+}
+.green_windfall {
+    width: 16px;
+    height: 16px;
+    background-position: -48px -68px;
+}
+.yellow_windfall {
+    width: 16px;
+    height: 16px;
+    background-position: -64px -68px;
+}
+.xeno_military_world {
+    width: 16px;
+    height: 16px;
+    background-position: -80px -68px;
+}
+
+.development {
+    width: 13.42px;
+    background-position: 0px -85px;
+}
+.dev_explore {
+    width: 13.42px;
+    background-position: -14px -85px;
+}
+.dev_trade {
+    width: 13.42px;
+    background-position: -28px -85px;
+}
+.dev_consume {
+    width: 13.42px;
+    background-position: -42px -85px;
+}
+.six_development {
+    width: 13.42px;
+    background-position: -56px -85px;
+}
+.dev_lower_than_six {
+    width: 13.42px;
+    background-position: -70px -85px;
+}
+
+.one_pt {
+    width: 26.327px;
+    background-position: 0px -102px;
+}
+.two_pts {
+    width: 26.327px;
+    background-position: -27px -102px;
+}
+.three_pts {
+    width: 26.327px;
+    background-position: -54px -102px;
+}
+.X_pts_no_slash {
+    width: 18.373px;
+    background-position: -81px -102px;
+}
+.empty_pts {
+    width: 19.239px;
+    background-position: -100px -102px;
+}
+
+.any_good {
+    width: 13.181px;
+    background-position: 0px -119px;
+}
+.chromosome {
+    width: 13.181px;
+    background-position: -11px -119px;
+}
+.pay_for_military {
+    width: 35.184px;
+    background-position: -25px -119px;
+    margin-bottom:-4px;
+}
+.takeover {
+    width: 16.395px;
+    background-position: -61px -119px;
+    margin-bottom:-3px;
+}
+
+.named_development {
+    height: 18px;
+    width: 14px;
+    background-position: 0px -136px;
+}
+.grey_world {
+    height: 18px;
+    width: 14px;
+    background-position: -14px -136px;
+}
+.blue_world {
+    height: 18px;
+    width: 14px;
+    background-position: -28px -136px;
+}
+.brown_civil_windfall {
+    height: 18px;
+    width: 14px;
+    background-position: -42px -136px;
+}
+.brown_civil_production {
+    height: 18px;
+    width: 14px;
+    background-position: -56px -136px;
+}
+.yellow_civil_production {
+    height: 18px;
+    width: 14px;
+    background-position: -70px -136px;
+}
+
+.vp_chip {
+    width: 23.089px;
+    height: 20px;
+    background-position: 0px -155px;
+}
+.prestige {
+    width: 20px;
+    height: 20px;
+    background-position: -24px -155px;
+}
+.alien_technology_token {
+    width: 20px;
+    height: 20px;
+    background-position: -44px -155px;
+}
+.alien_science_token {
+    width: 20px;
+    height: 20px;
+    background-position: -64px -155px;
+}
+.alien_uplift_token {
+    width: 20px;
+    height: 20px;
+    background-position: -84px -155px;
+}
+
+.X_pts {
+    width: 39.49px;
+    height: 24px;
+    background-position: 0px -197px;
+}
+.X_military {
+    width: 24px;
+    height: 24px;
+    background-position: -40px -197px;
+}
+.X_minus_military {
+    width: 24px;
+    height: 24px;
+    background-position: -64px -197px;
+}
+
+.trade_n {
+    width: 53.927px;
+    height: 31px;
+    background-position: 0px -222px;
+}
+.trade_r {
+    width: 53.927px;
+    height: 31px;
+    background-position: -54px -222px;
+}
+.trade_g {
+    width: 53.927px;
+    height: 31px;
+    background-position: -108px -222px;
+}
+.trade_a {
+    width: 53.927px;
+    height: 31px;
+    background-position: -162px -222px;
+}
+.trade_bonus {
+    width: 54px;
+    display: inline-block;
+    vertical-align: top;
+    margin-inline: 5px;
+    text-align: center;
+}
+/*** Goals *****/
+
+#goals_wrap {
+    position: relative;
+    float: left;
+    width: 430px;
+    height: 50px;
+    margin-left: 5px;
+}
+#goals {
+    position: absolute;
+    width: 430px;
+    top: 0px;
+    left: 0px;
+    z-index: 1;
+}
+.playergoals {
+    position: absolute;
+    right: 5px;
+    top: -15px;
+}
+
+.prestigeleadercount {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+}
+
+/*** draft ****/
+
+#my_deck_wrap {
+    display: none;
+}
+
+/**** Miscalenous ****/
+
+#discard_for_military_panel {
+    display: none;
+}
+.discard_for_military_mode #discard_for_military_panel {
+    display: block;
+}
+
+#consume_for_military_panel {
+    display: none;
+}
+.consume_for_military_mode #consume_for_military_panel {
+    display: block;
+}
+
+/**************** Adaptations for Alien Artifacts *******************************/
+
+
+#player_hand, #player_hand_orb, #player_hand_art {
+	display: inline-block;
+	margin-left: 0px;
+}
+
+#alien_orb {
+    width: 300px;
+    height: 200px;
+    position:relative;
+    overflow: hidden;
+}
+
+.orbcard {
+    position: absolute;
+    width: 100px;
+    height: 140px;
+    background-image: url('img/orb.jpg');
+
+}
+
+.orb {
+    position: absolute;
+    width: 42px;
+    height: 42px;
+    color: white;
+}
+
+.rotcommand {
+    position: absolute;
+    background-image: url('img/rotarrow.png');
+    width: 60px;
+    height: 60px;
+    left: 20px;
+    top: 35px;
+    background-size: 60px 60px;
+    display: none;
+    opacity: 0.5;
+    cursor: pointer;
+}
+.rotcommand:hover {
+    opacity: 1;
+}
+.selectedOrbCard .rotcommand {
+    display: block;
+}
+.selectedOrbCard.dragging_in_progress .rotcommand {
+    display: none;
+}
+
+#orb_target {
+    position: absolute;
+    display: none;
+    z-index: 10;
+    background-color: white;
+    opacity: 0.3;
+}
+
+#alien_orb_title {
+    position: relative;
+}
+
+#priority_track {
+    position: absolute;
+    top: 9px;
+    right: 10px;
+    width: 120px;
+    height: 20px;
+    background-image: url('img/priority.jpg');
+    padding-left: 2px;
+}
+.priority_place {
+    width: 17px;
+    height: 17px;
+    display: inline-block;
+/*    background-color: red; */
+    margin-left: 1px;
+    margin-top: 2px;
+}
+
+.priority_player {
+    position: absolute;
+    width: 17px;
+    height: 17px;
+    border-radius: 8px;
+}
+
+#remaining_orb_wrap {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.orb {
+    cursor: pointer;
+    z-index: 2;
+}
+.orb.possibledest {
+    background-color: white;
+    opacity: 0.2;
+}
+.orb:hover {
+    background-color: white;
+    opacity: 0.4;
+}
+
+.team {
+    position: absolute;
+    background-image: url('img/30_30_meeple.png');
+    width: 30px;
+    height: 30px;
+
+}
+.teamSelected {
+    outline: 2px red dashed;
+    outline-offset: 5px;
+}
+.activeTeam {
+    z-index: 1;
+}
+
+.artefact {
+    position: absolute;
+    width: 33px;
+    height: 30px;
+    background-image: url('img/artefacts.png');
+}
+.artefact_0 {
+    background-position: -499px -100px;
+}
+.artefact_1 {
+    background-position: -464px -100px;
+}
+
+
+/** Move arrows **/
+
+.movetop,.moveleft,.moveright,.movedown {
+    display: block;
+    position: absolute;
+    background-image: url('img/arrows.png');
+    width: 32px;
+    height: 32px;
+}
+
+.movetop {
+    top: 0px;
+    left: 50%;
+    background-position: 0px 32px;
+}
+.moveleft {
+    top: 50%;
+    left: 0px;
+    background-position: 32px 0px;
+}
+.moveright {
+    top: 50%;
+    right: 0px;
+    background-position: 0px 0px;
+}
+.movedown {
+    bottom: 0px;
+    left: 50%;
+    background-position: 32px 32px;
+}
+
+#map_scrollable, #map_scrollable_oversurface {
+    position: absolute;
+}
+#map_surface {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    cursor: move;
+}
+.map_scrollable, .map_scrollable_oversurface {
+    position: absolute;
+    left:  315px;
+}
+.map_surface {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    cursor: move;
+}
+.map_container {
+    position: relative;
+    width: 100%;
+    height: 480px;
+    overflow: hidden;
+}
+.player_played_art_wrap {
+    position: absolute;
+    right: 5px;
+    top: -5px;
+}
+
+.explore_galaxy_text {
+    font-size: 120%;
+}
