@@ -1857,6 +1857,12 @@ define([
                         }
                         break;
 
+                    case 'initialDiscardHomeWorld':
+                        if (this.isCurrentPlayerActive()) {
+                            this.addActionButton('initial_discard_home_confirm', _("Done"), 'onInitialDiscardHomeConfirm');
+                            dojo.query('#initial_discard_home_confirm').addClass('disabled');
+                            this.checkInitialDiscardHomeArm();
+                        }
                     case 'initialDiscard':
                     case 'initialDiscardScavenger':
                     case 'endturndiscard':
@@ -1965,37 +1971,31 @@ define([
                 var i;
                 if (cards.length > 0 || dojo.query('#tableau_' + this.player_id + ' .selectedGood.good3').length > 0 || dojo.query('#tableau_' + this.player_id + ' .selectedGood.good2').length > 0) {
                     if (this.checkAction("initialdiscard", true)) {
-                        // Initial discard: choose 2 cards to discard
-                        var to_discard = 2;
-                        if (dojo.query('#tableau_' + this.player_id + ' .card_type_107').length == 1) {
-                            if (this.gamedatas.gamestate.name == "initialDiscard") {
-                                to_discard = 3;
-                            } else if (this.gamedatas.gamestate.name == "initialDiscardAncientRace") {
-                                to_discard = 1;
-                            }
-                        }
-
-                        if (cards.length == to_discard) {
-                            card_ids = '';
-                            for (i in cards) {
-                                card_ids += cards[i].id + ';';
+                        if (this.gamedatas.gamestate.name == "initialDiscardHomeWorld") {
+                            this.checkInitialDiscardHomeArm();
+                        } else {
+                            // Initial discard: choose 2 cards to discard
+                            var to_discard = 2;
+                            if (dojo.query('#tableau_' + this.player_id + ' .card_type_107').length == 1) {
+                                if (this.gamedatas.gamestate.name == "initialDiscard") {
+                                    to_discard = 3;
+                                } else if (this.gamedatas.gamestate.name == "initialDiscardAncientRace") {
+                                    to_discard = 1;
+                                }
                             }
 
-                            if (this.gamedatas.gamestate.name != "initialDiscardHomeWorld") {
+                            if (cards.length == to_discard) {
+                                card_ids = '';
+                                for (i in cards) {
+                                    card_ids += cards[i].id + ';';
+                                }
+
                                 this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/initialdiscard.html", {
                                     lock: true,
                                     cards: card_ids
                                 }, this, function() {}, function() {
                                     this.playerHand.unselectAll();
                                 });
-                            } else if (dojo.query('.selectedCard').length > 0) {
-                                dojo.removeClass('tableau_' + this.player_id, 'paymentMode');
-                                var start_world_id = dojo.query('.selectedCard')[0].id.substr(5);
-                                this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/initialdiscardhome.html", {
-                                    lock: true,
-                                    start_world: start_world_id,
-                                    cards: card_ids
-                                }, this, function() {}, function() {});
                             }
                         }
                     } else if (this.checkAction('replaceWorld', true)) {
@@ -2351,6 +2351,17 @@ define([
                 }, this, function() {}, function() {});
             },
 
+            checkInitialDiscardHomeArm: function() {
+                console.log('checkInitialDiscardHomeArm');
+
+                const discard_hand = this.playerHand.getSelectedItems();
+                const discard_world = dojo.query('.selectedCard');
+                if (discard_hand.length == 2 && discard_world.length == 1) {
+                    dojo.query('#initial_discard_home_confirm').removeClass('disabled');
+                } else {
+                    dojo.query('#initial_discard_home_confirm').addClass('disabled');
+                }
+            },
 
             exploreKeepHowMany: function() {
                 if (this.checkAction("gamble", true) || this.checkAction("scavenge", true)) {
@@ -2745,6 +2756,23 @@ define([
                     lock: true
                 }, this, function() {}, function() {});
             },
+
+            onInitialDiscardHomeConfirm: function() {
+                console.log('onInitialDiscardHomeConfirm');
+
+                const cards = this.playerHand.getSelectedItems();
+                var card_ids = '';
+                for (var i in cards) {
+                    card_ids += cards[i].id + ';';
+                }
+                dojo.removeClass('tableau_' + this.player_id, 'paymentMode');
+                const start_world_id = dojo.query('.selectedCard')[0].id.substr(5);
+                this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/initialdiscardhome.html", {
+                    lock: true,
+                    start_world: start_world_id,
+                    cards: card_ids
+                }, this, function() {}, function() {});
+            },
             onNoMoreBoost: function() {
                 this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/noMoreBoost.html", {
                     lock: true
@@ -2869,23 +2897,10 @@ define([
                     if (dojo.hasClass(evt.currentTarget.id, 'selectedCard')) {
                         dojo.removeClass(evt.currentTarget.id, 'selectedCard');
                     } else {
-                        var cards = this.playerHand.getSelectedItems();
-                        if (cards.length == 2) {
-                            card_ids = '';
-                            for (i in cards) {
-                                card_ids += cards[i].id + ';';
-                            }
-                            dojo.removeClass('tableau_' + this.player_id, 'paymentMode');
-                            this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/initialdiscardhome.html", {
-                                lock: true,
-                                start_world: card_id,
-                                cards: card_ids
-                            }, this, function() {}, function() {});
-                        } else {
-                            dojo.query('.selectedCard').removeClass('selectedCard');
-                            dojo.addClass(evt.currentTarget.id, 'selectedCard');
-                        }
+                        dojo.query('.selectedCard').removeClass('selectedCard');
+                        dojo.addClass(evt.currentTarget.id, 'selectedCard');
                     }
+                    this.checkInitialDiscardHomeArm();
                 }
 
                 if (this.checkAction('replaceWorld', true)) {
