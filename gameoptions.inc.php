@@ -198,5 +198,13 @@ $game_preferences = [
             2 => ['name' => totranslate('Only multiple cards')],
             3 => ['name' => totranslate('Never')]
         ]
+    ],
+    '8' => [
+        'name' => totranslate('Confirm initial discard'),
+        'needReload' => true,
+        'values' => [
+            1 => ['name' => totranslate('Always')],
+            2 => ['name' => totranslate('Never')]
+        ]
     ]
  ];
