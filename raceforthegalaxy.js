@@ -1860,16 +1860,20 @@ define([
                     case 'initialDiscardHomeWorld':
                         if (this.isCurrentPlayerActive()) {
                             dojo.addClass('hand_panel', 'paymentMode');
-                            this.addActionButton('initial_discard_home_confirm', _("Done"), 'onInitialDiscardHomeConfirm');
-                            dojo.query('#initial_discard_home_confirm').addClass('disabled');
+                            if (this.initialDiscardNeedsConfirm()) {
+                                this.addActionButton('initial_discard_home_confirm', _("Done"), 'onInitialDiscardHomeConfirm');
+                                dojo.query('#initial_discard_home_confirm').addClass('disabled');
+                            }
                             this.checkInitialDiscardHomeArm();
                         }
                         break;
 
                     case 'initialDiscard':
                         if (this.isCurrentPlayerActive()) {
-                            this.addActionButton('initial_discard_confirm', _("Done"), 'onInitialDiscardConfirm');
-                            dojo.query('#initial_discard_confirm').addClass('disabled');
+                            if (this.initialDiscardNeedsConfirm()) {
+                                this.addActionButton('initial_discard_confirm', _("Done"), 'onInitialDiscardConfirm');
+                                dojo.query('#initial_discard_confirm').addClass('disabled');
+                            }
                             this.checkInitialDiscardArm();
                         }
                     case 'initialDiscardScavenger':
@@ -2342,8 +2346,13 @@ define([
                 }, this, function() {}, function() {});
             },
 
+            initialDiscardNeedsConfirm: function() {
+                return this.prefs[8].value != '2';
+            },
             checkInitialDiscardArm: function(instant_execute = false) {
                 console.log('checkInitialDiscardArm');
+
+                instant_execute = instant_execute || (!this.initialDiscardNeedsConfirm());
 
                 // Initial discard: choose 2 cards to discard (except if home world is Ancient Race)
                 var to_discard = 2;
@@ -2371,10 +2380,16 @@ define([
             checkInitialDiscardHomeArm: function() {
                 console.log('checkInitialDiscardHomeArm');
 
+                const instant_execute = !this.initialDiscardNeedsConfirm();
+
                 const discard_hand = this.playerHand.getSelectedItems();
                 const discard_world = dojo.query('.selectedCard');
                 if (discard_hand.length == 2 && discard_world.length == 1) {
-                    dojo.query('#initial_discard_home_confirm').removeClass('disabled');
+                    if (instant_execute) {
+                        this.onInitialDiscardHomeConfirm();
+                    } else {
+                        dojo.query('#initial_discard_home_confirm').removeClass('disabled');
+                    }
                 } else {
                     dojo.query('#initial_discard_home_confirm').addClass('disabled');
                 }
