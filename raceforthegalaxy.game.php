@@ -13489,6 +13489,18 @@ ADD  `player_xeno_victory` TINYINT UNSIGNED NOT NULL DEFAULT  '0';");
         $artefact = $this->artefacts->pickCard($type, $player_id);
     }
 
+    function debug_money() {
+        $this->money();
+    }
+
+    function debug_ac(int $card_id) {
+        $this->ac($card_id);
+    }
+
+    function debug_act(int $card_type_id, bool $no_good = false) {
+        $this->act($card_type_id, $no_good);
+    }
+
     // Add Orb card to player hand
     function debug_aoc(int $player_id, int $card_id)
     {
