@@ -2246,22 +2246,78 @@ class RaceForTheGalaxy extends Table
         }
     }
 
-    // Get the cost of the specific card (development or world), taking into account player's tableau
-    function getCardCost($card_id, $bWorld, $cloaking_card_type = null, $takeover = null)
+    // Get the cost of the specific development, taking into account player's tableau
+    // Additionally if cost is zero list actionable alternatives (like using R&D Crash Programm)
+    function getDevCost($card_id)
     {
         $player_id = self::GetCurrentPlayerId();
+        $phase_choice = $this->getPhaseChoice(2);
+        $bIsPhaseRepeat = (self::getGameStateValue('repeatPhase') == 1);
+        $bPhaseBonus = isset($phase_choice[$player_id]) && (!$bIsPhaseRepeat || $phase_choice[$player_id] % 10 == 2);
+        $bPrestigeBonus = $bPhaseBonus && floor($phase_choice[$player_id] / 10) == self::getGameStateValue('repeatPhase') + 1;
+        $card = $this->cards->getCard($card_id);
 
-        if ($bWorld) {
-            $phase_choice = $this->getPhaseChoice(3);
-        } else {
-            $phase_choice = $this->getPhaseChoice(2);
+        if ($card['location'] != 'hand' || $card['location_arg'] != $player_id) {
+            throw new feException("This card is not in your hand");
         }
 
+        $card_type = $this->card_types[ $card['type'] ];
+        if ($card_type['type'] != 'development') {
+            throw new feException(self::_('This is not a development'), true);
+        }
+
+        $cost = $card_type['cost'];
+        if ($bPhaseBonus) {
+            $cost --;
+        }
+        if ($bPrestigeBonus) {
+            $cost -= 2;
+        }
+
+        $immediateAlternatives = [];
+        $powers = $this->scanTableau(2, $player_id);
+        foreach ($powers as $power) {
+            if ($power['power'] == 'devcost') {
+                $cost += $power['arg']['cost'];
+            } elseif ($power['power'] == 'devcost_ondiscard') {
+                $immediateAlternatives[] = ['kind' => "rdcrashprogram", 'card_id' => $power['card_id']];
+            }
+        }
+
+        $cost = max(0, $cost);
+        if ($cost == 0 && count($immediateAlternatives) > 0) {
+            array_unshift($immediateAlternatives, ['kind' => 'pay']);
+        } else {
+            $immediateAlternatives = [];
+        }
+        $immediate = $cost == 0 && count($immediateAlternatives) == 0;
+
+        // We make this compatible to the return type of getWorldCost to avoid
+        // even more churn. Maybe this can at some point be untangled.
+        return array(
+            'card' => $card,
+            'cost' => $cost,
+            'isWorld' => false,
+            'immediate' => $immediate,
+            'immediate_alternatives' => $immediateAlternatives,
+            'military_force' => false,
+            'use_contact_specialist' => false,
+        );
+    }
+
+    // Get the cost of the specific world, taking into account player's tableau
+    // Additionally if cost is zero list actionable alternatives (like paying via Contact Specialist for a world you could conquer with military)
+    function getWorldCost($card_id, $cloaking_card_type = null)
+    {
+        $player_id = self::GetCurrentPlayerId();
+        $phase_choice = $this->getPhaseChoice(3);
         $bIsPhaseRepeat = (self::getGameStateValue('repeatPhase') == 1);
         $bPhaseBonus = isset($phase_choice[$player_id]) && (!$bIsPhaseRepeat || $phase_choice[$player_id] % 10 == 2);
         $bPrestigeBonus = $bPhaseBonus && floor($phase_choice[$player_id] / 10) == self::getGameStateValue('repeatPhase') + 1;
         $bConvoy = self::checkAction('onlyremainingmilitary', false);
         $bTerraformingProject = self::checkAction('onlycivilnonalien', false);
+        $bCloaking = ($cloaking_card_type !== null);
+
 
         $previous_type = null;
         if ($bConvoy) {
@@ -2270,164 +2326,133 @@ class RaceForTheGalaxy extends Table
         }
 
         $card = $this->cards->getCard($card_id);
+        $bOortCloud = $card['type'] == 220;
 
-        $bCloaking = ($cloaking_card_type !== null);
-
-        if ($card['location'] == 'hand' && $card['location_arg'] == $player_id || $takeover) {
-            $card_type = $this->card_types[ $card['type'] ];
-
-            if ($bWorld) {
-                if ($card_type['type'] != 'world') {
-                    throw new feException(self::_('This is not a world'), true);
-                }
-            } else {
-                if ($card_type['type'] != 'development') {
-                    throw new feException(self::_('This is not a development'), true);
-                }
-            }
-
-            $bMilitaryWorld = false;
-            $bContactSpecialistCase = false;
-            $bSpaceMercenariesCase = false;
-            $bUseMilitaryForce = false;
-            if ($bWorld && ($bCloaking || in_array('military', $card_type['category']))) { // Note : cloaking = conquer civil world as a military
-                $bMilitaryWorld = true;
-                $cost = 0;  // Military world, cost is null but the military force should be enough
-
-                if (! $bConvoy) {
-                    $militaryoptions = $this->getMilitaryForceForWorld($player_id, $card_type);
-                } else {
-                    $militaryoptions = $this->getMilitaryForceForWorld($player_id, $card_type, true, $this->card_types[ $previous_type ]);
-                }
-
-                if ($cloaking_card_type == 140) {
-                    $card_type['cost'] = max(0, $card_type['cost']-2);
-                }
-                $force = $militaryoptions['force'];
-
-                $militarycost = $card_type['cost'];
-                if ($previous_type !== null) {
-                    $militarycost += $this->card_types[ $previous_type ]['cost'];
-                }
-
-                if ($force >= $militarycost  && !$bTerraformingProject || $takeover) {
-                    $cost = 0;  // Enough military force => cost is null
-                    $bUseMilitaryForce = true;
-                } else {
-                    // Not enough military force. See our options ...
-                    // DEPRECATED : now mercenaries are using player_tmp_milforce like New Military Tactics
-//                    if(count($militaryoptions['mercenaries']) > 0)
-//                    {
-//                        // The player explicitely clicks on Space Mercenaries (or equivalent) => we have to use it!
-//                        $cards_in_hand = $this->cards->countCardInLocation('hand', $player_id)-1; // Note : -1 for the world being placed
-//
-//                        $max_mercenaries = 0;
-//                        foreach($militaryoptions['mercenaries'] as $mercenary_id => $mercenary_type)
-//                        {
-//                            foreach($this->card_types[ $mercenary_type ]['powers'][3] as $power)
-//                            {
-//                                if($power['power'] == 'militaryforcetmp_discard')
-//                                    $max_mercenaries += $power['arg']['repeat'];
-//                            }
-//                        }
-//                        if($force + min($max_mercenaries, $cards_in_hand) >= $card_type['cost'])
-//                        {
-//                            // This is worth using Space Mercenaries
-//                            $cost =  $card_type['cost'] - $force;
-//                            $bSpaceMercenariesCase = true;
-//                            $bUseMilitaryForce = true;
-//                        }
-//                    }
-
-                    if (! $bSpaceMercenariesCase) {
-                        if ($militaryoptions['contactspecialist'] && !$bCloaking && !$bConvoy) {
-                            $cost = max(0, $card_type['cost']+$militaryoptions['contactspecialist_discount']);
-                            $bContactSpecialistCase = true;
-                        } else if ($bTerraformingProject) {
-                            throw new feException(self::_("You cannot settle a military world with Terraforming Project"), true);
-                        } else {
-                            if ($previous_type === null) {
-                                throw new feException(sprintf(self::_("Your military (%s) is not big enough"), $force), true);
-                            } else {
-                                throw new feException(sprintf(self::_("Your military (%s) is not big enough to conquer this world after the previous one."), $force), true);
-                            }
-                        }
-                    }
-                }
-            } else {
-                $cost = $card_type['cost'];
-            }
-
-            if ($bTerraformingProject) {
-                if ($this->getCardColorFromType($card_type) == 4) {
-                    throw new feException(self::_("You cannot settle an Alien world with Terraforming Project"), true);
-                }
-
-                $cost = 0;
-            }
-
-            if ($bConvoy && !$bMilitaryWorld) {
-                throw new feException(self::_("You can only conquer a military world with Imperium Supply Convoy"), true);
-            }
-
-            if ($bWorld) {
-                if ($bPrestigeBonus && (!$bMilitaryWorld || $bContactSpecialistCase)) {
-                    $cost -= 3;
-                }
-            } else {
-                if ($bPhaseBonus) {
-                    $cost --;
-                }
-
-                if ($bPrestigeBonus) {
-                    $cost -= 2;
-                }
-            }
-
-            $powers = array();
-            if (!$bWorld) {
-                $powers = $this->scanTableau(2, $player_id);
-            } else {
-                // During a takeover, make sure we don't return cards in a disabled state (-1).
-                // This should probably always be the case as setting the state to -1 is a good way
-                // to make sure cards aren't active in the phase they are played. Although I might not
-                // see all the implications it can have yet so let's keep the change to a reduced scope for now
-                $powers = $this->scanTableau(3, $player_id, null, $takeover);
-            }
-
-            foreach ($powers as $power) {
-                if ($power['power'] == 'devcost') {
-                    $cost += $power['arg']['cost'];
-                } elseif ($power['power'] == 'settlecost') {
-                    // This power is not valid for military
-                    if (! $bMilitaryWorld || $bContactSpecialistCase) {                // Note: In case of a contact specialist, powers apply too
-                    // For world, worldtype must match
-                        if (count($power['arg']['worldtype']) == 4) {
-                            $cost += $power['arg']['cost']; // Any world
-                        } elseif (count($power['arg']['worldtype']) == 1) {
-                            $color_id = $this->getCardColorFromType($card_type);
-                            if ($color_id == $power['arg']['worldtype'][0]) {
-                                $cost += $power['arg']['cost'];
-                            }
-                        }
-                    }
-                }
-            }
-
-            $cost = max(0, $cost);
-
-
-            return array(
-                'card' => $card,
-                'cost' => $cost,
-                'isWorld' => $bWorld,
-                'military_force' => $bUseMilitaryForce,
-                'use_mercenaries' => $bSpaceMercenariesCase,
-                'use_contact_specialist' => $bContactSpecialistCase
-                );
-        } else {
+        if ($card['location'] != 'hand' && $card['location_arg'] != $player_id) {
             throw new feException("This card is not in your hand");
         }
+
+        $card_type = $this->card_types[ $card['type'] ];
+        if ($card_type['type'] != 'world') {
+            throw new feException(self::_('This is not a world'), true);
+        }
+
+        $bMilitaryWorld = false;
+        $bContactSpecialistCase = false;
+        $bUseMilitaryForce = false;
+        if ($bCloaking || in_array('military', $card_type['category'])) { // Note : cloaking = conquer civil world as a military
+            $bMilitaryWorld = true;
+            $cost = -1;  // Military world, cost (non-military) is not defined, but the military force should be enough
+
+            if (! $bConvoy) {
+                $militaryoptions = $this->getMilitaryForceForWorld($player_id, $card_type);
+            } else {
+                $militaryoptions = $this->getMilitaryForceForWorld($player_id, $card_type, true, $this->card_types[ $previous_type ]);
+            }
+
+            if ($militaryoptions['contactspecialist'] && !$bCloaking && !$bConvoy) {
+                $cost = max(0, $card_type['cost']+$militaryoptions['contactspecialist_discount']);
+                $bContactSpecialistCase = true;
+            }
+
+            if ($cloaking_card_type == 140) {
+                $card_type['cost'] = max(0, $card_type['cost']-2);
+            }
+            $force = $militaryoptions['force'];
+
+            $militarycost = $card_type['cost'];
+            if ($previous_type !== null) {
+                $militarycost += $this->card_types[ $previous_type ]['cost'];
+            }
+
+            if ($force >= $militarycost  && !$bTerraformingProject) {
+                $bUseMilitaryForce = true;
+            } else {
+                // Not enough military force.
+                if ($bContactSpecialistCase) {
+                    // must use Contact Specialist; nothing to be done here
+                } else if ($bTerraformingProject) {
+                    throw new feException(self::_("You cannot settle a military world with Terraforming Project"), true);
+                } else {
+                    if ($previous_type === null) {
+                        throw new feException(sprintf(self::_("Your military (%s) is not big enough"), $force), true);
+                    } else {
+                        throw new feException(sprintf(self::_("Your military (%s) is not big enough to conquer this world after the previous one."), $force), true);
+                    }
+                }
+            }
+        } else {
+            $cost = $card_type['cost'];
+        }
+
+        if ($bTerraformingProject) {
+            if ($this->getCardColorFromType($card_type) == 4) {
+                throw new feException(self::_("You cannot settle an Alien world with Terraforming Project"), true);
+            }
+            $cost = 0;
+        }
+
+        if ($bConvoy && !$bMilitaryWorld) {
+            throw new feException(self::_("You can only conquer a military world with Imperium Supply Convoy"), true);
+        }
+
+        if ($bPrestigeBonus && (!$bMilitaryWorld || $bContactSpecialistCase)) {
+            $cost -= 3;
+        }
+
+        // DEPRECATED: This whole function no longer handles takeovers
+        // // During a takeover, make sure we don't return cards in a disabled state (-1).
+        // // This should probably always be the case as setting the state to -1 is a good way
+        // // to make sure cards aren't active in the phase they are played. Although I might not
+        // // see all the implications it can have yet so let's keep the change to a reduced scope for now
+        $powers = $this->scanTableau(3, $player_id);
+        $immediateAlternatives = [];
+        $bHasMediator = false;
+        foreach ($powers as $power) {
+            if ($power['power'] == 'settlecost') {
+                // This power is not valid for military
+                if (! $bMilitaryWorld || $bContactSpecialistCase) {                // Note: In case of a contact specialist, powers apply too
+                    // For world, worldtype must match
+                    if (count($power['arg']['worldtype']) == 4) {
+                        $cost += $power['arg']['cost']; // Any world
+                    } elseif (count($power['arg']['worldtype']) == 1) {
+                        $color_id = $this->getCardColorFromType($card_type);
+                        if ($color_id == $power['arg']['worldtype'][0]) {
+                            $cost += $power['arg']['cost'];
+                        }
+                    }
+                }
+            } elseif ($power['power'] == 'colonyship') {
+                $immediateAlternatives[] = ['kind' => "colonyship", 'card_id' => $power['card_id']];
+            } elseif ($power['power'] == 'diplomatbonus') {
+                $bHasMediator = true;
+            }
+        }
+
+        $cost = max(0, $cost);
+
+        if ($bUseMilitaryForce && $bHasMediator && $bContactSpecialistCase) {
+            array_unshift($immediateAlternatives, ['kind' => 'military'], ['kind' => 'pay']);
+        } elseif ($cost == 0 && count($immediateAlternatives) > 0) {
+            array_unshift($immediateAlternatives, ['kind' => 'pay']);
+            if ($bUseMilitaryForce) {
+                array_unshift($immediateAlternatives, ['kind' => 'military']);
+            }
+        } else {
+            $immediateAlternatives = [];
+        }
+
+        $immediate = count($immediateAlternatives) == 0 && ($bUseMilitaryForce || $cost == 0) && !$bOortCloud;
+
+        return array(
+            'card' => $card,
+            'cost' => $cost,
+            'isWorld' => true,
+            'immediate' => $immediate,
+            'immediate_alternatives' => $immediateAlternatives,
+            'military_force' => $bUseMilitaryForce, // may be conquered by military force
+            'use_contact_specialist' => $bContactSpecialistCase, // is it possible to use a diplomat power?
+        );
     }
 
     function notifyUpdateCardCount($bDefered = false)
@@ -4874,47 +4899,77 @@ class RaceForTheGalaxy extends Table
         $this->gamestate->setPlayerNonMultiactive(self::getCurrentPlayerId(), "phaseCleared");
     }
 
-    // Try to play this development but return only its costs
+    // Try to play this development or world if possible without cost and
+    // alternatives, otherwise return the cost (and if applicable the
+    // alternatives like Colony Ship).
     function playCard($card_id)
     {
-        $bSettle = false;
         if (self::checkAction("settle", false)) {
-            $bSettle = true;
+            $cardCost = $this->getWorldCost($card_id);
         } else {
-            self::checkAction("develop");
+            $cardCost = $this->getDevCost($card_id);
         }
 
-        self::notifyPlayer(self::getCurrentPlayerId(), 'cardcost', '', $this->getCardCost($card_id, $bSettle));
+
+        if ($cardCost['immediate']) {
+            // Immediatly play in the straightforward case
+            $this->playCardAndPay($card_id, [], ['immediate' => true]);
+        } else {
+            // Card must either be paid for or has a choice attached to it
+            self::notifyPlayer(self::getCurrentPlayerId(), 'cardcost', '', $cardCost);
+        }
     }
 
     // Play development or world 'for real'
     // Options (array)
     //  _ colonyship: settle with colony ship => colonyship card id
+    //  _ settlereplace: replace world via Terraforming Engineers
     //  _ cloaking: settle with imperium cloaking technology
-    //  _ good : goods used to reduce the cost
-    //  _ artifact : artifacts used to reduce the cost
-    //  _ forfree : place it for free
+    //  _ rdcrashprogram: use R&D Crash Program to reduce cost
+    //  _ forfree : place it for free (Wormhole ability)
+    //  _ goods : goods used to reduce the cost
+    //  _ arts : artifacts used to reduce the cost
+    //  _ scavenger : preset the card to save via Scavenger
+    //  _ oort : specify initial kind of Alien Oort Cloud Refinery
+    //  _ immediate : placed immediately for zero cost
+    //  _ mode : "military" or "pay" explicitly selecting way of settling
     function playCardAndPay($card_id, $money, $options)
     {
-        $bSettle = false;
-        if (self::checkAction("settle", false) || self::checkAction("replaceWorld", false)) {
-            $bSettle = true;
-        } else {
-            self::checkAction("develop");
-        }
-
         $player_id = self::getCurrentPlayerId();
         $bCloaking = (isset($options['cloaking']));
-        if ($bCloaking) {
-            $cloakingcard = $this->cards->getCard($options['cloaking']);
-            if (! $cloakingcard) {
-                throw new feException("This card does not exist");
+        if (self::checkAction("settle", false) || self::checkAction("replaceWorld", false)) {
+            if ($bCloaking) {
+                $cloakingcard = $this->cards->getCard($options['cloaking']);
+                if (! $cloakingcard) {
+                    throw new feException("This card does not exist");
+                }
+                $res = $this->getWorldCost($card_id, $cloakingcard['type']);
+            } else {
+                $res = $this->getWorldCost($card_id);
             }
-
-            $res = $this->getCardCost($card_id, $bSettle, $cloakingcard['type']);
         } else {
-            $res = $this->getCardCost($card_id, $bSettle);
+            self::checkAction("develop");
+            $res = $this->getDevCost($card_id);
         }
+
+        if (isset($options['mode'])) {
+            if ($options['mode'] == 'military' && !$res['military_force']) {
+                throw new feException("Unable to use military force.");
+            }
+        } else {
+            if ($res['military_force']) {
+                $options['mode'] = 'military';
+            } else {
+                $options['mode'] = 'pay';
+            }
+        }
+        if ($options['mode'] == 'military' && count($money)) {
+            throw new feException("No payment in military mode.");
+        }
+        if ($options['mode'] != 'military' && $options['mode'] != 'pay') {
+            throw new feException("Invalid mode value.");
+        }
+
 
         $cost = $res['cost'];
         $card = $res['card'];
@@ -5034,6 +5089,14 @@ class RaceForTheGalaxy extends Table
                     throw new feException(self::_("You must choose a world from the same kind (ie: same good color)"), true);
                 }
             }
+            if ($card['type'] == 220) {
+                // Set the color of the Alien Oort Cloud Refinery by the constraints
+                $impliedType = $this->getCardColorFromType($to_replace_type);
+                if (isset($options['oort']) && $options['oort'] != impliedType) {
+                    throw new feException(self::_("Invalid choice of color (must be same good color)"), true);
+                }
+                $options['oort'] = $impliedType;
+            }
 
             // Remove world to replace
             $this->discardFromTableau($options['settlereplace']);
@@ -5088,25 +5151,6 @@ class RaceForTheGalaxy extends Table
                                            ));
         }
 
-        if ($res['use_mercenaries']) {
-            $mercenary_card_id = self::getCollectionFromDB("SELECT card_type, card_id FROM card WHERE card_type IN ('106','153','157','164') AND card_location='tableau' AND card_location_arg='$player_id' AND card_status='-2'", true);
-
-            if (count($mercenary_card_id) == 0) {
-                throw new feException("Could not find mercenaries ...");
-            }
-
-            self::DbQuery("UPDATE card SET card_status='-1' WHERE card_id IN ('".implode("','", $mercenary_card_id)."')");
-
-            foreach ($mercenary_card_id as $thiscard_type => $card_id) {
-                $this->defered_notifyAllPlayers($this->notif_defered_id, 'simpleNote', clienttranslate('${player_name} uses ${card_name} to temporary boost Military force'),
-                                                array(
-                                                    "i18n" => array("card_name"),
-                                                    "card_name" => $this->card_types[ $thiscard_type ]['name'],
-                                                    "player_name" => self::getCurrentPlayerName()
-                                               ));
-            }
-        }
-
         // good_for_settlecost / good_for_devcost
         if (isset($options['goods']) &&  count($options['goods']) > 0) {
             $options['goods'] = array_unique($options['goods']);
@@ -5125,7 +5169,7 @@ class RaceForTheGalaxy extends Table
 
                 $good_type = self::getUniqueValueFromDB("SELECT card_status FROM card WHERE card_id='$good_id'");
 
-                if ($bSettle) {
+                if ($res['isWorld']) {
                     if ($good_type != 3) {
                         throw new feException("This is not a gene good");
                     }
@@ -5143,7 +5187,7 @@ class RaceForTheGalaxy extends Table
 
 
             // How many cards
-            if ($bSettle) {
+            if ($res['isWorld']) {
                 $cards_with_good_powers = array(193, 204);
             } else {
                 $cards_with_good_powers = array(193);
@@ -5160,7 +5204,7 @@ class RaceForTheGalaxy extends Table
                 throw new feException(self::_("You do not have enough cards using these goods for this action"), true);
             }
 
-            if ($bSettle) {
+            if ($res['isWorld']) {
                 $cost -= (3*$good_to_use);
             } else {
                 $cost -= (2*$good_to_use);
@@ -5184,7 +5228,7 @@ class RaceForTheGalaxy extends Table
         }
 
         // R&D crash Program
-        if (isset ($options['rdcrashprogram']) && !$bSettle) {
+        if (isset ($options['rdcrashprogram']) && !$res['isWorld']) {
             // Checks
             $rdcrashprogram= $this->cards->getCard($options['rdcrashprogram']);
             if (! $rdcrashprogram) {
@@ -5234,7 +5278,7 @@ class RaceForTheGalaxy extends Table
                 $art_type = $art['type'];
 
                 if ($art_type==1||$art_type==13) {
-                    if (!$bSettle) {
+                    if (!$res['isWorld']) {
                         throw new feException(self::_("This artifact can only be used to reduce non-military world cost"), true);
                     }
 
@@ -5242,7 +5286,7 @@ class RaceForTheGalaxy extends Table
                     $art_cost_reduction += ($art_type == 1) ?  2 : 3;
                     $artpoints += $this->artefact_types[ $art_type ]['vp'];
                 } elseif ($art_type == 4) {
-                    if (!$bSettle) {
+                    if (!$res['isWorld']) {
                         throw new feException(self::_("This artifact can only be used to reduce Gene world cost"), true);
                     }
                     if ($this->getCardColorFromType($card_type) != 3) {
@@ -5252,7 +5296,7 @@ class RaceForTheGalaxy extends Table
                     $art_cost_reduction += 2;
                     $artpoints += $this->artefact_types[ $art_type ]['vp'];
                 } elseif ($art_type == 7 || $art_type == 10) {
-                    if ($bSettle) {
+                    if ($res['isWorld']) {
                         throw new feException(self::_("This artifact can only be used to reduce development cost"), true);
                     }
                     $art_to_use[$art_id] = $art_type;
@@ -5293,7 +5337,7 @@ class RaceForTheGalaxy extends Table
                                                ));
             }
         }
-        if (count($money) != $cost) {
+        if ($options['mode'] == 'pay' && count($money) != $cost) {
             throw new feException("This card cost $cost and not ".count($money));
         }
 
@@ -5320,7 +5364,7 @@ class RaceForTheGalaxy extends Table
             }
         }
 
-        // Move development to player tableau
+        // Move development/world to player tableau
         $this->cards->moveCard($card_id, 'tableau', $player_id);
         self::DbQuery("INSERT INTO tableau_order VALUES ($card_id)");
 
@@ -5332,19 +5376,23 @@ class RaceForTheGalaxy extends Table
         self::DbQuery("UPDATE card SET card_status=-1 WHERE card_id=$card_id");
 
         // Keep these move information for the next game state
-
-        self::notifyPlayer($player_id, 'playcard', '', array("card" => $card, "money" => $money, "player" => $player_id, "need_scavenging" => $need_scavenging));
+        self::notifyPlayer($player_id, 'playcard', '',
+                           array("card" => $card,
+                                 "money" => $money,
+                                 "player" => $player_id,
+                                 "immediate" => isset($options['immediate']) && $options['immediate'],
+                                 "need_scavenging" => $need_scavenging));
 
         $log = clienttranslate('${player_name} plays a ${card_type_name} for ${cost}');
-        if ($res['military_force']) {
+        if ($options['mode'] == 'military') {
             $log = clienttranslate('${player_name} plays a ${card_type_name} using military force');
         }
-        if ($res['use_contact_specialist']) {
+        if ($options['mode'] == 'pay' && $res['use_contact_specialist']) {
             $log = clienttranslate('${player_name} plays a ${card_type_name} using a power to pay for Military worlds for ${cost}');
         }
 
         if (self::checkAction('onlymilitarysettle', false)) {
-            if (!$res['military_force']) {
+            if (options['mode'] != 'military') {
                 throw new feException(self::_("You may only settle a military world using Rebel Sneak Attack"), true);
             }
 
@@ -5374,26 +5422,26 @@ class RaceForTheGalaxy extends Table
         }
         if (self::checkAction('onlycivilnonalien', false)) {
             // Discard Terraforming project
-            $sneak = self::getUniqueValueFromDB("SELECT card_id
+            $tproj = self::getUniqueValueFromDB("SELECT card_id
                          FROM card
                          INNER JOIN player ON player_id=card_location_arg
                          WHERE card_type='259'
                          AND card_location='tableau'
                          AND card_location_arg = $player_id", true);
 
-            if ($sneak === null) {
+            if ($tproj === null) {
                 throw new feException("Cannot find Terraforming project on tableau");
             }
 
-            $this->discardFromTableau($sneak);
+            $this->discardFromTableau($tproj);
 
-            self::notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $sneak));
+            self::notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $tproj));
             $this->defered_notifyAllPlayers($this->notif_defered_id, 'discardfromtableau', clienttranslate('${player_name} uses a ${card_name} to pay'),
                                             array(
                                                 "i18n" => array('card_name'),
                                                 "player_name" => self::getCurrentPlayerName(),
                                                 "player_id" => $player_id,
-                                                "card" => $sneak,
+                                                "card" => $tproj,
                                                 'card_name' => $this->card_types[ 259 ]['name']
                                            ));
         }
@@ -5439,7 +5487,7 @@ class RaceForTheGalaxy extends Table
                                              "vp_delta" => 0     // Note: "consumption" vp
                                        ));
 
-        if ($res['use_contact_specialist']) {
+        if ($options['mode'] == 'pay' && $res['use_contact_specialist']) {
             // Is there some bonus associated?
             $diplomatbonus = $this->scanTableau(3, $player_id, 'diplomatbonus');
 
@@ -5449,9 +5497,9 @@ class RaceForTheGalaxy extends Table
             }
         }
 
-         // See if this card has some impact on military force
+        // See if this card has some impact on military force
         // For worlds, wait until the end of the settle phase
-        if (! $bSettle) {
+        if (! $res['isWorld']) {
             $this->updateMilforceIfNeeded($player_id, true);
         }
 
@@ -13530,4 +13578,9 @@ ADD  `player_xeno_victory` TINYINT UNSIGNED NOT NULL DEFAULT  '0';");
     public function debug_goToState(int $state = 98) {
       $this->gamestate->jumpToState($state);
     }
+
+    function debug_dc(int $card_id) {
+        $this->drawCard($card_id);
+    }
+
 }

@@ -190,6 +190,9 @@ class action_raceforthegalaxy extends APP_GameAction
         if (self::isArg('rdcrashprogram')) {   // Use R&D crash program to reduce cost
             $options['rdcrashprogram'] = self::getArg('rdcrashprogram', AT_posint, true);
         }
+        if (self::isArg('mode')) {  // explicitly select 'military' or 'pay'
+            $options['mode'] = self::getArg('mode', AT_alphanum, true);
+        }
 
         $options['goods'] = $good;
         $options['arts'] = $art;

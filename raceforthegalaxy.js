@@ -42,6 +42,7 @@ define([
                 this.paymentMode = false; // During develop and settle phase, beeing in "payment mode" means: choice cards to pay nextCardToPlay
                 this.nextCardToPlay = null;
                 this.paymentCost = 0;
+                this.immediateAlternatives = null; // Lists actions during develop and settle if cost is zero but the player must make a choice
                 this.card_to_type = {}; // Card_id => type_id (at least for cards in tableau)
 
                 this.goals = null;
@@ -1541,6 +1542,7 @@ define([
                         dojo.removeClass('hand_panel', 'paymentMode');
                         this.nextCardToPlay = null;
                         this.paymentCost = 0;
+                        this.immediateAlternatives = null;
                         break;
                     case 'consumesell':
                         this.setActivePhase('consume');
@@ -1642,6 +1644,11 @@ define([
                     case 'settle':
                         dojo.query('.mercenarySelected').removeClass('mercenarySelected');
                         dojo.query('.consumeformilitarySelected').removeClass('consumeformilitarySelected');
+                    case 'develop':
+                        this.paymentMode = false;
+                        this.nextCardToPlay = null;
+                        this.paymentCost = 0;
+                        this.immediateAlternatives = null;
                         break;
                     case 'consumesell':
                         dojo.query('.goodsell').style('display', 'none');
@@ -1722,6 +1729,18 @@ define([
                     case 'settle':
                     case 'develop':
                         this.updatePageTitleForCost();
+                        if (this.immediateAlternatives !== null && this.immediateAlternatives.length > 0) {
+                            var phase = 'phase';
+                            if (this.gamedatas.gamestate.name === 'develop') {
+                                phase = _("Develop");
+                            } else {
+                                phase = _("Settle");
+                            }
+                            const title = dojo.string.substitute(_('${phase}: Choose an action'), {
+                                phase: phase});
+                            $('pagemaintitletext').innerHTML = title
+                            document.title =  title
+                        }
                         break;
                     case 'productionwindfall':
                         if (!this.isCurrentPlayerActive() && $('windfallpowers')) {
@@ -1824,7 +1843,49 @@ define([
                     case 'develop':
                     case 'settle':
                         if (this.isCurrentPlayerActive()) {
-                            if (!this.paymentMode) {
+                            if (this.immediateAlternatives !== null && this.immediateAlternatives.length > 0) {
+                                var i = 0;
+                                for (const alternative of this.immediateAlternatives) {
+                                    var buttonID = `btn_immediate_alternative_${i}`;
+                                    var buttonIcon = '';
+                                    var buttonLabel = '';
+                                    if (alternative.kind === 'military' || alternative.kind === 'pay') {
+                                        buttonID = `btn_immediate_alternative_${alternative.kind}`;
+                                        if (alternative.kind === 'military') {
+                                            buttonIcon = '<span class="icon military_world"></span> ';
+                                            buttonLabel = _('Conquer');
+                                        } else {
+                                            const target = this.gamedatas.card_types[this.nextCardToPlay.type];
+                                            if (target.type === 'world') {
+                                                if (target.category.includes('military')) {
+                                                    buttonIcon = '<span class="icon pay_for_military"></span> ';
+                                                } else {
+                                                    buttonIcon = '<span class="icon civil_world"></span> ';
+                                                }
+                                            } else {
+                                                buttonIcon = '<span class="icon development"></span>';
+                                            }
+                                            buttonLabel = dojo.string.substitute(_("Pay ${cost} cards"), {
+                                                cost: this.paymentCost
+                                            });
+                                        }
+                                    } else {
+                                        const card_type = this.card_to_type[alternative.card_id];
+                                        const card_name = this.gamedatas.card_types[card_type].name;
+                                        buttonLabel = dojo.string.substitute(_("Use ${name}"), {
+                                            name: card_name
+                                        });
+                                    }
+                                    this.addActionButton(
+                                        buttonID, buttonIcon + buttonLabel,
+                                        () => {this.onHandleImmediateAlternative(alternative);});
+                                    i = i + 1;
+                                }
+                                if (this.paymentCost > 0) {
+                                    dojo.query('#btn_immediate_alternative_pay').addClass('disabled');
+                                }
+                            }
+                            if (!this.paymentMode && this.immediateAlternatives === null) {
                                 this.addActionButton('action_nothing_to_play', _("I won't"), 'onNothingToPlay');
                                 if (this.exploreSet.items.length > 0) {
                                     // No cancel in scavenging
@@ -1953,6 +2014,38 @@ define([
             /////////////////////////////////////////////////////////////////:
             ////////////////////// UI events
 
+            onHandleImmediateAlternative: function (alternative) {
+                var call_options = {
+                        lock: true,
+                        card: this.nextCardToPlay.id,
+                };
+                switch (alternative.kind) {
+                case 'military':
+                    call_options.money = '';
+                    call_options.mode = 'military';
+                    break;
+                case 'pay':
+                    if (!this.checkCurrentPayment(/* execute = */ true)) {
+                        this.onDontPay();
+                    }
+                    call_options = null;
+                    break;
+                case 'rdcrashprogram':
+                    call_options.rdcrashprogram = alternative.card_id;
+                    call_options.money = '';
+                    call_options.mode = 'pay';
+                    break;
+                case 'colonyship':
+                    call_options.colonyship = alternative.card_id;
+                    call_options.money = '';
+                    call_options.mode = 'pay';
+                    break;
+                }
+                if (call_options !== null) {
+                    this.playCardAndPayMaybeOortCloud(this.nextCardToPlay.type, call_options);
+                }
+            },
+
             onBunkerPower: function() {
                 var cards = this.playerHand.getSelectedItems();
 
@@ -2013,6 +2106,7 @@ define([
                     } else if (this.checkAction('replaceWorld', true)) {
                         if (cards.length == 1 && dojo.query('.selectedCard').length > 0) {
                             var replace_world_id = dojo.query('.selectedCard')[0].id.substr(5);
+                            // Oort Cloud is handled implicitly by selecting matching color
                             this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/playCardAndPay.html", {
                                 lock: true,
                                 card: cards[0].id,
@@ -2148,7 +2242,15 @@ define([
                             }
                         } else {
                             // Selection of cards needed for the payment of 'nextCardToPlay'
-                            this.checkCurrentPayment();
+                            if (this.immediateAlternatives !== null && this.immediateAlternatives.length > 0) {
+                                if (this.checkCurrentPayment(/* execute = */ false)) {
+                                    dojo.query('#btn_immediate_alternative_pay').removeClass('disabled');
+                                } else {
+                                    dojo.query('#btn_immediate_alternative_pay').addClass('disabled');
+                                }
+                            } else {
+                                this.checkCurrentPayment();
+                            }
                         }
                     } else if (this.checkAction('draft', true)) {
                         var card_id = cards[0].id;
@@ -2162,14 +2264,17 @@ define([
                         });
 
                     }
+                } else {
+                    if (this.immediateAlternatives !== null && this.paymentCost > 0) {
+                        dojo.query('#btn_immediate_alternative_pay').addClass('disabled');
+                    }
                 }
-
             },
 
-            // Check current payment in the interface and send payment to server if it matches the cost
-            // return true if payment matches the cost
-            checkCurrentPayment: function() {
-                if (!this.paymentMode) {
+            // Check current payment in the interface and return true if payment matches the cost
+            // Optionally send payment to server if `execute` is true
+            checkCurrentPayment: function(execute = true) {
+                if (!this.paymentMode && this.immediateAlternatives === null) {
                     return false;
                 }
 
@@ -2177,7 +2282,7 @@ define([
                 var card_ids;
                 var i;
 
-                var paid = cards.length;
+                var paid = 0;
 
                 // Note : good_for_settlecost
                 var goods = dojo.query('#tableau_' + this.player_id + ' .selectedGood.good3');
@@ -2227,51 +2332,54 @@ define([
                     }
                 }
 
-                if (paid >= this.paymentCost) {
-                    // Play the card, for real
-                    card_ids = '';
-                    for (i in cards) {
-                        card_ids += cards[i].id + ';';
-                    }
-                    var goods = dojo.query('#tableau_' + this.player_id + ' .selectedGood');
-                    good_ids = '';
-                    for (i in goods) {
-                        if (goods[i].id) {
-                            good_ids += goods[i].id.substr(5) + ';';
+                // allow overpayment via materials
+                paid = Math.min(paid, this.paymentCost);
+                paid += cards.length;
+
+                if (paid == this.paymentCost) {
+                    if (execute) {
+                        // Play the card, for real
+                        card_ids = '';
+                        for (i in cards) {
+                            card_ids += cards[i].id + ';';
                         }
-                    }
-
-                    if (rdcrashprogram.length > 0) {
-                        rdcrashprogram = rdcrashprogram[0].id.substr(5);
-                    } else {
-                        rdcrashprogram = null;
-                    }
-
-                    var scavenger = dojo.query('.stockitem_selected.scavenger_selected');
-                    if (scavenger.length == 1) {
-                        // player_hand_item_XX
-                        scavenger = scavenger[0].id.substr(17);
-                    } else {
-                        scavenger = null;
-                    }
-
-                    this.paymentMode = false;
-                    dojo.removeClass('hand_panel', 'paymentMode');
-                    dojo.removeClass('hand_panel', 'paymentModeScavenger');
-                    this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/playCardAndPay.html", {
-                        lock: true,
-                        card: this.nextCardToPlay.id,
-                        money: card_ids,
-                        goods: good_ids,
-                        rdcrashprogram: rdcrashprogram,
-                        arts: arts_ids,
-                        scavenger: scavenger
-                    }, this, function() {}, function(is_error) {
-                        this.playerHand.unselectAll();
-                        if (is_error) {
-                            this.onDontPay();
+                        var goods = dojo.query('#tableau_' + this.player_id + ' .selectedGood');
+                        good_ids = '';
+                        for (i in goods) {
+                            if (goods[i].id) {
+                                good_ids += goods[i].id.substr(5) + ';';
+                            }
                         }
-                    });
+
+                        if (rdcrashprogram.length > 0) {
+                            rdcrashprogram = rdcrashprogram[0].id.substr(5);
+                        } else {
+                            rdcrashprogram = null;
+                        }
+
+                        var scavenger = dojo.query('.stockitem_selected.scavenger_selected');
+                        if (scavenger.length == 1) {
+                            // player_hand_item_XX
+                            scavenger = scavenger[0].id.substr(17);
+                        } else {
+                            scavenger = null;
+                        }
+
+                        this.paymentMode = false;
+                        dojo.removeClass('hand_panel', 'paymentMode');
+                        dojo.removeClass('hand_panel', 'paymentModeScavenger');
+                        const call_options = {
+                            lock: true,
+                            card: this.nextCardToPlay.id,
+                            money: card_ids,
+                            goods: good_ids,
+                            rdcrashprogram: rdcrashprogram,
+                            arts: arts_ids,
+                            scavenger: scavenger,
+                            mode: 'pay',
+                        };
+                        this.playCardAndPayMaybeOortCloud(this.nextCardToPlay.type, call_options);
+                    }
                     return true;
                 } else
                     return false;
@@ -2516,6 +2624,7 @@ define([
                 dojo.removeClass('hand_panel', 'paymentModeScavenger');
                 this.nextCardToPlay = null;
                 this.paymentCost = 0;
+                this.immediateAlternatives = null;
                 dojo.empty('generalactions');
                 this.updatePageTitle();
             },
@@ -2958,6 +3067,7 @@ define([
                     } else {
                         var cards = this.playerHand.getSelectedItems();
                         if (cards.length == 1) {
+                            // Oort Cloud is handled implicitly by selecting matching color
                             this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/playCardAndPay.html", {
                                 lock: true,
                                 card: cards[0].id,
@@ -2994,11 +3104,13 @@ define([
                             this.showMessage(_("You must select a world first"), 'error');
                         } else {
                             this.paymentMode = false;
+                            // Cannot be Oort Cloud in this branch
                             this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/playCardAndPay.html", {
                                 lock: true,
                                 card: this.nextCardToPlay.id,
                                 colonyship: card_id,
-                                money: ''
+                                money: '',
+                                mode: 'pay',
                             }, this, function() {}, function(is_error) {
                                 if (is_error) {
                                     this.onDontPay();
@@ -3012,11 +3124,13 @@ define([
                         this.showMessage(_("You must first choose a non-military world to conquer from your hand"), 'error');
                     } else {
                         this.paymentMode = false;
+                        // Cannot be Oort Cloud in this branch
                         this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/playCardAndPay.html", {
                             lock: true,
                             card: this.nextCardToPlay.id,
                             cloaking: card_id,
-                            money: ''
+                            money: '',
+                            mode: 'military',
                         }, this, function() {}, function() {});
 
                     }
@@ -3052,11 +3166,13 @@ define([
                                 this.showMessage(_("You must first choose an opponent world to takeover OR a non-military world to conquer from your hand"), 'error');
                             } else {
                                 this.paymentMode = false;
+                                // Cannot be Oort Cloud in this branch
                                 this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/playCardAndPay.html", {
                                     lock: true,
                                     card: this.nextCardToPlay.id,
                                     cloaking: card_id,
-                                    money: ''
+                                    money: '',
+                                    mode: 'military',
                                 }, this, function() {}, function(is_error) {
                                     if (is_error) {
                                         this.onDontPay();
@@ -4391,14 +4507,16 @@ define([
                     $('pagemaintitletext').innerHTML = this.lastPaymentTitle;
                 }
             },
+
             notif_cardcost: function(notif) {
                 console.log('notif_cardcost');
                 console.log(notif);
 
                 this.paymentCost = notif.args.cost;
                 this.nextCardToPlay = notif.args.card;
+                this.immediateAlternatives = notif.args.immediate_alternatives;
 
-                if (toint(this.paymentCost) !== 0) {
+                if (toint(this.paymentCost) > 0) {
                     // Go to payment mode
                     this.paymentMode = true;
                     dojo.addClass('hand_panel', 'paymentMode');
@@ -4425,6 +4543,7 @@ define([
 
                 dojo.empty('generalactions');
 
+                this.onUpdatePageTitle();
                 this.onUpdateActionButtons(this.gamedatas.gamestate.name, this.gamedatas.gamestate.args);
 
                 // Move this card to tableau
@@ -4434,81 +4553,16 @@ define([
                 dojo.destroy('player_hand_item_' + notif.args.card.id);
                 dojo.addClass($('card_' + notif.args.card.id), 'nextCardToPlay');
 
-                if (toint(this.paymentCost) === 0 && !g_archive_mode) {
-                    if (notif.args.card.type == 220) {
-                        // Must choose Oort good
-
-                        this.getGoodChoice(_("Which kind do you want this world to be?"), dojo.hitch(this, function(good) {
-
-
-                            this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/playCardAndPay.html", {
-                                lock: true,
-                                card: this.nextCardToPlay.id,
-                                money: '',
-                                oort: good
-                            }, this, function() {}, function(is_error) {
-                                if (is_error) {
-                                    setTimeout(dojo.hitch(this, 'onDontPay'), 1000);
-                                }
-                            });
-
-
-                        }));
-                    } else {
-                        // Play this card immediately
-                        this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/playCardAndPay.html", {
-                            lock: true,
-                            card: this.nextCardToPlay.id,
-                            money: ''
-                        }, this, function() {}, function(is_error) {
-                            if (is_error) {
-                                setTimeout(dojo.hitch(this, 'onDontPay'), 1000);
-                            }
-                        });
-                    }
+                if(this.nextCardToPlay.type == 220 && (this.immediateAlternatives === null || this.immediateAlternatives.length === 0)) {
+                    // Alien Oort Cloud Refinery needs to be initialised
+                    const call_options = {
+                        lock: true,
+                        card: this.nextCardToPlay.id,
+                        money: '',
+                        mode: 'pay',
+                    };
+                    this.playCardAndPayMaybeOortCloud(this.nextCardToPlay.type, call_options);
                 }
-            },
-
-
-            getGoodChoice: function(text, callback) {
-                var oortChoice = new dijit.Dialog({
-                    title: text
-                });
-
-                dojo.destroy('goodChoiceDlgContent');
-                var html = '<div id="goodChoiceDlgContent">';
-
-                html += '<a href="#" class="goodchoice" id="goodchoice_1"><div class="good goodinline good1"></div></a>';
-                html += '<a href="#" class="goodchoice" id="goodchoice_2"><div class="good goodinline good2"></div></a>';
-                html += '<a href="#" class="goodchoice" id="goodchoice_3"><div class="good goodinline good3"></div></a>';
-                html += '<a href="#" class="goodchoice" id="goodchoice_4"><div class="good goodinline good4"></div></a>';
-
-                html += '</div>';
-
-                oortChoice.attr("content", html);
-                oortChoice.show();
-
-                dojo.query(".goodchoice").connect('onclick', this, function(evt) {
-                    evt.preventDefault();
-                    var good_id = evt.currentTarget.id.substr(11);
-
-                    callback(good_id);
-
-                    oortChoice.hide();
-                });
-
-            },
-
-            notif_oortKindChanged: function(notif) {
-                console.log('notif_oortKindChanged');
-                console.log(notif);
-
-                var card_div = $('card_' + notif.args.card.id);
-                var card_type_id = notif.args.card.type;
-
-                dojo.replaceClass(card_div, 'kind_' + notif.args.kind_id, 'kind_1 kind_2 kind_3 kind_4');
-                this.gamedatas.card_types[card_type_id].kind = notif.args.kind_id;
-                $(card_div).setAttribute('oort', this.gamedatas.good_types[notif.args.kind_id]);
             },
 
             notif_playcard: function(notif) {
@@ -4517,6 +4571,13 @@ define([
 
                 if (notif.args.player == this.player_id) {
                     dojo.query('.nextCardToPlay').removeClass('nextCardToPlay');
+
+                    if(notif.args.immediate) {
+                        // notif_cardcost was not executed in this branch, so we need to add the relevant pieces
+                        this.addCardToTableau(notif.args.card, $('player_hand_item_' + notif.args.card.id));
+                        this.playerHand.removeFromStockById(notif.args.card.id);
+                        dojo.destroy('player_hand_item_' + notif.args.card.id);
+                    }
 
                     if (notif.args.need_scavenging) {
                         this.exploreSet.removeAll();
@@ -4559,6 +4620,69 @@ define([
                     this.addCardToTableau(notif.args.card);
                 }
             },
+
+            // As the Alien Oort Cloud Refinery is pretty special we need a dedicated function for it
+            playCardAndPayMaybeOortCloud: function(card_type, call_options) {
+                if (card_type == 220) {
+                    this.getGoodChoice(_("Which kind do you want this world to be?"), dojo.hitch(this, function(good) {
+                        call_options.oort = good;
+                        this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/playCardAndPay.html",
+                                      call_options, this, function() {}, function(is_error) {
+                                          if (is_error) {
+                                              setTimeout(dojo.hitch(this, "onDontPay"), 1000);
+                                          }
+                                      });
+                    }));
+                } else {
+                    this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/playCardAndPay.html",
+                                  call_options, this, function() {}, function(is_error) {
+                                      if (is_error) {
+                                          this.onDontPay();
+                                      }});
+                }
+            },
+            getGoodChoice: function(text, callback) {
+                var oortChoice = new dijit.Dialog({
+                    title: text
+                });
+
+                dojo.destroy('goodChoiceDlgContent');
+                var html = '<div id="goodChoiceDlgContent">';
+
+                html += '<a href="#" class="goodchoice" id="goodchoice_1"><div class="good goodinline good1"></div></a>';
+                html += '<a href="#" class="goodchoice" id="goodchoice_2"><div class="good goodinline good2"></div></a>';
+                html += '<a href="#" class="goodchoice" id="goodchoice_3"><div class="good goodinline good3"></div></a>';
+                html += '<a href="#" class="goodchoice" id="goodchoice_4"><div class="good goodinline good4"></div></a>';
+
+                html += '</div>';
+
+                oortChoice.attr("content", html);
+                oortChoice.show();
+
+                dojo.query(".goodchoice").connect('onclick', this, function(evt) {
+                    evt.preventDefault();
+                    var good_id = evt.currentTarget.id.substr(11);
+
+                    callback(good_id);
+
+                    oortChoice.hide();
+                });
+
+            },
+
+            notif_oortKindChanged: function(notif) {
+                console.log('notif_oortKindChanged');
+                console.log(notif);
+
+                var card_div = $('card_' + notif.args.card.id);
+                var card_type_id = notif.args.card.type;
+
+                dojo.replaceClass(card_div, 'kind_' + notif.args.kind_id, 'kind_1 kind_2 kind_3 kind_4');
+                this.gamedatas.card_types[card_type_id].kind = notif.args.kind_id;
+                $(card_div).setAttribute('oort', this.gamedatas.good_types[notif.args.kind_id]);
+            },
+
+
             notif_confirmTakeover: function(notif) {
                 this.confirmationDialog(
                     dojo.string.substitute(_("Attempt a takover of ${target_name} (defense: ${defense}) with ${takeover_card} (attack: ${attack})?"), {
