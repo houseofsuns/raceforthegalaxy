@@ -5092,7 +5092,7 @@ class RaceForTheGalaxy extends Table
             if ($card['type'] == 220) {
                 // Set the color of the Alien Oort Cloud Refinery by the constraints
                 $impliedType = $this->getCardColorFromType($to_replace_type);
-                if (isset($options['oort']) && $options['oort'] != impliedType) {
+                if (isset($options['oort']) && $options['oort'] != $impliedType) {
                     throw new feException(self::_("Invalid choice of color (must be same good color)"), true);
                 }
                 $options['oort'] = $impliedType;
