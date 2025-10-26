@@ -5392,7 +5392,7 @@ class RaceForTheGalaxy extends Table
         }
 
         if (self::checkAction('onlymilitarysettle', false)) {
-            if (options['mode'] != 'military') {
+            if ($options['mode'] != 'military') {
                 throw new feException(self::_("You may only settle a military world using Rebel Sneak Attack"), true);
             }
 
