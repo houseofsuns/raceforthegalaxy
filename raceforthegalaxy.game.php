@@ -2328,7 +2328,7 @@ class RaceForTheGalaxy extends Table
         $card = $this->cards->getCard($card_id);
         $bOortCloud = $card['type'] == 220;
 
-        if ($card['location'] != 'hand' && $card['location_arg'] != $player_id) {
+        if ($card['location'] != 'hand' || $card['location_arg'] != $player_id) {
             throw new feException("This card is not in your hand");
         }
 
