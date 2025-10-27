@@ -1645,6 +1645,15 @@ define([
                         dojo.query('.mercenarySelected').removeClass('mercenarySelected');
                         dojo.query('.consumeformilitarySelected').removeClass('consumeformilitarySelected');
                     case 'develop':
+                        // Remove any previous card which was not actually played.
+                        // This is necessary as the onDontPay is not triggered by a notification.
+                        if (this.nextCardToPlay) {
+                            dojo.query('.nextCardToPlay').removeClass('nextCardToPlay');
+                            this.playerHand.addToStockWithId(this.nextCardToPlay.type, this.nextCardToPlay.id, $('card_' + this.nextCardToPlay.id));
+                            dojo.destroy($('card_wrapper_' + this.nextCardToPlay.id));
+                            $('tableau_nbr_' + this.player_id).innerHTML = toint($('tableau_nbr_' + this.player_id).innerHTML) - 1;
+                        }
+
                         this.paymentMode = false;
                         this.nextCardToPlay = null;
                         this.paymentCost = 0;
@@ -4512,6 +4521,15 @@ define([
                 console.log('notif_cardcost');
                 console.log(notif);
 
+                // Remove any previous card which was not actually played.
+                // This is necessary as the onDontPay is not triggered by a notification.
+                if (this.nextCardToPlay) {
+                    dojo.query('.nextCardToPlay').removeClass('nextCardToPlay');
+                    this.playerHand.addToStockWithId(this.nextCardToPlay.type, this.nextCardToPlay.id, $('card_' + this.nextCardToPlay.id));
+                    dojo.destroy($('card_wrapper_' + this.nextCardToPlay.id));
+                    $('tableau_nbr_' + this.player_id).innerHTML = toint($('tableau_nbr_' + this.player_id).innerHTML) - 1;
+                }
+
                 this.paymentCost = notif.args.cost;
                 this.nextCardToPlay = notif.args.card;
                 this.immediateAlternatives = notif.args.immediate_alternatives;
@@ -4615,6 +4633,12 @@ define([
                     if (dojo.query('#tableau_panel_' + this.player_id + " #card_" + notif.args.card.id).length == 0) {
                         this.addCardToTableau(notif.args.card);
                     }
+
+                    // Reset payment state
+                    this.paymentMode = false;
+                    this.nextCardToPlay = null;
+                    this.paymentCost = 0;
+                    this.immediateAlternatives = null;
                 } else {
                     // Another player plays a development card to his tableau
                     this.addCardToTableau(notif.args.card);
