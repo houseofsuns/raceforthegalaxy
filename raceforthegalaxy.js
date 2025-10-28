@@ -4516,7 +4516,7 @@ define([
                 this.nextCardToPlay = notif.args.card;
                 this.immediateAlternatives = notif.args.immediate_alternatives;
 
-                if (toint(this.paymentCost) > 0) {
+                if (toint(this.paymentCost) > 0 || this.immediateAlternatives.length > 0) {
                     // Go to payment mode
                     this.paymentMode = true;
                     dojo.addClass('hand_panel', 'paymentMode');

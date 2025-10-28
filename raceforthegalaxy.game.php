@@ -2422,7 +2422,7 @@ class RaceForTheGalaxy extends Table
                         }
                     }
                 }
-            } elseif ($power['power'] == 'colonyship') {
+            } elseif ($power['power'] == 'colonyship' && (!$bMilitaryWorld || $bContactSpecialistCase)) {
                 $immediateAlternatives[] = ['kind' => "colonyship", 'card_id' => $power['card_id']];
             } elseif ($power['power'] == 'diplomatbonus') {
                 $bHasMediator = true;
@@ -2433,7 +2433,7 @@ class RaceForTheGalaxy extends Table
 
         if ($bUseMilitaryForce && $bHasMediator && $bContactSpecialistCase) {
             array_unshift($immediateAlternatives, ['kind' => 'military'], ['kind' => 'pay']);
-        } elseif ($cost == 0 && count($immediateAlternatives) > 0) {
+        } elseif ($cost == 0 && count($immediateAlternatives) > 0 && (!$bMilitaryWorld || $bContactSpecialistCase)) {
             array_unshift($immediateAlternatives, ['kind' => 'pay']);
             if ($bUseMilitaryForce) {
                 array_unshift($immediateAlternatives, ['kind' => 'military']);
