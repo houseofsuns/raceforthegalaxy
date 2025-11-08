@@ -8689,8 +8689,21 @@ class RaceForTheGalaxy extends Table
         // Card draws for settle bonus must occur
         // after Ore-Rich World discard to put a good on it
         // but before Imperium Fuel Depot discard after settle
-        $players = self::loadPlayersBasicInfos();
-        foreach ($players as $player_id => $player) {
+        $players = array_keys(self::loadPlayersBasicInfos());
+        if (self::getGameStateValue('improvedLogisticsPhase') == 5) {
+            // If this is the Terraforming Engineers sub-phase: only consider players owning Terraforming Engineers.
+            // This is a bandaid fix for bug #8577 where in the following scenario too much prestige is distributed:
+            // Player A has Improved Logistics; Player B has Terraforming Engineers.
+            // Player A settles two worlds the second of which gives a prestige.
+            // Player B replaces a world.
+            // Now Player A receives the prestige again after the Terraforming Engineers sub-phase.
+            $players = $this->playersThatMayUseTerraformingEngineers();
+        } elseif (self::getGameStateValue('improvedLogisticsPhase') == 3) {
+            // Same story with Imperium Supply Convoy
+            $players = $this->playersThatMayUseImperiumSupplyConvoy();
+        }
+
+        foreach ($players as $player_id) {
             $this->phaseBonus($player_id);
         }
 
