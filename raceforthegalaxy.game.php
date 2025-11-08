@@ -2340,9 +2340,10 @@ class RaceForTheGalaxy extends Table
         $bMilitaryWorld = false;
         $bContactSpecialistCase = false;
         $bUseMilitaryForce = false;
+        $cost = $card_type['cost']; // In case of military worlds this is not an actionable number except if using a Contact Specialist.
+                                    // However setting this to some sentinel value like -1 does not survive and end up as 0.
         if ($bCloaking || in_array('military', $card_type['category'])) { // Note : cloaking = conquer civil world as a military
             $bMilitaryWorld = true;
-            $cost = -1;  // Military world, cost (non-military) is not defined, but the military force should be enough
 
             if (! $bConvoy) {
                 $militaryoptions = $this->getMilitaryForceForWorld($player_id, $card_type);
@@ -2381,8 +2382,6 @@ class RaceForTheGalaxy extends Table
                     }
                 }
             }
-        } else {
-            $cost = $card_type['cost'];
         }
 
         if ($bTerraformingProject) {
