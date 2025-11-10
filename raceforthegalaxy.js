@@ -2274,8 +2274,12 @@ define([
 
                     }
                 } else {
-                    if (this.immediateAlternatives !== null && this.paymentCost > 0) {
-                        dojo.query('#btn_immediate_alternative_pay').addClass('disabled');
+                    if (this.immediateAlternatives !== null) {
+                        if (this.paymentCost > 0) {
+                            dojo.query('#btn_immediate_alternative_pay').addClass('disabled');
+                        } else {
+                            dojo.query('#btn_immediate_alternative_pay').removeClass('disabled');
+                        }
                     }
                 }
             },
