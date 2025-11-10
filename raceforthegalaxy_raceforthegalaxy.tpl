@@ -1,5 +1,11 @@
 {OVERALL_GAME_HEADER}
 
+<div id="ios-auxilliary-wrapper" onclick="void(0);">
+<!--
+Empty mouse event handler to help with mobile Safari client handling according to
+https://stackoverflow.com/questions/24077725/mobile-safari-sometimes-does-not-trigger-the-click-event
+-->
+
 <div id="phase_panel">
     <div class="phase" id="explore_phase">
         <div class="phase_icon" id="phase_icon_explore"></div>
@@ -31,23 +37,23 @@
 <div id="phasechoice_panel">
     <br class="clear" />
     <div class="phasechoice" >
-        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_1"><span class="normalbonus">+1 +1</span><span class="boosted">+7 +2 +{COMBINE}</span></a>
-        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_2"><span class="normalbonus">+5 +0</span><span class="boosted">+11 +1 +{COMBINE}</span></a>
-        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_8" style="display:none">{ORB}</a>
+        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_1" role="button"><span class="normalbonus">+1 +1</span><span class="boosted">+7 +2 +{COMBINE}</span></a>
+        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_2" role="button"><span class="normalbonus">+5 +0</span><span class="boosted">+11 +1 +{COMBINE}</span></a>
+        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_8" style="display:none" role="button">{ORB}</a>
     </div>
     <div class="phasechoice" >
-        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_3"><span class="normalbonus">{LB_CHOOSE}</span><span class="boosted">-3</span></a>
+        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_3" role="button"><span class="normalbonus">{LB_CHOOSE}</span><span class="boosted">-3</span></a>
     </div>
     <div class="phasechoice" >
-        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_4"><span class="normalbonus">{LB_CHOOSE}</span><span class="boosted">-3 +2</span></a>
+        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_4" role="button"><span class="normalbonus">{LB_CHOOSE}</span><span class="boosted">-3 +2</span></a>
     </div>
     <div class="phasechoice" >
-        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_5"><span class="normalbonus">$</span><span class="boosted">$+3 / x2</span></a>
-        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_6"><span class="normalbonus">x2</span><span class="boosted">x3</span></a>
+        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_5" role="button"><span class="normalbonus">$</span><span class="boosted">$+3 / x2</span></a>
+        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_6" role="button"><span class="normalbonus">x2</span><span class="boosted">x3</span></a>
     </div>
     <div class="phasechoice" >
-        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_7"><span class="normalbonus">{LB_CHOOSE}</span><span id="prodboosted" class="boosted">{DRAW} 3 + 2 {WINDFALL}</span></a>
-        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_9"><span class="normalbonus"><i class="fa fa-wrench fa-lg" aria-hidden="true"></i></span></a>
+        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_7" role="button"><span class="normalbonus">{LB_CHOOSE}</span><span id="prodboosted" class="boosted">{DRAW} 3 + 2 {WINDFALL}</span></a>
+        <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_9" role="button"><span class="normalbonus"><i class="fa fa-wrench fa-lg" aria-hidden="true"></i></span></a>
     </div>
 </div>
 
@@ -248,7 +254,7 @@ var jstpl_player_board = '<div class="rftg_board">\
     </div>';
 
 var jstpl_card = '<div id="card_wrapper_${id}" class="card_wrapper card_type_${type} thickness">\
-                    <div id="card_${id}" class="card" style="background-position: -${backx}px -${backy}px; background-image: url(${background})">\
+                    <div id="card_${id}" class="card" role="button" style="background-position: -${backx}px -${backy}px; background-image: url(${background})">\
                       <div id="good_place_${id}" class="good_place"></div>\
                       <div class="damage" id="damage_${id}"></div>\
                     </div>\
@@ -257,7 +263,7 @@ var jstpl_tooltip_card = '<div class="card_tooltip"\
     style="margin:0 auto; background-image: url(${background}); background-position: -${backx}px -${backy}px">\
     <div class="cardname_tooltip"><span>${card_name}</span></div></div>';
 
-var jstpl_good = '<div class="good_wrap" id="good_wrap_${good_id}"><div class="good good${good_type}" id="good_${good_id}">${indicator}<div id="goodsell_${good_id}" class="goodsell"></div></div></div>';
+var jstpl_good = '<div class="good_wrap" id="good_wrap_${good_id}"><div class="good good${good_type}" id="good_${good_id}" role="button">${indicator}<div id="goodsell_${good_id}" class="goodsell"></div></div></div>';
 
 var jstpl_artefact = '<div id="artefact_${id}" class="artefact artefact_${type_arg}"></div>';
 var jstpl_team = '<div id="team_${team_id}" class="team"></div>';
@@ -281,5 +287,7 @@ var jstpl_goal_tooltip = '<div class="cardtooltip">\
     </div>';
 
 </script>
+
+</div>
 
 {OVERALL_GAME_FOOTER}
