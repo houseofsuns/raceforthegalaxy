@@ -636,24 +636,24 @@ $machinestates = array(
         "transitions" => array("" => 70)
    ),
 
-    // Turn end
+    // Round end
     70 => array(
-        "name" => "endturndiscard",
+        "name" => "endrounddiscard",
         "description" => clienttranslate('End of round : Players with more than 10 cards must discard'),
         "descriptionmyturn" => clienttranslate('End of round : ${you} must discard ${titlearg1} cards'),
         "type" => "multipleactiveplayer",
-        "action" => "stEndTurnDiscard",
-        "args" => "argEndTurnDiscard",
-        "possibleactions" => array("endturndiscard"),
+        "action" => "stEndRoundDiscard",
+        "args" => "argEndRoundDiscard",
+        "possibleactions" => array("endrounddiscard"),
         "transitions" => array("allPlayersValid" => 71, "invasionGame" => 171)
    ),
     71 => array(
-        "name" => "endTurn",
+        "name" => "endRound",
         "description" => '',
         "descriptionmyturn" => '',
-        "action" => "stEndTurn",
+        "action" => "stEndRound",
         "type" => "game",
-        "transitions" => array("endGame" => 98, "nextTurn" => 10)
+        "transitions" => array("endGame" => 98, "nextRound" => 10)
    ),
 
     // Invasion game
@@ -663,7 +663,7 @@ $machinestates = array(
         "descriptionmyturn" => '',
         "action" => "stInvasionGame",
         "type" => "game",
-        "transitions" => array("invasionResolution" => 172, "nextTurn" => 71)
+        "transitions" => array("invasionResolution" => 172, "nextRound" => 71)
    ),
     172 => array(
         "name" => "invasionGameResolution",

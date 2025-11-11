@@ -1581,7 +1581,7 @@ define([
                     case 'draft':
                         dojo.style('my_deck_wrap', 'display', 'block');
                         break;
-                    case 'endTurn':
+                    case 'endRound':
                         dojo.query('.prestigeleadercount').forEach(dojo.hitch(this, function(node) {
                             node.innerHTML = 0;
                         }));
@@ -1674,7 +1674,7 @@ define([
                         this.gamedatas.produced_goods = [0, 0, 0, 0, 0];
                         break;
                     case 'initialDiscard':
-                    case 'endturndiscard':
+                    case 'endrounddiscard':
                         dojo.removeClass('hand_panel', 'paymentMode');
                         break;
                     case 'takeover_attackerboost':
@@ -1720,7 +1720,7 @@ define([
                             $('titlearg1').innerHTML = this.gamedatas.gamestate.args[this.player_id].keep;
                         }
                         break;
-                    case 'endturndiscard':
+                    case 'endrounddiscard':
                         if ($('titlearg1')) {
                             $('titlearg1').innerHTML = this.gamedatas.gamestate.args[this.player_id];
                         }
@@ -1947,7 +1947,7 @@ define([
                             this.checkInitialDiscardArm();
                         }
                     case 'initialDiscardScavenger':
-                    case 'endturndiscard':
+                    case 'endrounddiscard':
                     case 'developdiscard':
                     case 'settlediscard':
                         if (this.isCurrentPlayerActive()) {
@@ -2128,13 +2128,13 @@ define([
                                 }
                             });
                         }
-                    } else if (this.checkAction("endturndiscard", true)) {
+                    } else if (this.checkAction("endrounddiscard", true)) {
                         if (cards.length == this.gamedatas.gamestate.args[this.player_id]) {
                             card_ids = '';
                             for (i in cards) {
                                 card_ids += cards[i].id + ';';
                             }
-                            this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/endTurnDiscard.html", {
+                            this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/endRoundDiscard.html", {
                                 lock: true,
                                 cards: card_ids
                             }, this, function() {}, function() {

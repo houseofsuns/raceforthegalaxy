@@ -331,7 +331,7 @@ class action_raceforthegalaxy extends APP_GameAction
         self::ajaxResponse();
     }
 
-    public function endTurnDiscard()
+    public function endRoundDiscard()
     {
         self::setAjaxMode();
         $cards_raw = self::getArg("cards", AT_numberlist, true);
@@ -345,7 +345,7 @@ class action_raceforthegalaxy extends APP_GameAction
         } else {
             $cards = explode(';', $cards_raw);
         }
-        $result = $this->game->endTurnDiscard($cards);
+        $result = $this->game->endRoundDiscard($cards);
         self::ajaxResponse();
     }
     public function developdiscard()
