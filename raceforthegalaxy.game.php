@@ -24,28 +24,32 @@ class RaceForTheGalaxy extends Table
     function __construct()
     {
         parent::__construct();self::initGameStateLabels(array(
-                                    "remainingVp" => 10,
-                                    "repeatPhase" => 11,     // =0 (normal case), =1 (two players mode, when repeating phase II or III)
-                                    "improvedLogisticsPhase" => 12,
-                                    "draftRound" => 13,
-                                    'prestigeLeader' => 14,
-                                    'prestigeOnLeaderTile' => 15,
-                                    "expansion" => 100,
-                                    "draft" => 101,
-                                    "takeover" => 102,
-                                    "search" => 103,
-                                    "newWorlds" => 104,
-                                    "presetHands" => 105,
-                                    "goals" => 106,
-                                    "reuseDraft" => 107,
-                                    "orbactionnbr" => 16,
-                                    "orbteamhasmoved"=>17,
-                                    "orbteam"=>18,
-                                    "xeno_repulse" => 21,
-                                    "xeno_repulse_goal" => 22,
-                                    "xeno_current_wave" => 23,
-                                    "xeno_empire_defeat" => 24
-                                        ));
+            "remainingVp" => 10,
+            "repeatPhase" => 11,     // =0 (normal case), =1 (two players mode, when repeating phase II or III) DEPRECATED
+            "improvedLogisticsPhase" => 12, //  DEPRECATED
+            "draftRound" => 13,
+            'prestigeLeader' => 14,
+            'prestigeOnLeaderTile' => 15,
+            "orbactionnbr" => 16,
+            "orbteamhasmoved"=>17,
+            "orbteam"=>18,
+            "xeno_repulse" => 21,
+            "xeno_repulse_goal" => 22,
+            "xeno_current_wave" => 23,
+            "xeno_empire_defeat" => 24,
+            "current_round" => 30,
+            "current_phase" => 31, // explore 10, develop 20/21, settle 30/31, consume 40, produce 50 (currently only used in develop and settle)
+            "current_subphase" => 32, // always 1, except for settle: normal 1, Improved Logistics 2, Rebel Sneak Attack 3, Supply Convoy 4, TerraformingProject 5, Terraforming Engineers 6
+
+            "expansion" => 100,
+            "draft" => 101,
+            "takeover" => 102,
+            "search" => 103,
+            "newWorlds" => 104,
+            "presetHands" => 105,
+            "goals" => 106,
+            "reuseDraft" => 107,
+        ));
 
         require('cards.inc.php');
 
