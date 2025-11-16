@@ -137,6 +137,7 @@ class RaceForTheGalaxy extends Table
         self::setGameStateInitialValue('prestigeLeader', 0);
         self::setGameStateInitialValue('prestigeOnLeaderTile', 0);
         self::setGameStateInitialValue('search', 0);
+        self::setGameStateInitialValue('round', 0);
 
         $expansion = self::getGameStateValue('expansion');
         $bGoals = self::getGameStateValue('goals');
@@ -5376,7 +5377,11 @@ class RaceForTheGalaxy extends Table
         self::DbQuery($sql);
 
         // Mark the card as active so that its power cannot be used in this phase
-        self::DbQuery("UPDATE card SET card_status=-1 WHERE card_id=$card_id");
+        // Also record its exact time of play
+        $cround = self::getGameStateValue('current_round');
+        $cphase = self::getGameStateValue('current_phase');
+        $csubphase = self::getGameStateValue('current_subphase');
+        self::DbQuery("UPDATE card SET card_status=-1, card_played_round=$cround, card_played_phase=$cphase, card_played_subphase=$csubphase,  WHERE card_id=$card_id");
 
         // Keep these move information for the next game state
         self::notifyPlayer($player_id, 'playcard', '',
@@ -8500,6 +8505,9 @@ class RaceForTheGalaxy extends Table
         $this->gamestate->setAllPlayersMultiactive();
 
         self::incStat(1, 'turn_number');
+        self::incGameStateValue('current_round', 1);
+        self::setGameStateValue('current_phase', 0);
+        self::setGameStateValue('current_subphase', 0);
 
         $crystal_player = $this->getPsyCrystalPlayer();
         if ($crystal_player !== null && !$this->is_twoplayers()) {
@@ -8635,6 +8643,12 @@ class RaceForTheGalaxy extends Table
         self::incStat(1, 'phase_played');
         self::incStat(1, 'phase_develop');
         $this->drawOnPhase(2);
+        if (self::getGameStateValue('current_phase') >= 20) {
+            self::incGameStateValue('current_phase', 1);
+        } else {
+            self::setGameStateValue('current_phase', 20);
+        }
+        self::setGameStateValue('current_subphase', 1);
 
 //        $this->gamestate->setAllPlayersMultiactive();
         $this->gamestate->nextState('developdiscard');
@@ -8802,6 +8816,13 @@ class RaceForTheGalaxy extends Table
             self::incStat(1, 'phase_played');
             self::incStat(1, 'phase_settle');
 
+            if (self::getGameStateValue('current_phase') >= 30) {
+                self::incGameStateValue('current_phase', 1);
+            } else {
+                self::setGameStateValue('current_phase', 30);
+            }
+            self::setGameStateValue('current_subphase', 1);
+
             $sql = "UPDATE player SET player_just_played=NULL, player_takeover_target=NULL WHERE 1 ";
             self::DbQuery($sql);
 
@@ -8826,22 +8847,27 @@ class RaceForTheGalaxy extends Table
             //        read: https://boardgamegeek.com/thread/1087399/space-mercenaries-improved-logistics
 
             // Active only players that has really played a world during the previous phase
+            self::setGameStateValue('current_subphase', 2);
             $players_with_improved = $this->playersThatMayUseImprovedLogistics();
             $this->gamestate->setPlayersMultiactive($players_with_improved, 'phaseCleared');
         } elseif (self::getGameStateValue('improvedLogisticsPhase') == 2) {
             // Rebel Sneak Attack phase
+            self::setGameStateValue('current_subphase', 3);
             $players_with_improved = $this->playersThatMayUseSneakAttack();
             $this->gamestate->setPlayersMultiactive($players_with_improved, 'phaseCleared');
         } elseif (self::getGameStateValue('improvedLogisticsPhase') == 3) {
             // Imperium Supply Convoy
+            self::setGameStateValue('current_subphase', 4);
             $players_with_improved = $this->playersThatMayUseImperiumSupplyConvoy();
             $this->gamestate->setPlayersMultiactive($players_with_improved, 'phaseCleared');
         } elseif (self::getGameStateValue('improvedLogisticsPhase') == 4) {
             // Terraforming project
+            self::setGameStateValue('current_subphase', 5);
             $players_with_improved = $this->playersThatMayUseTerraformingProject();
             $this->gamestate->setPlayersMultiactive($players_with_improved, 'phaseCleared');
         } elseif (self::getGameStateValue('improvedLogisticsPhase') == 5) {
             // Terraforming engineers
+            self::setGameStateValue('current_subphase', 6);
             $players_with_improved = $this->playersThatMayUseTerraformingEngineers();
             $this->gamestate->setPlayersMultiactive($players_with_improved, 'phaseCleared');
         }
