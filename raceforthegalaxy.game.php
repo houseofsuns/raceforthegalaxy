@@ -9982,12 +9982,12 @@ class RaceForTheGalaxy extends Table
             self::setGameStateValue('xeno_current_wave', -1);
             self::notifyAllPlayers('updateWave', clienttranslate('No invasion this turn ...'), array('wave' => -1, 'remaining' => 0));
 
-            $this->gamestate->nextState('nextTurn');
+            $this->gamestate->nextState('nextRound');
         } elseif ($current_wave == -1) {   // Second turn
             self::setGameStateValue('xeno_current_wave', 0);
             self::notifyAllPlayers('updateWave', clienttranslate('No invasion this turn ...'), array('wave' => 1, 'remaining' => $this->getWaveRemaining()));
 
-            $this->gamestate->nextState('nextTurn');
+            $this->gamestate->nextState('nextRound');
         } else {
             // Update admiral disk
 
@@ -10098,7 +10098,7 @@ class RaceForTheGalaxy extends Table
             if (self::getGameStateValue('xeno_repulse_goal') <= $total_force) {
                 self::notifyAllPlayers('simpleNote', clienttranslate("The Empire successfully manages to repulse the Xenos!! Game ends immediately"), array());
 
-                $this->gamestate->nextState('nextTurn');
+                $this->gamestate->nextState('nextRound');
                 return ;
             }
 
@@ -10539,7 +10539,7 @@ class RaceForTheGalaxy extends Table
 
             self::DbQuery("DELETE FROM phase");
 
-            $this->gamestate->nextState('nextTurn');
+            $this->gamestate->nextState('nextRound');
         }
     }
 
