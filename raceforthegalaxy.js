@@ -1843,9 +1843,9 @@ define([
                         break;
                     case 'explore':
                         if (this.isCurrentPlayerActive()) {
-                            this.addActionButton('action_explore_done', _("Done"), 'onExploreDone');
-                            if (!this.exploreNeedsConfirm()) {
-                                dojo.style('action_explore_done', 'display', 'none');
+                            if (this.exploreNeedsConfirm()) {
+                                this.addActionButton('action_explore_confirm', _("Done"), 'onExploreDone');
+                                dojo.query('#action_explore_confirm').addClass('disabled');
                             }
                         }
                         if (this.isCurrentPlayerActive() && this.playerHasExploreMix()) {
@@ -2215,16 +2215,7 @@ define([
                         }
                     } else if (this.checkAction("exploreCardChoice", true)) {
                         if (this.isCurrentPlayerActive() && this.playerHasExploreMix()) {
-                            if (this.exploreNeedsConfirm()) {
-                                dojo.style('action_explore_done', 'display', 'inline');
-                            } else {
-                                var mustDiscard = Math.max(0, this.gamedatas.gamestate.args[this.player_id].draw - this.gamedatas.gamestate.args[this.player_id].keep);
-                                if (cards.length == mustDiscard) {
-                                    this.exploreDiscardCards(cards);
-                                } else {
-                                    dojo.style('action_explore_done', 'display', 'none');
-                                }
-                            }
+                            this.checkExploreArm();
                         }
                     } else if (this.checkAction('develop', true) || this.checkAction('settle', true) || this.checkAction('militaryboost', true)) {
                         if (!this.paymentMode && !this.scavenging) {
@@ -2564,6 +2555,25 @@ define([
                 if (!need_confirm) {
                     return false;
                 }
+                if (this.prefs[7].value == '2') {
+                    if (this.playerHasExploreMix()) {
+                        var n = Math.max(0, this.gamedatas.gamestate.args[this.player_id].draw - this.gamedatas.gamestate.args[this.player_id].keep);
+                    } else {
+                        var n = this.exploreKeepHowMany();
+                    }
+                    if (n == 1) {
+                        return false;
+                    }
+                }
+                return true;
+            },
+            onExploredSelectionChanged: function() {
+                console.log('onExploredSelectionChanged');
+                this.checkExploreArm()
+            },
+            checkExploreArm: function() {
+                console.log('checkExploreArm');
+
                 if (this.playerHasExploreMix()) {
                     var cards = this.playerHand.getSelectedItems();
                     var n = Math.max(0, this.gamedatas.gamestate.args[this.player_id].draw - this.gamedatas.gamestate.args[this.player_id].keep);
@@ -2571,34 +2581,23 @@ define([
                     var cards = this.exploreSet.getSelectedItems();
                     var n = this.exploreKeepHowMany();
                 }
-                if (this.prefs[7].value == '2' && n == 1) {
-                    return false;
-                } else {
-                    return cards.length == n;
-                }
-            },
-            onExploredSelectionChanged: function() {
-                console.log('onExploredSelectionChanged');
-
-                if (this.exploreNeedsConfirm()) {
-                    dojo.style('action_explore_done', 'display', 'inline');
-                } else {
-                    var cards = this.exploreSet.getSelectedItems();
-                    var tokeep = this.exploreKeepHowMany();
-                    if (cards.length == tokeep) {
-                        this.exploreKeepCards(cards);
+                if (cards.length == n) {
+                    const instant_execute = !this.exploreNeedsConfirm();
+                    if (instant_execute) {
+                        this.onExploreDone();
                     } else {
-                        dojo.style('action_explore_done', 'display', 'none');
+                        dojo.query('#action_explore_confirm').removeClass('disabled');
                     }
+                } else {
+                    dojo.query('#action_explore_confirm').addClass('disabled');
                 }
             },
-
             onExploreDone: function() {
                 if (typeof(this.gamedatas.gamestate.args[this.player_id]) != 'undefined' && typeof(this.gamedatas.gamestate.args[this.player_id].mix) != 'undefined') {
                     var mustDiscard = Math.max(0, this.gamedatas.gamestate.args[this.player_id].draw - this.gamedatas.gamestate.args[this.player_id].keep);
                     var cards = this.playerHand.getSelectedItems();
                     if (cards.length != mustDiscard) {
-                        dojo.style('action_explore_done', 'display', 'none');
+                        dojo.query('#action_explore_confirm').addClass('disabled');
                         this.showMessage("Invalid number of cards selected", 'error');
                     } else {
                         this.exploreDiscardCards(cards);
@@ -2607,7 +2606,7 @@ define([
                     var cards = this.exploreSet.getSelectedItems();
                     var tokeep = this.exploreKeepHowMany();
                     if (cards.length != tokeep) {
-                        dojo.style('action_explore_done', 'display', 'none');
+                        dojo.query('#action_explore_confirm').addClass('disabled');
                         this.showMessage("Invalid number of cards selected", 'error');
                     } else {
                         this.exploreKeepCards(cards);
