@@ -53,6 +53,9 @@ define([
                 this.teamPlace = {};
                 this.playerPlayedArt = {};
                 this.prestige_action = false;
+                this.phases_chosen = 0;
+                this.current_phase_choices = null;
+                this.pending_phase_choice = {};
             },
 
             setup: function(gamedatas) {
@@ -417,6 +420,7 @@ define([
                 }
 
                 // Phases
+                this.current_phase_choices = gamedatas.phase_choices;
                 this.updatePhaseChoices(gamedatas.phase_choices);
                 dojo.query('.phasechoicebtn').connect('onclick', this, 'onPhaseChoice');
 
@@ -1084,6 +1088,10 @@ define([
                 this.setupNewCard($('card_' + card.id), card_type_id);
             },
 
+            numberPlayers: function() {
+                return Object.keys(this.gamedatas.players).length;
+            },
+
             updatePhaseChoices: function(choices) {
                 console.log('updatePhaseChoices');
                 console.log(choices);
@@ -1096,7 +1104,7 @@ define([
                     4: 'consume',
                     5: 'produce'
                 };
-                var bAtLeastOnePhase = false;
+                this.phases_chosen = 0;
                 for (var phase_id in choices) {
                     if (phase_id != 7) {
                         dojo.empty('phase_selected_' + phase_id);
@@ -1109,7 +1117,7 @@ define([
                             dojo.style('prestige_search_' + player_id, 'visibility', 'hidden');
                         }
                         if (player_id != '-1') {
-                            bAtLeastOnePhase = true;
+                            this.phases_chosen += 1;
                         }
                         var symbol = 'X';
                         if (phase_id == 1) {
@@ -1206,7 +1214,7 @@ define([
                 if (this.gamedatas.gamestate.name == "phaseChoice" && dojo.query('#action_phaseCancel').length > 0) {
                     // If at least one phase has been selected, show the cancel button
                     // otherwise hide it, and check if prestige and search buttons need to be restored
-                    if (bAtLeastOnePhase) {
+                    if (this.phases_chosen > 0) {
                         dojo.style('action_phaseCancel', 'display', 'inline');
                     } else {
                         dojo.style('action_phaseCancel', 'display', 'none');
@@ -1477,6 +1485,7 @@ define([
                     case 'phaseChoice':
                         dojo.style($('phasechoice_panel'), 'display', 'block');
                         dojo.query('.current_phase').removeClass('current_phase');
+                        this.current_phase_choices = args.args.phasechoices;
                         this.updatePhaseChoices(args.args.phasechoices);
 
                         if (this.gamedatas.expansion == 5) {
@@ -4452,7 +4461,11 @@ define([
             notif_phase_choices: function(notif) {
                 console.log('notif_phase_choices');
                 console.log(notif);
+                this.current_phase_choices = notif.args;
                 this.updatePhaseChoices(notif.args);
+                if (this.phases_chosen === 0) {
+                    dojo.style($('phasechoice_panel'), 'display', 'block');
+                }
             },
 
             notif_prestige_search: function(notif) {
