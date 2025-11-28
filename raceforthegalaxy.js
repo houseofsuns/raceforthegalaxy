@@ -1895,7 +1895,7 @@ define([
                                     dojo.query('#btn_immediate_alternative_pay').addClass('disabled');
                                 }
                             }
-                            if (!this.paymentMode && this.immediateAlternatives === null) {
+                            if (!this.paymentMode) {
                                 this.addActionButton('action_nothing_to_play', _("I won't"), 'onNothingToPlay');
                                 if (this.exploreSet.items.length > 0) {
                                     // No cancel in scavenging
@@ -1903,6 +1903,11 @@ define([
                                     dojo.style('action_nothing_to_play', 'display', 'none');
                                 }
                             } else {
+                                if ((this.immediateAlternatives === null || this.immediateAlternatives.length === 0)
+                                        && this.paymentNeedsConfirm()) {
+                                    this.addActionButton('payment_confirm', _("Done"), 'onPaymentConfirm');
+                                    dojo.query('#payment_confirm').addClass('disabled');
+                                }
                                 this.addActionButton('action_cancel_payment', _("Cancel"), 'onDontPay');
                             }
                         }
@@ -2679,6 +2684,9 @@ define([
                 return this.prefs[10].value != '2';
             },
             checkPaymentArm: function() {
+                // XXX
+            },
+            onPaymentConfirm: function() {
                 // XXX
             },
 
