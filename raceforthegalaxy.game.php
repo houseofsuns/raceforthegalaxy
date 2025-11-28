@@ -1865,6 +1865,34 @@ class RaceForTheGalaxy extends Table
         return $order;
     }
 
+    function combinePhaseBonus($phase_id, $first, $second) {
+        // We are in two player case, and 2 cards was played on the same phase
+        // For phase 1 and 4 we do (sum + 1), the incerement signalling the double bonus
+        // For phase 2 and 3, we need to know which phase prestige is applied to
+        // 2 => 2 normal phases
+        // 12 => first is prestige, second is normal
+        // 22 => first is normal, second is prestige
+        // For phase 1 and 4, there is only one phase so it doesn't matter if prestige is chosen for first or second
+        // 2 for both bonuses
+        // 12 for both bonuses and prestige
+        // For phase 5 we too do (sum + 1) noting that the combination prestige+repair does not exist
+        if ($phase_id == 1 && ($first == 100 || $second == 100)) {
+            // + Orb case
+            return $first + $second + 1;
+        } elseif ($phase_id == 2 || $phase_id == 3) {
+            // note that the order of insertion is preserved so this is the second choice
+            return $first + 2 + 2*$second;
+        } else {
+            if ($first >= 10 || $second >= 10) {
+                return 12;
+            } elseif ($phase_id == 5) {
+                return $first + $second + 1;
+            } else {
+                return 2;
+            }
+        }
+    }
+
     // Return an array "player => bonus" with only players that choose the corresponding phase
     // (note: return void array if nobody choose the phase)
     function getPhaseChoice($phase_id)
@@ -1876,29 +1904,8 @@ class RaceForTheGalaxy extends Table
         $dbres = self::DbQuery($sql);
         while ($row = mysql_fetch_assoc($dbres)) {
             if (isset($result[ $row['phase_player'] ])) {
-                // We are in two player case, and 2 cards was played on the same phase
-                // For phase 2 and 3, we need to know which phase prestige is applied to
-                // 2 => 2 normal phases
-                // 12 => first is prestige, second is normal
-                // 22 => first is normal, second is prestige
-                // For phase 1 and 4, there is only one phase so it doesn't matter if prestige is chosen for first or second
-                // 2 for both bonuses
-                // 12 for both bonuses and prestige
-
-                if ($phase_id == 1 && ($result[ $row['phase_player'] ] == 100 || $row['phase_bonus'] == 100)) {
-                    // + Orb case
-                    $result[ $row['phase_player'] ] +=  ($row['phase_bonus']+1);
-                } elseif ($phase_id == 2 || $phase_id == 3) {
-                    $result[ $row['phase_player'] ] += 2 + $row['phase_bonus'] * 2;
-                } else {
-                    if ($result[ $row['phase_player'] ] >= 10 || $row['phase_bonus'] >= 10) {
-                        $result[ $row['phase_player'] ] = 12;
-                    } elseif ($phase_id == 5) {
-                        $result[ $row['phase_player'] ] += $row['phase_bonus'] + 1;
-                    } else {
-                        $result[ $row['phase_player'] ] = 2;
-                    }
-                }
+                $result[ $row['phase_player'] ] = $this->combinePhaseBonus(
+                    $phase_id, $result[ $row['phase_player'] ], $row['phase_bonus']);
             } else {
                 $result[ $row['phase_player'] ] = $row['phase_bonus'];
             }
@@ -1928,20 +1935,8 @@ class RaceForTheGalaxy extends Table
         $dbres = self::DbQuery($sql);
         while ($row = mysql_fetch_assoc($dbres)) {
             if (isset($result[ $row['phase_id'] ][  $row['phase_player'] ])) {
-                if ($row['phase_id'] == 1 && ($result[ $row['phase_id'] ][  $row['phase_player'] ] == 100 || $row['phase_bonus'] == 100)) {
-                    // + Orb case
-                    $result[ $row['phase_id'] ][  $row['phase_player'] ] +=  ($row['phase_bonus']+1);
-                } elseif ($row['phase_id'] ==  2 || $row['phase_id'] == 3) {
-                    $result[ $row['phase_id'] ][ $row['phase_player'] ] += 2 + $row['phase_bonus'] * 2;
-                } else {
-                    if ($result[ $row['phase_id'] ][  $row['phase_player'] ] >= 10 || $row['phase_bonus'] >= 10) {
-                        $result[ $row['phase_id'] ][  $row['phase_player'] ] = 12;
-                    } elseif ($row['phase_id'] == 5) {
-                        $result[ $row['phase_id'] ][  $row['phase_player'] ] += $row['phase_bonus'] + 1;
-                    } else {
-                        $result[ $row['phase_id'] ][  $row['phase_player'] ] = 2;
-                    }
-                }
+                $result[ $row['phase_id'] ][ $row['phase_player'] ] = $this->combinePhaseBonus(
+                    $row['phase_id'], $result[ $row['phase_id'] ][ $row['phase_player'] ], $row['phase_bonus']);
             } else {
                 $result[ $row['phase_id'] ][  $row['phase_player'] ] = $row['phase_bonus'];
             }
@@ -4705,6 +4700,14 @@ class RaceForTheGalaxy extends Table
 
     // Phase choice
     // (note: supposed to be existing phases & bonus combinations at this step)
+    //  $phase = phase number (1 to 5) or search (7)
+    //  $bonus by phase:
+    //    explore: 0 -> +1+1 ; 1 -> +5+0 ; 100 -> orb
+    //    develop: 0 -> -1
+    //    settle:  0 -> +1
+    //    consume: 0 -> $ ; 1 -> x2
+    //    produce: 0 -> windfall ; 3 -> repair
+    //  $bBonusCard = prestige action
     function choosePhase($phase, $bonus, $bBonusCard = false)
     {
         self::checkAction("choosePhase");
