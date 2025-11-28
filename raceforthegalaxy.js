@@ -2501,11 +2501,11 @@ define([
             checkInitialDiscardHomeArm: function() {
                 console.log('checkInitialDiscardHomeArm');
 
-                const instant_execute = !this.initialDiscardNeedsConfirm();
-
                 const discard_hand = this.playerHand.getSelectedItems();
                 const discard_world = dojo.query('.selectedCard');
                 if (discard_hand.length == 2 && discard_world.length == 1) {
+                    const instant_execute = !this.initialDiscardNeedsConfirm();
+
                     if (instant_execute) {
                         this.onInitialDiscardHomeConfirm();
                     } else {
