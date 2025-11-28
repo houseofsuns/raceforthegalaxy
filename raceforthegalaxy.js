@@ -1494,25 +1494,6 @@ define([
                             dojo.addClass('phasechoice_panel', 'orbavail');
                         }
 
-                        if (!this.isSpectator) {
-                            this.addActionButton('action_phaseCancel', _("Cancel"), 'onPhaseCancel', null, false, 'red');
-                            dojo.place('action_phaseCancel', 'pagemaintitletext', 'before');
-
-                            bAtLeastOnePhase = false;
-                            for (var phase_id in args.args.phasechoices) {
-                                for (var player_id in args.args.phasechoices[phase_id]) {
-                                    if (player_id != "-1") {
-                                        bAtLeastOnePhase = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (!bAtLeastOnePhase || args.args.crystalplayer) {
-                                dojo.style('action_phaseCancel', 'display', 'none');
-                            }
-                        }
-
                         break;
                     case 'phaseChoiceCrystal':
                         dojo.style($('phasechoice_panel'), 'display', 'block');
@@ -1783,6 +1764,10 @@ define([
                     case 'phaseChoice':
                     case 'phaseChoiceCrystal':
                         if (this.isCurrentPlayerActive()) {
+                            if (this.phaseSelectNeedsConfirm()) {
+                                this.addActionButton('phase_select_confirm', _("Done"), 'onPhaseSelectConfirm');
+                                dojo.query('#phase_select_confirm').addClass('disabled');
+                            }
                             if (typeof args.searchavail[this.player_id] != 'undefined') {
                                 if ((typeof args.hasprestige[this.player_id] != 'undefined')) {
                                     this.addActionButton('action_phasebonus', _("Use bonus card for phase bonus"), 'onPhaseBonus');
@@ -1794,6 +1779,13 @@ define([
                                 this.addActionButton('action_cancelphasebonus', _("Cancel bonus card use"), 'onCancelPhaseBonus');
                                 dojo.style('action_cancelphasebonus', 'display', 'none');
                                 this.addTooltipOnPrestigeSearchButtons();
+                            }
+                        }
+                        if (!this.isSpectator) {
+                            this.addActionButton('action_phaseCancel', _("Cancel"), 'onPhaseCancel', null, false, 'red');
+
+                            if (this.phases_chosen === 0 || args.crystalplayer) {
+                                dojo.style('action_phaseCancel', 'display', 'none');
                             }
                         }
                         break;
@@ -2452,12 +2444,13 @@ define([
                         this.prestige_action = false;
                     }
 
-                    this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/choosePhase.html", {
-                        lock: true,
+                    this.pending_phase_choice = {
                         phase: phase_id,
                         bonus: bonus_id,
                         cardbonus: bCardBonus
-                    }, this, function() {}, function() {});
+                    }
+
+                    this.checkPhaseSelectArm()
                 }
             },
 
@@ -2613,6 +2606,82 @@ define([
                     }
                 }
             },
+
+
+            combinePhaseBonus: function(phase_id, first, second) {
+                // copy of function in game.php
+                //
+                // We are in two player case, and 2 cards was played on the same phase
+                // For phase 1 and 4 we do (sum + 1), the incerement signalling the double bonus
+                // For phase 2 and 3, we need to know which phase prestige is applied to
+                // 2 => 2 normal phases
+                // 12 => first is prestige, second is normal
+                // 22 => first is normal, second is prestige
+                // For phase 1 and 4, there is only one phase so it doesn't matter if prestige is chosen for first or second
+                // 2 for both bonuses
+                // 12 for both bonuses and prestige
+                // For phase 5 we too do (sum + 1) noting that the combination prestige+repair does not exist
+                if (phase_id == 1 && (first == 100 || second == 100)) {
+                    // + Orb case
+                    return first + second + 1;
+                } else if (phase_id == 2 || phase_id == 3) {
+                    // note that the order of insertion is preserved so this is the second choice
+                    return first + 2 + 2*second;
+                } else {
+                    if (first >= 10 || second >= 10) {
+                        return 12;
+                    } else if (phase_id == 5) {
+                        return first + second + 1;
+                    } else {
+                        return 2;
+                    }
+                }
+            },
+            addPhaseChoice: function(current, pending) {
+                // HOWTO get current player id
+                const total_bonus = pending.bonus + (pending.cardbonus ? 10 : 0);
+                if (this.player_id in current[pending.phase]) {
+                    const number = parseInt(current[pending.phase][this.player_id]);
+                    current[pending.phase][this.player_id] = this.combinePhaseBonus(
+                        pending.phase, number, total_bonus).toString();
+                } else {
+                    current[pending.phase] = {[this.player_id]: total_bonus.toString()};
+                }
+                return current;
+            },
+            phaseSelectNeedsConfirm: function() {
+                return this.prefs[9].value != '2';
+            },
+            checkPhaseSelectArm: function() {
+                // if last phase to choose, check for confirmation
+                if (this.phaseSelectNeedsConfirm() && (this.numberPlayers() > 2 || this.phases_chosen > 0)) {
+                    // FIXME update buttons
+                    choices = structuredClone(this.current_phase_choices);
+                    this.updatePhaseChoices(this.addPhaseChoice(choices, this.pending_phase_choice));
+                    dojo.style($('phasechoice_panel'), 'display', 'none');
+                    dojo.style('action_phaseCancel', 'display', 'inline');  // FIXME null
+                    // FIXME maybe hide prestige buttons?
+                    dojo.query('#phase_select_confirm').removeClass('disabled');
+                } else {
+                    this.onPhaseSelectConfirm();
+                }
+            },
+            onPhaseSelectConfirm: function() {
+                this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/choosePhase.html", {
+                    lock: true,
+                    phase: this.pending_phase_choice.phase,
+                    bonus: this.pending_phase_choice.bonus,
+                    cardbonus: this.pending_phase_choice.cardbonus,
+                }, this, function() {}, function() {});
+            },
+
+            paymentNeedsConfirm: function() {
+                return this.prefs[10].value != '2';
+            },
+            checkPaymentArm: function() {
+                // XXX
+            },
+
 
             onNothingToPlay: function() {
                 this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/nothingToPlay.html", {
