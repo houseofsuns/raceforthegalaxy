@@ -8698,9 +8698,15 @@ class RaceForTheGalaxy extends Table
             // Player B replaces a world.
             // Now Player A receives the prestige again after the Terraforming Engineers sub-phase.
             $players = $this->playersThatMayUseTerraformingEngineers();
+        } elseif (self::getGameStateValue('improvedLogisticsPhase') == 4) {
+            // Same story with Terraforming Project
+            $players = $this->playersThatMayUseTerraformingProject();
         } elseif (self::getGameStateValue('improvedLogisticsPhase') == 3) {
             // Same story with Imperium Supply Convoy
             $players = $this->playersThatMayUseImperiumSupplyConvoy();
+        } elseif (self::getGameStateValue('improvedLogisticsPhase') == 2) {
+            // Same story with Rebel Sneak Attack
+            $players = $this->playersThatMayUseSneakAttack();
         }
 
         foreach ($players as $player_id) {
