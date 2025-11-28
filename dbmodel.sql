@@ -12,9 +12,9 @@ CREATE TABLE IF NOT EXISTS `card` (
 
 
 CREATE TABLE IF NOT EXISTS `phase` (
-  `phase_id` int(10) unsigned NOT NULL,
+  `phase_id` int(10) unsigned NOT NULL COMMENT '1-5=phase number, 7=search',
   `phase_player` int(10) unsigned NOT NULL,
-  `phase_bonus` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `phase_bonus` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '(0->+1+1,1->+5+0,100->orb) (0->-1) (0->+1) (0->$,1->x2) (0->windfall,1->used,3->repair) / +10 prestige',
   KEY `phase_player` (`phase_player`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
