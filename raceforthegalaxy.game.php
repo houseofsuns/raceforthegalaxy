@@ -137,7 +137,7 @@ class RaceForTheGalaxy extends Table
         self::setGameStateInitialValue('prestigeLeader', 0);
         self::setGameStateInitialValue('prestigeOnLeaderTile', 0);
         self::setGameStateInitialValue('search', 0);
-        self::setGameStateInitialValue('round', 0);
+        self::setGameStateInitialValue('current_round', 0);
 
         $expansion = self::getGameStateValue('expansion');
         $bGoals = self::getGameStateValue('goals');
