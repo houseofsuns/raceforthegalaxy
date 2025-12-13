@@ -2446,7 +2446,7 @@ define([
                     }
 
                     this.playerHand.unselectAll();
-                    this.onCancelPhaseBonus();
+                    this.onCancelPhaseBonus();  // FIXME why does this show prestige buttons??? XXX
                     var bCardBonus = this.prestige_action;
 
                     if (bCardBonus) {
@@ -2651,9 +2651,8 @@ define([
                 }
             },
             addPhaseChoice: function(current, pending) {
-                // HOWTO get current player id
                 const total_bonus = pending.bonus + (pending.cardbonus ? 10 : 0);
-                if (this.player_id in current[pending.phase]) {
+                if (pending.phase != 7 && this.player_id in current[pending.phase]) {
                     const number = parseInt(current[pending.phase][this.player_id]);
                     current[pending.phase][this.player_id] = this.combinePhaseBonus(
                         pending.phase, number, total_bonus).toString();
@@ -2680,12 +2679,19 @@ define([
                 }
             },
             onPhaseSelectConfirm: function() {
+
+                var callback = function() {};
+                if (this.pending_phase_choice.phase === 7) {
+                    callback = function() {
+                        this.showMessage(_("Your search action has been registered"), 'info');
+                    }
+                }
                 this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/choosePhase.html", {
                     lock: true,
                     phase: this.pending_phase_choice.phase,
                     bonus: this.pending_phase_choice.bonus,
                     cardbonus: this.pending_phase_choice.cardbonus,
-                }, this, function() {}, function() {});
+                }, this, function() {}, callback);
             },
 
             paymentNeedsConfirm: function() {
@@ -2942,24 +2948,19 @@ define([
             onSearchAction: function() {
                 this.confirmationDialog(_("This search action can be done only once during the game, are you sure?"), dojo.hitch(this, function() {
 
-                    this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/choosePhase.html", {
-                        lock: true,
+                    this.pending_phase_choice = {
                         phase: 7,
                         bonus: 0,
                         cardbonus: true
-                    }, this, function() {}, function() {
-                        this.playerHand.unselectAll();
-                        this.onCancelPhaseBonus();
+                    }
+                    this.checkPhaseSelectArm();
+                    this.playerHand.unselectAll();
+                    this.onCancelPhaseBonus();
 
-                        this.gamedatas.gamestate.args.searchavail[this.player_id] = 0;
-                        dojo.destroy('action_cancelphasebonus');
-                        dojo.destroy('action_phasebonus');
-                        dojo.destroy('action_search');
-
-                        this.showMessage(_("Your search action has been registered"), 'info');
-                    });
-
-
+                    this.gamedatas.gamestate.args.searchavail[this.player_id] = 0;
+                    dojo.style('action_phasebonus', 'display', 'none');
+                    dojo.style('action_search', 'display', 'none');
+                    dojo.style('action_cancelphasebonus', 'display', 'none');
                 }));
             },
 
