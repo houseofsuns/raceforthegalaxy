@@ -1091,6 +1091,12 @@ define([
             numberPlayers: function() {
                 return Object.keys(this.gamedatas.players).length;
             },
+            phasesToChoose: function() {
+                if (this.numberPlayers() == 2) {
+                    return 2;
+                }
+                return 1;
+            },
 
             updatePhaseChoices: function(choices) {
                 console.log('updatePhaseChoices');
@@ -1766,7 +1772,9 @@ define([
                         if (this.isCurrentPlayerActive()) {
                             if (this.phaseSelectNeedsConfirm()) {
                                 this.addActionButton('phase_select_confirm', _("Done"), 'onPhaseSelectConfirm');
-                                dojo.query('#phase_select_confirm').addClass('disabled');
+                                if (this.phases_chosen != this.phasesToChoose()) {
+                                    dojo.query('#phase_select_confirm').addClass('disabled');
+                                }
                             }
                             if (typeof args.searchavail[this.player_id] != 'undefined') {
                                 if ((typeof args.hasprestige[this.player_id] != 'undefined')) {
