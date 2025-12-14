@@ -1224,25 +1224,9 @@ define([
                         dojo.style('action_phaseCancel', 'display', 'inline');
                     } else {
                         dojo.style('action_phaseCancel', 'display', 'none');
-                        var args = this.gamedatas.gamestate.args;
-                        if (this.isCurrentPlayerActive() && typeof args.searchavail[this.player_id] != 'undefined') {
-                            if (dojo.query('#action_phasebonus').length > 0) {
-                                dojo.style('action_phasebonus', 'display', 'inline');
-                            } else {
-                                if ((typeof args.hasprestige[this.player_id] != 'undefined')) {
-                                    this.addActionButton('action_phasebonus', _("Use bonus card for phase bonus"), 'onPhaseBonus');
-                                } else {
-                                    this.addActionButton('action_phasebonus', _("Use bonus card for phase bonus"), Function.prototype);
-                                    dojo.style('action_phasebonus', 'background', 'grey');
-                                }
-                            }
-
-                            if (dojo.query('#action_search').length > 0) {
-                                dojo.style('action_search', 'display', 'inline');
-                            } else {
-                                this.addActionButton('action_search', _("Use bonus card for search action"), 'onSearchAction');
-                            }
-
+                        if (this.isCurrentPlayerActive() && this.gamedatas.gamestate.args.searchavail[this.player_id] == 1) {
+                            dojo.style('action_phasebonus', 'display', 'inline');
+                            dojo.style('action_search', 'display', 'inline');
                         }
                     }
                 }
@@ -2445,8 +2429,6 @@ define([
                             break;
                     }
 
-                    this.playerHand.unselectAll();
-                    this.onCancelPhaseBonus();  // FIXME why does this show prestige buttons??? XXX
                     var bCardBonus = this.prestige_action;
 
                     if (bCardBonus) {
@@ -2457,6 +2439,8 @@ define([
                         this.prestige_action = false;
                     }
 
+                    this.playerHand.unselectAll();
+                    this.onCancelPhaseBonus();
                     this.pending_phase_choice = {
                         phase: phase_id,
                         bonus: bonus_id,
@@ -2468,6 +2452,13 @@ define([
             },
 
             onPhaseCancel: function() {
+                for (var phase_id in this.current_phase_choices) {
+                    if (Object.hasOwn(this.current_phase_choices, this.player_id)
+                            && this.current_phase_choices[this.player_id] >= 10
+                            && this.current_phase_choices[this.player_id] < 100) {
+                        this.gamedatas.gamestate.args.searchavail[this.player_id] = 1;
+                    }
+                }
                 this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/cancelPhase.html", {
                     lock: true
                 }, this, function() {}, function() {});
@@ -2679,7 +2670,6 @@ define([
                 }
             },
             onPhaseSelectConfirm: function() {
-
                 var callback = function() {};
                 if (this.pending_phase_choice.phase === 7) {
                     callback = function() {
@@ -2953,11 +2943,12 @@ define([
                         bonus: 0,
                         cardbonus: true
                     }
+                    this.gamedatas.gamestate.args.searchavail[this.player_id] = 0;
+
                     this.checkPhaseSelectArm();
                     this.playerHand.unselectAll();
                     this.onCancelPhaseBonus();
 
-                    this.gamedatas.gamestate.args.searchavail[this.player_id] = 0;
                     dojo.style('action_phasebonus', 'display', 'none');
                     dojo.style('action_search', 'display', 'none');
                     dojo.style('action_cancelphasebonus', 'display', 'none');
@@ -2986,16 +2977,16 @@ define([
             },
 
             onCancelPhaseBonus: function() {
-                if ($('action_phasebonus')) {
+                if (this.gamedatas.gamestate.args.searchavail[this.player_id] == 1) {
                     dojo.style('action_phasebonus', 'display', 'inline');
                     dojo.style('action_search', 'display', 'inline');
-                    dojo.style('action_cancelphasebonus', 'display', 'none');
-
-                    dojo.query('.boosted').style('display', 'none');
-                    dojo.query('.normalbonus').style('display', 'inline');
-                    dojo.removeClass('phasechoice_panel', 'searchavail');
-                    this.addTooltipOnPhaseButtons(false);
                 }
+                dojo.style('action_cancelphasebonus', 'display', 'none');
+
+                dojo.query('.boosted').style('display', 'none');
+                dojo.query('.normalbonus').style('display', 'inline');
+                dojo.removeClass('phasechoice_panel', 'searchavail');
+                this.addTooltipOnPhaseButtons(false);
             },
 
 

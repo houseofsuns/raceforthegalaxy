@@ -591,6 +591,7 @@ html.new_design {
     background-image: url('img/backtexture.jpg');
 }
 
+/* This is used for prestige bonus selection (not for the search action) */
 .searchavail .phasechoice {
     height: 100px;
 }
