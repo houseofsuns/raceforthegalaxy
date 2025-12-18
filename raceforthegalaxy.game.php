@@ -3800,7 +3800,7 @@ class RaceForTheGalaxy extends Table
         }
         if (isset($dev_to_players[ 192 ])) {
             // Peace Institute (-military force)
-            $dev_to_points[192] -= $player_infos[ $dev_to_players[ 192 ] ][ 'player_milforce' ];
+            $dev_to_points[192] -= min(0, $player_infos[ $dev_to_players[ 192 ] ][ 'player_milforce' ]);
         }
         if (isset($dev_to_players[ 199 ])) {
             // Pan-Galactic Affluence (+prestige)
