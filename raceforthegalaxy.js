@@ -1898,7 +1898,9 @@ define([
                                 if ((this.immediateAlternatives === null || this.immediateAlternatives.length === 0)
                                         && this.paymentNeedsConfirm()) {
                                     this.addActionButton('payment_confirm', _("Done"), 'onPaymentConfirm');
-                                    dojo.query('#payment_confirm').addClass('disabled');
+                                    if (this.paymentCost > 0) {
+                                        dojo.query('#payment_confirm').addClass('disabled');
+                                    }
                                 }
                                 this.addActionButton('action_cancel_payment', _("Cancel"), 'onDontPay');
                             }
@@ -2247,7 +2249,7 @@ define([
                                     dojo.query('#btn_immediate_alternative_pay').addClass('disabled');
                                 }
                             } else {
-                                this.checkCurrentPayment();
+                                this.checkPaymentArm();
                             }
                         }
                     } else if (this.checkAction('draft', true)) {
@@ -2688,10 +2690,22 @@ define([
                 return this.prefs[10].value != '2';
             },
             checkPaymentArm: function() {
-                // XXX
+                if (this.checkCurrentPayment(/* execute = */ false)) {
+                    if (this.paymentNeedsConfirm()) {
+                        dojo.query('#payment_confirm').removeClass('disabled');
+                    } else {
+                        this.onPaymentConfirm();
+                    }
+                    return true;
+                } else {
+                    dojo.query('#payment_confirm').addClass('disabled');
+                    return false;
+                }
             },
             onPaymentConfirm: function() {
-                // XXX
+                if (!this.checkCurrentPayment(/* execute = */ true)) {
+                    this.showMessage("WARNING: Payment failed. Please reload by pressing F5.", 'error');
+                }
             },
 
 
@@ -2895,7 +2909,7 @@ define([
                             dojo.query('.selectedGood').removeClass('selectedGood');
                         }
                         dojo.addClass(evt.currentTarget.id, 'selectedGood');
-                        if (!this.checkCurrentPayment()) {
+                        if (!this.checkPaymentArm()) {
                             this.showMessage(_("This good is selected for discard = you can use 3 less cards for your payment"), 'info');
                         }
                     } else if (this.checkAction('militaryboost', true) && power_good_for_military && !this.paymentMode
@@ -2910,7 +2924,7 @@ define([
                     ) {
                         dojo.query('.selectedGood').removeClass('selectedGood');
                         dojo.addClass(evt.currentTarget.id, 'selectedGood');
-                        if (!this.checkCurrentPayment()) {
+                        if (!this.checkPaymentArm()) {
                             this.showMessage(_("This good is selected for discard = you can use 2 less cards for your payment"), 'info');
                         }
                     } else if (this.checkAction('selectGood', true)) {
@@ -3319,7 +3333,7 @@ define([
                             dojo.removeClass('card_' + card_id, 'rdcrashprogramSelected');
                         } else {
                             dojo.addClass('card_' + card_id, 'rdcrashprogramSelected');
-                            if (!this.checkCurrentPayment()) {
+                            if (!this.checkPaymentArm()) {
                                 this.showMessage(_("You now have a cost reduction of 3 for this development."), 'info');
                             }
                         }
@@ -3900,7 +3914,7 @@ define([
                 var cards = this.playerHandArt.getSelectedItems();
 
                 // Make sure to use the artefacts used for payment if any
-                this.checkCurrentPayment();
+                this.checkPaymentArm();
 
                 if (cards.length == 1) {
                     var card = cards[0];
@@ -4627,7 +4641,7 @@ define([
                 this.nextCardToPlay = notif.args.card;
                 this.immediateAlternatives = notif.args.immediate_alternatives;
 
-                if (toint(this.paymentCost) > 0 || this.immediateAlternatives.length > 0) {
+                if (toint(this.paymentCost) > 0 || this.immediateAlternatives.length > 0 || this.prefs[10].value == '1') {
                     // Go to payment mode
                     this.paymentMode = true;
                     dojo.addClass('hand_panel', 'paymentMode');

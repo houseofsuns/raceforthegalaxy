@@ -2286,6 +2286,10 @@ class RaceForTheGalaxy extends Table
             $immediateAlternatives = [];
         }
         $immediate = $cost == 0 && count($immediateAlternatives) == 0;
+        if ($this->userPreferences->get($player_id, 10) == 1) {
+            // Player wants to confirm placement, so no immediate action
+            $immediate = false;
+        }
 
         // We make this compatible to the return type of getWorldCost to avoid
         // even more churn. Maybe this can at some point be untangled.
@@ -2437,6 +2441,10 @@ class RaceForTheGalaxy extends Table
         }
 
         $immediate = count($immediateAlternatives) == 0 && ($bUseMilitaryForce || $cost == 0) && !$bOortCloud;
+        if ($this->userPreferences->get($player_id, 10) == 1) {
+            // Player wants to confirm placement, so no immediate action
+            $immediate = false;
+        }
 
         return array(
             'card' => $card,
