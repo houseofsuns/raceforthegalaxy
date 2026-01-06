@@ -43,6 +43,7 @@ define([
                 this.nextCardToPlay = null;
                 this.paymentCost = 0;
                 this.immediateAlternatives = null; // Lists actions during develop and settle if cost is zero but the player must make a choice
+                this.isMilitarySettle = false; // purely military settle action (relevant for confirmation)
                 this.card_to_type = {}; // Card_id => type_id (at least for cards in tableau)
 
                 this.goals = null;
@@ -1523,6 +1524,7 @@ define([
                         this.nextCardToPlay = null;
                         this.paymentCost = 0;
                         this.immediateAlternatives = null;
+                        this.isMilitarySettle = false;
                         break;
                     case 'consumesell':
                         this.setActivePhase('consume');
@@ -1638,6 +1640,7 @@ define([
                         this.nextCardToPlay = null;
                         this.paymentCost = 0;
                         this.immediateAlternatives = null;
+                        this.isMilitarySettle = false;
                         break;
                     case 'consumesell':
                         dojo.query('.goodsell').style('display', 'none');
@@ -1898,7 +1901,7 @@ define([
                                 if ((this.immediateAlternatives === null || this.immediateAlternatives.length === 0)
                                         && this.paymentNeedsConfirm()) {
                                     this.addActionButton('payment_confirm', _("Done"), 'onPaymentConfirm');
-                                    if (this.paymentCost > 0) {
+                                    if (this.paymentCost > 0 && !this.isMilitarySettle) {
                                         dojo.query('#payment_confirm').addClass('disabled');
                                     }
                                 }
@@ -2280,6 +2283,30 @@ define([
             checkCurrentPayment: function(execute = true) {
                 if (!this.paymentMode && this.immediateAlternatives === null) {
                     return false;
+                }
+                if (this.isMilitarySettle) {
+                    if (execute) {
+                        this.paymentMode = false;
+                        dojo.removeClass('hand_panel', 'paymentMode');
+                        dojo.removeClass('hand_panel', 'paymentModeScavenger');
+                        this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/playCardAndPay.html",
+                                      {
+                                          lock: true,
+                                          card: this.nextCardToPlay.id,
+                                          money: '',
+                                          goods: '',
+                                          rdcrashprogram: null,
+                                          arts: '',
+                                          scavenger: null,
+                                          mode: 'military',
+                                      }, this, function() {}, function(is_error) {
+                                          if (is_error) {
+                                              this.onDontPay();
+                                          }});
+                    }
+                    // The check of military strength was done prior to the
+                    // cardcost notification
+                    return true;
                 }
 
                 var cards = this.playerHand.getSelectedItems();
@@ -2741,6 +2768,7 @@ define([
                 this.nextCardToPlay = null;
                 this.paymentCost = 0;
                 this.immediateAlternatives = null;
+                this.isMilitarySettle = false;
                 dojo.empty('generalactions');
                 this.updatePageTitle();
             },
@@ -4640,6 +4668,7 @@ define([
                 this.paymentCost = notif.args.cost;
                 this.nextCardToPlay = notif.args.card;
                 this.immediateAlternatives = notif.args.immediate_alternatives;
+                this.isMilitarySettle = notif.args.military_force && (this.immediateAlternatives.length == 0)
 
                 if (toint(this.paymentCost) > 0 || this.immediateAlternatives.length > 0 || this.prefs[10].value == '1') {
                     // Go to payment mode
@@ -4653,9 +4682,13 @@ define([
                     }
 
                     if (notif.args.isWorld) {
-                        $('pagemaintitletext').innerHTML = dojo.string.substitute(_('You must pay ${cost} cards for this world'), {
-                            cost: notif.args.cost
-                        });
+                        if (this.isMilitarySettle) {
+                            $('pagemaintitletext').innerHTML = _('You may conquer this world by military force');
+                        } else {
+                            $('pagemaintitletext').innerHTML = dojo.string.substitute(_('You must pay ${cost} cards for this world'), {
+                                cost: notif.args.cost
+                            });
+                        }
                     } else {
                         $('pagemaintitletext').innerHTML = dojo.string.substitute(_('You must pay ${cost} cards for this development'), {
                             cost: notif.args.cost
@@ -4746,6 +4779,7 @@ define([
                     this.nextCardToPlay = null;
                     this.paymentCost = 0;
                     this.immediateAlternatives = null;
+                    this.isMilitarySettle = false;
                 } else {
                     // Another player plays a development card to his tableau
                     this.addCardToTableau(notif.args.card);
