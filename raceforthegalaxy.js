@@ -1142,16 +1142,19 @@ define([
                                 symbol += '+5+0';
                             } else if (bonus_id === 2) {
                                 symbol += '+6+1';
+                                this.phases_chosen += 1;
                             } else if (bonus_id === 10) {
                                 symbol += '+7+2';
                             } else if (bonus_id === 11) {
                                 symbol += '+11+1';
                             } else if (bonus_id === 12) {
                                 symbol += '+12+2';
+                                this.phases_chosen += 1;
                             }
                         } else if (phase_id == 2 || phase_id == 3) {
                             if (bonus_id === 2) {
                                 symbol = 'XX';
+                                this.phases_chosen += 1;
                             }
 
                             if (phase_id == 2 && bonus_id === 10) {
@@ -1159,9 +1162,11 @@ define([
                             }
                             if (phase_id == 2 && bonus_id === 12) {
                                 symbol = '-3 X';
+                                this.phases_chosen += 1;
                             }
                             if (phase_id == 2 && bonus_id === 22) {
                                 symbol = 'X -3';
+                                this.phases_chosen += 1;
                             }
 
                             if (phase_id == 3 && bonus_id === 10) {
@@ -1169,9 +1174,11 @@ define([
                             }
                             if (phase_id == 3 && bonus_id === 12) {
                                 symbol = '-3+2 X';
+                                this.phases_chosen += 1;
                             }
                             if (phase_id == 3 && bonus_id === 22) {
                                 symbol = 'X -3+2';
+                                this.phases_chosen += 1;
                             }
                         } else if (phase_id == 4) {
                             if (bonus_id === 0) {
@@ -1180,12 +1187,14 @@ define([
                                 symbol = 'x2';
                             } else if (bonus_id === 2) {
                                 symbol = '$ x2';
+                                this.phases_chosen += 1;
                             } else if (bonus_id === 10) {
                                 symbol = '$+3 / x2';
                             } else if (bonus_id === 11) {
                                 symbol = 'x3';
                             } else if (bonus_id === 12) {
                                 symbol = '$+3 / x3';
+                                this.phases_chosen += 1;
                             }
                         } else if (phase_id == 5) {
                             if (Math.floor(bonus_id / 10) == 1) {
