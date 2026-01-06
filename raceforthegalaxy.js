@@ -1234,10 +1234,36 @@ define([
                         dojo.style('action_phaseCancel', 'display', 'inline');
                     } else {
                         dojo.style('action_phaseCancel', 'display', 'none');
-                        if (this.isCurrentPlayerActive() && this.gamedatas.gamestate.args.searchavail[this.player_id] == 1) {
-                            dojo.style('action_phasebonus', 'display', 'inline');
-                            dojo.style('action_search', 'display', 'inline');
+                    }
+                    if (this.isCurrentPlayerActive()) {
+                        const selectionDone = (this.phases_chosen > 1
+                                               || (this.numberPlayers() > 2 && this.phases_chosen > 0));
+                        if (this.phaseSelectNeedsConfirm()) {
+                            dojo.style('phase_select_confirm', 'display', 'inline');
                         }
+                        if (selectionDone) {
+                            dojo.style('phasechoice_panel', 'display', 'none');
+                            dojo.query('#phase_select_confirm').removeClass('disabled');
+                            dojo.style('action_phasebonus', 'display', 'none');
+                            dojo.style('action_search', 'display', 'none');
+                            dojo.style('action_cancelphasebonus', 'display', 'none');
+                        } else {
+                            dojo.style('phasechoice_panel', 'display', 'block');
+                            dojo.query('#phase_select_confirm').addClass('disabled');
+                            if(this.gamedatas.gamestate.args.searchavail[this.player_id] == 1) {
+                                dojo.style('action_phasebonus', 'display', 'inline');
+                                dojo.style('action_search', 'display', 'inline');
+                            }
+                        }
+                    } else {
+                        dojo.style('phasechoice_panel', 'display', 'none');
+                        // remaining buttons do not exist
+                        /*
+                        dojo.style('phase_select_confirm', 'display', 'none');
+                        dojo.style('action_phasebonus', 'display', 'none');
+                        dojo.style('action_search', 'display', 'none');
+                        dojo.style('action_cancelphasebonus', 'display', 'none');
+                        */
                     }
                 }
             },
@@ -1622,7 +1648,6 @@ define([
                     case 'phaseChoiceCrystal':
                         dojo.style($('phasechoice_panel'), 'display', 'none');
                         dojo.destroy($('action_phaseCancel'));
-                        this.onCancelPhaseBonus();
                         break;
                     case 'breedingTube':
                         dojo.query('.orbCardUnder').removeClass('orbCardUnder');
@@ -1766,6 +1791,7 @@ define([
                     case 'phaseChoice':
                     case 'phaseChoiceCrystal':
                         if (this.isCurrentPlayerActive()) {
+                            dojo.style($('phasechoice_panel'), 'display', 'block');
                             if (this.phaseSelectNeedsConfirm()) {
                                 this.addActionButton('phase_select_confirm', _("Done"), 'onPhaseSelectConfirm');
                                 if (this.phases_chosen != this.phasesToChoose()) {
@@ -2491,11 +2517,14 @@ define([
 
             onPhaseCancel: function() {
                 for (var phase_id in this.current_phase_choices) {
-                    if (Object.hasOwn(this.current_phase_choices, this.player_id)
-                            && this.current_phase_choices[this.player_id] >= 10
-                            && this.current_phase_choices[this.player_id] < 100) {
+                    if (Object.hasOwn(this.current_phase_choices[phase_id], this.player_id)
+                            && this.current_phase_choices[phase_id][this.player_id] >= 10
+                            && this.current_phase_choices[phase_id][this.player_id] < 100) {
                         this.gamedatas.gamestate.args.searchavail[this.player_id] = 1;
                     }
+                }
+                if (this.pending_phase_choice != null && this.pending_phase_choice.cardbonus) {
+                        this.gamedatas.gamestate.args.searchavail[this.player_id] = 1;
                 }
                 this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/cancelPhase.html", {
                     lock: true
@@ -2696,13 +2725,8 @@ define([
             checkPhaseSelectArm: function() {
                 // if last phase to choose, check for confirmation
                 if (this.phaseSelectNeedsConfirm() && (this.numberPlayers() > 2 || this.phases_chosen > 0)) {
-                    // FIXME update buttons
                     choices = structuredClone(this.current_phase_choices);
                     this.updatePhaseChoices(this.addPhaseChoice(choices, this.pending_phase_choice));
-                    dojo.style($('phasechoice_panel'), 'display', 'none');
-                    dojo.style('action_phaseCancel', 'display', 'inline');  // FIXME null
-                    // FIXME maybe hide prestige buttons?
-                    dojo.query('#phase_select_confirm').removeClass('disabled');
                 } else {
                     this.onPhaseSelectConfirm();
                 }
