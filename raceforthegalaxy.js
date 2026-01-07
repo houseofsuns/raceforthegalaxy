@@ -1246,6 +1246,7 @@ define([
                             dojo.query('#phase_select_confirm').removeClass('disabled');
                             dojo.style('action_phasebonus', 'display', 'none');
                             dojo.style('action_search', 'display', 'none');
+                            // FIXME fails if not prestige game
                             dojo.style('action_cancelphasebonus', 'display', 'none');
                         } else {
                             dojo.style('phasechoice_panel', 'display', 'block');
