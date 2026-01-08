@@ -1231,7 +1231,9 @@ define([
                     }
                 }
 
-                if (this.gamedatas.gamestate.name == "phaseChoice" && dojo.query('#action_phaseCancel').length > 0) {
+                if (this.gamedatas.gamestate.name == "phaseChoice"
+                        // check that the buttons are already created (we are sometimes called earlier)
+                        && dojo.query('#action_phaseCancel').length > 0) {
                     // If at least one phase has been selected, show the cancel button
                     // otherwise hide it, and check if prestige and search buttons need to be restored
                     if (this.phases_chosen > 0) {
