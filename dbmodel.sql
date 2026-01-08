@@ -6,9 +6,9 @@ CREATE TABLE IF NOT EXISTS `card` (
   `card_location` varchar(16) NOT NULL,
   `card_location_arg` int(11) NOT NULL,
   `card_status` smallint(5) NOT NULL COMMENT '0=nothing,>0=in use,-1=used (or good type for goods)',
-  `card_played_round` smallint(3) NOT NULL DEFAULT '-1',
-  `card_played_phase` smallint(3) NOT NULL DEFAULT '-1',
-  `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1',
+  `card_played_round` smallint(3) NOT NULL DEFAULT '-1' COMMENT 'TODO:use',
+  `card_played_phase` smallint(3) NOT NULL DEFAULT '-1' COMMENT 'TODO:use',
+  `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1' COMMENT 'TODO:use',
   PRIMARY KEY (`card_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=115 ;
 
