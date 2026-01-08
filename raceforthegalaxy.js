@@ -1089,6 +1089,10 @@ define([
                 this.setupNewCard($('card_' + card.id), card_type_id);
             },
 
+            hasGamePrestige: function() {
+                return this.gamedatas.expansion == 4;
+            },
+
             numberPlayers: function() {
                 return Object.keys(this.gamedatas.players).length;
             },
@@ -1244,14 +1248,15 @@ define([
                         if (selectionDone) {
                             dojo.style('phasechoice_panel', 'display', 'none');
                             dojo.query('#phase_select_confirm').removeClass('disabled');
-                            dojo.style('action_phasebonus', 'display', 'none');
-                            dojo.style('action_search', 'display', 'none');
-                            // FIXME fails if not prestige game
-                            dojo.style('action_cancelphasebonus', 'display', 'none');
+                            if (this.hasGamePrestige()) {
+                                dojo.style('action_phasebonus', 'display', 'none');
+                                dojo.style('action_search', 'display', 'none');
+                                dojo.style('action_cancelphasebonus', 'display', 'none');
+                            }
                         } else {
                             dojo.style('phasechoice_panel', 'display', 'block');
                             dojo.query('#phase_select_confirm').addClass('disabled');
-                            if(this.gamedatas.gamestate.args.searchavail[this.player_id] == 1) {
+                            if(this.hasGamePrestige() && this.gamedatas.gamestate.args.searchavail[this.player_id] == 1) {
                                 dojo.style('action_phasebonus', 'display', 'inline');
                                 dojo.style('action_search', 'display', 'inline');
                             }
@@ -1799,12 +1804,10 @@ define([
                                     dojo.query('#phase_select_confirm').addClass('disabled');
                                 }
                             }
-                            if (typeof args.searchavail[this.player_id] != 'undefined') {
-                                if ((typeof args.hasprestige[this.player_id] != 'undefined')) {
-                                    this.addActionButton('action_phasebonus', _("Use bonus card for phase bonus"), 'onPhaseBonus');
-                                } else {
-                                    this.addActionButton('action_phasebonus', _("Use bonus card for phase bonus"), Function.prototype);
-                                    dojo.style('action_phasebonus', 'background', 'grey');
+                            if (this.hasGamePrestige()) {
+                                this.addActionButton('action_phasebonus', _("Use bonus card for phase bonus"), 'onPhaseBonus');
+                                if (!args.hasprestige[this.player_id]) {
+                                    dojo.query('#action_phasebonus').addClass('disabled');
                                 }
                                 this.addActionButton('action_search', _("Use bonus card for search action"), 'onSearchAction');
                                 this.addActionButton('action_cancelphasebonus', _("Cancel bonus card use"), 'onCancelPhaseBonus');
@@ -3055,16 +3058,18 @@ define([
             },
 
             onCancelPhaseBonus: function() {
-                if (this.gamedatas.gamestate.args.searchavail[this.player_id] == 1) {
-                    dojo.style('action_phasebonus', 'display', 'inline');
-                    dojo.style('action_search', 'display', 'inline');
-                }
-                dojo.style('action_cancelphasebonus', 'display', 'none');
+                if (this.hasGamePrestige()) {
+                    if (this.gamedatas.gamestate.args.searchavail[this.player_id] == 1) {
+                        dojo.style('action_phasebonus', 'display', 'inline');
+                        dojo.style('action_search', 'display', 'inline');
+                    }
+                    dojo.style('action_cancelphasebonus', 'display', 'none');
 
-                dojo.query('.boosted').style('display', 'none');
-                dojo.query('.normalbonus').style('display', 'inline');
-                dojo.removeClass('phasechoice_panel', 'searchavail');
-                this.addTooltipOnPhaseButtons(false);
+                    dojo.query('.boosted').style('display', 'none');
+                    dojo.query('.normalbonus').style('display', 'inline');
+                    dojo.removeClass('phasechoice_panel', 'searchavail');
+                    this.addTooltipOnPhaseButtons(false);
+                }
             },
 
 
