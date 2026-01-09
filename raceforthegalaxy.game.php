@@ -5392,7 +5392,7 @@ class RaceForTheGalaxy extends Table
         $cround = self::getGameStateValue('current_round');
         $cphase = self::getGameStateValue('current_phase');
         $csubphase = self::getGameStateValue('current_subphase');
-        self::DbQuery("UPDATE card SET card_status=-1, card_played_round=$cround, card_played_phase=$cphase, card_played_subphase=$csubphase,  WHERE card_id=$card_id");
+        self::DbQuery("UPDATE card SET card_status=-1, card_played_round=$cround, card_played_phase=$cphase, card_played_subphase=$csubphase WHERE card_id=$card_id");
 
         // Keep these move information for the next game state
         self::notifyPlayer($player_id, 'playcard', '',
