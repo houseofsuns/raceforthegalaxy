@@ -43,6 +43,7 @@ define([
                 this.nextCardToPlay = null;
                 this.paymentCost = 0;
                 this.immediateAlternatives = null; // Lists actions during develop and settle if cost is zero but the player must make a choice
+                this.isMilitarySettle = false; // purely military settle action (relevant for confirmation)
                 this.card_to_type = {}; // Card_id => type_id (at least for cards in tableau)
 
                 this.goals = null;
@@ -53,6 +54,9 @@ define([
                 this.teamPlace = {};
                 this.playerPlayedArt = {};
                 this.prestige_action = false;
+                this.phases_chosen = 0;
+                this.current_phase_choices = null;
+                this.pending_phase_choice = {};
             },
 
             setup: function(gamedatas) {
@@ -417,6 +421,7 @@ define([
                 }
 
                 // Phases
+                this.current_phase_choices = gamedatas.phase_choices;
                 this.updatePhaseChoices(gamedatas.phase_choices);
                 dojo.query('.phasechoicebtn').connect('onclick', this, 'onPhaseChoice');
 
@@ -1084,6 +1089,20 @@ define([
                 this.setupNewCard($('card_' + card.id), card_type_id);
             },
 
+            hasGamePrestige: function() {
+                return this.gamedatas.expansion == 4;
+            },
+
+            numberPlayers: function() {
+                return Object.keys(this.gamedatas.players).length;
+            },
+            phasesToChoose: function() {
+                if (this.numberPlayers() == 2) {
+                    return 2;
+                }
+                return 1;
+            },
+
             updatePhaseChoices: function(choices) {
                 console.log('updatePhaseChoices');
                 console.log(choices);
@@ -1096,7 +1115,7 @@ define([
                     4: 'consume',
                     5: 'produce'
                 };
-                var bAtLeastOnePhase = false;
+                this.phases_chosen = 0;
                 for (var phase_id in choices) {
                     if (phase_id != 7) {
                         dojo.empty('phase_selected_' + phase_id);
@@ -1109,7 +1128,7 @@ define([
                             dojo.style('prestige_search_' + player_id, 'visibility', 'hidden');
                         }
                         if (player_id != '-1') {
-                            bAtLeastOnePhase = true;
+                            this.phases_chosen += 1;
                         }
                         var symbol = 'X';
                         if (phase_id == 1) {
@@ -1127,16 +1146,19 @@ define([
                                 symbol += '+5+0';
                             } else if (bonus_id === 2) {
                                 symbol += '+6+1';
+                                this.phases_chosen += 1;
                             } else if (bonus_id === 10) {
                                 symbol += '+7+2';
                             } else if (bonus_id === 11) {
                                 symbol += '+11+1';
                             } else if (bonus_id === 12) {
                                 symbol += '+12+2';
+                                this.phases_chosen += 1;
                             }
                         } else if (phase_id == 2 || phase_id == 3) {
                             if (bonus_id === 2) {
                                 symbol = 'XX';
+                                this.phases_chosen += 1;
                             }
 
                             if (phase_id == 2 && bonus_id === 10) {
@@ -1144,9 +1166,11 @@ define([
                             }
                             if (phase_id == 2 && bonus_id === 12) {
                                 symbol = '-3 X';
+                                this.phases_chosen += 1;
                             }
                             if (phase_id == 2 && bonus_id === 22) {
                                 symbol = 'X -3';
+                                this.phases_chosen += 1;
                             }
 
                             if (phase_id == 3 && bonus_id === 10) {
@@ -1154,9 +1178,11 @@ define([
                             }
                             if (phase_id == 3 && bonus_id === 12) {
                                 symbol = '-3+2 X';
+                                this.phases_chosen += 1;
                             }
                             if (phase_id == 3 && bonus_id === 22) {
                                 symbol = 'X -3+2';
+                                this.phases_chosen += 1;
                             }
                         } else if (phase_id == 4) {
                             if (bonus_id === 0) {
@@ -1165,12 +1191,14 @@ define([
                                 symbol = 'x2';
                             } else if (bonus_id === 2) {
                                 symbol = '$ x2';
+                                this.phases_chosen += 1;
                             } else if (bonus_id === 10) {
                                 symbol = '$+3 / x2';
                             } else if (bonus_id === 11) {
                                 symbol = 'x3';
                             } else if (bonus_id === 12) {
                                 symbol = '$+3 / x3';
+                                this.phases_chosen += 1;
                             }
                         } else if (phase_id == 5) {
                             if (Math.floor(bonus_id / 10) == 1) {
@@ -1203,33 +1231,47 @@ define([
                     }
                 }
 
-                if (this.gamedatas.gamestate.name == "phaseChoice" && dojo.query('#action_phaseCancel').length > 0) {
+                if (this.gamedatas.gamestate.name == "phaseChoice"
+                        // check that the buttons are already created (we are sometimes called earlier)
+                        && dojo.query('#action_phaseCancel').length > 0) {
                     // If at least one phase has been selected, show the cancel button
                     // otherwise hide it, and check if prestige and search buttons need to be restored
-                    if (bAtLeastOnePhase) {
+                    if (this.phases_chosen > 0) {
                         dojo.style('action_phaseCancel', 'display', 'inline');
                     } else {
                         dojo.style('action_phaseCancel', 'display', 'none');
-                        var args = this.gamedatas.gamestate.args;
-                        if (this.isCurrentPlayerActive() && typeof args.searchavail[this.player_id] != 'undefined') {
-                            if (dojo.query('#action_phasebonus').length > 0) {
-                                dojo.style('action_phasebonus', 'display', 'inline');
-                            } else {
-                                if ((typeof args.hasprestige[this.player_id] != 'undefined')) {
-                                    this.addActionButton('action_phasebonus', _("Use bonus card for phase bonus"), 'onPhaseBonus');
-                                } else {
-                                    this.addActionButton('action_phasebonus', _("Use bonus card for phase bonus"), Function.prototype);
-                                    dojo.style('action_phasebonus', 'background', 'grey');
-                                }
-                            }
-
-                            if (dojo.query('#action_search').length > 0) {
-                                dojo.style('action_search', 'display', 'inline');
-                            } else {
-                                this.addActionButton('action_search', _("Use bonus card for search action"), 'onSearchAction');
-                            }
-
+                    }
+                    if (this.isCurrentPlayerActive()) {
+                        const selectionDone = (this.phases_chosen > 1
+                                               || (this.numberPlayers() > 2 && this.phases_chosen > 0));
+                        if (this.phaseSelectNeedsConfirm()) {
+                            dojo.style('phase_select_confirm', 'display', 'inline');
                         }
+                        if (selectionDone) {
+                            dojo.style('phasechoice_panel', 'display', 'none');
+                            dojo.query('#phase_select_confirm').removeClass('disabled');
+                            if (this.hasGamePrestige()) {
+                                dojo.style('action_phasebonus', 'display', 'none');
+                                dojo.style('action_search', 'display', 'none');
+                                dojo.style('action_cancelphasebonus', 'display', 'none');
+                            }
+                        } else {
+                            dojo.style('phasechoice_panel', 'display', 'block');
+                            dojo.query('#phase_select_confirm').addClass('disabled');
+                            if(this.hasGamePrestige() && this.gamedatas.gamestate.args.searchavail[this.player_id] == 1) {
+                                dojo.style('action_phasebonus', 'display', 'inline');
+                                dojo.style('action_search', 'display', 'inline');
+                            }
+                        }
+                    } else {
+                        dojo.style('phasechoice_panel', 'display', 'none');
+                        // remaining buttons do not exist
+                        /*
+                        dojo.style('phase_select_confirm', 'display', 'none');
+                        dojo.style('action_phasebonus', 'display', 'none');
+                        dojo.style('action_search', 'display', 'none');
+                        dojo.style('action_cancelphasebonus', 'display', 'none');
+                        */
                     }
                 }
             },
@@ -1477,31 +1519,13 @@ define([
                     case 'phaseChoice':
                         dojo.style($('phasechoice_panel'), 'display', 'block');
                         dojo.query('.current_phase').removeClass('current_phase');
+                        this.current_phase_choices = args.args.phasechoices;
                         this.updatePhaseChoices(args.args.phasechoices);
 
                         if (this.gamedatas.expansion == 5) {
                             // Orb play
                             dojo.style('phasechoicebtn_8', 'display', 'inline');
                             dojo.addClass('phasechoice_panel', 'orbavail');
-                        }
-
-                        if (!this.isSpectator) {
-                            this.addActionButton('action_phaseCancel', _("Cancel"), 'onPhaseCancel', null, false, 'red');
-                            dojo.place('action_phaseCancel', 'pagemaintitletext', 'before');
-
-                            bAtLeastOnePhase = false;
-                            for (var phase_id in args.args.phasechoices) {
-                                for (var player_id in args.args.phasechoices[phase_id]) {
-                                    if (player_id != "-1") {
-                                        bAtLeastOnePhase = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (!bAtLeastOnePhase || args.args.crystalplayer) {
-                                dojo.style('action_phaseCancel', 'display', 'none');
-                            }
                         }
 
                         break;
@@ -1543,6 +1567,7 @@ define([
                         this.nextCardToPlay = null;
                         this.paymentCost = 0;
                         this.immediateAlternatives = null;
+                        this.isMilitarySettle = false;
                         break;
                     case 'consumesell':
                         this.setActivePhase('consume');
@@ -1631,7 +1656,6 @@ define([
                     case 'phaseChoiceCrystal':
                         dojo.style($('phasechoice_panel'), 'display', 'none');
                         dojo.destroy($('action_phaseCancel'));
-                        this.onCancelPhaseBonus();
                         break;
                     case 'breedingTube':
                         dojo.query('.orbCardUnder').removeClass('orbCardUnder');
@@ -1658,6 +1682,7 @@ define([
                         this.nextCardToPlay = null;
                         this.paymentCost = 0;
                         this.immediateAlternatives = null;
+                        this.isMilitarySettle = false;
                         break;
                     case 'consumesell':
                         dojo.query('.goodsell').style('display', 'none');
@@ -1774,17 +1799,29 @@ define([
                     case 'phaseChoice':
                     case 'phaseChoiceCrystal':
                         if (this.isCurrentPlayerActive()) {
-                            if (typeof args.searchavail[this.player_id] != 'undefined') {
-                                if ((typeof args.hasprestige[this.player_id] != 'undefined')) {
-                                    this.addActionButton('action_phasebonus', _("Use bonus card for phase bonus"), 'onPhaseBonus');
-                                } else {
-                                    this.addActionButton('action_phasebonus', _("Use bonus card for phase bonus"), Function.prototype);
-                                    dojo.style('action_phasebonus', 'background', 'grey');
+                            dojo.style($('phasechoice_panel'), 'display', 'block');
+                            if (this.phaseSelectNeedsConfirm()) {
+                                this.addActionButton('phase_select_confirm', _("Done"), 'onPhaseSelectConfirm');
+                                if (this.phases_chosen != this.phasesToChoose()) {
+                                    dojo.query('#phase_select_confirm').addClass('disabled');
+                                }
+                            }
+                            if (this.hasGamePrestige()) {
+                                this.addActionButton('action_phasebonus', _("Use bonus card for phase bonus"), 'onPhaseBonus');
+                                if (!args.hasprestige[this.player_id]) {
+                                    dojo.query('#action_phasebonus').addClass('disabled');
                                 }
                                 this.addActionButton('action_search', _("Use bonus card for search action"), 'onSearchAction');
                                 this.addActionButton('action_cancelphasebonus', _("Cancel bonus card use"), 'onCancelPhaseBonus');
                                 dojo.style('action_cancelphasebonus', 'display', 'none');
                                 this.addTooltipOnPrestigeSearchButtons();
+                            }
+                        }
+                        if (!this.isSpectator) {
+                            this.addActionButton('action_phaseCancel', _("Cancel"), 'onPhaseCancel', null, false, 'red');
+
+                            if (this.phases_chosen === 0 || args.crystalplayer) {
+                                dojo.style('action_phaseCancel', 'display', 'none');
                             }
                         }
                         break;
@@ -1834,9 +1871,9 @@ define([
                         break;
                     case 'explore':
                         if (this.isCurrentPlayerActive()) {
-                            this.addActionButton('action_explore_done', _("Done"), 'onExploreDone');
-                            if (!this.exploreNeedsConfirm()) {
-                                dojo.style('action_explore_done', 'display', 'none');
+                            if (this.exploreNeedsConfirm()) {
+                                this.addActionButton('action_explore_confirm', _("Done"), 'onExploreDone');
+                                dojo.query('#action_explore_confirm').addClass('disabled');
                             }
                         }
                         if (this.isCurrentPlayerActive() && this.playerHasExploreMix()) {
@@ -1894,7 +1931,7 @@ define([
                                     dojo.query('#btn_immediate_alternative_pay').addClass('disabled');
                                 }
                             }
-                            if (!this.paymentMode && this.immediateAlternatives === null) {
+                            if (!this.paymentMode) {
                                 this.addActionButton('action_nothing_to_play', _("I won't"), 'onNothingToPlay');
                                 if (this.exploreSet.items.length > 0) {
                                     // No cancel in scavenging
@@ -1902,6 +1939,13 @@ define([
                                     dojo.style('action_nothing_to_play', 'display', 'none');
                                 }
                             } else {
+                                if ((this.immediateAlternatives === null || this.immediateAlternatives.length === 0)
+                                        && this.paymentNeedsConfirm()) {
+                                    this.addActionButton('payment_confirm', _("Done"), 'onPaymentConfirm');
+                                    if (this.paymentCost > 0 && !this.isMilitarySettle) {
+                                        dojo.query('#payment_confirm').addClass('disabled');
+                                    }
+                                }
                                 this.addActionButton('action_cancel_payment', _("Cancel"), 'onDontPay');
                             }
                         }
@@ -2206,16 +2250,7 @@ define([
                         }
                     } else if (this.checkAction("exploreCardChoice", true)) {
                         if (this.isCurrentPlayerActive() && this.playerHasExploreMix()) {
-                            if (this.exploreNeedsConfirm()) {
-                                dojo.style('action_explore_done', 'display', 'inline');
-                            } else {
-                                var mustDiscard = Math.max(0, this.gamedatas.gamestate.args[this.player_id].draw - this.gamedatas.gamestate.args[this.player_id].keep);
-                                if (cards.length == mustDiscard) {
-                                    this.exploreDiscardCards(cards);
-                                } else {
-                                    dojo.style('action_explore_done', 'display', 'none');
-                                }
-                            }
+                            this.checkExploreArm();
                         }
                     } else if (this.checkAction('develop', true) || this.checkAction('settle', true) || this.checkAction('militaryboost', true)) {
                         if (!this.paymentMode && !this.scavenging) {
@@ -2258,7 +2293,7 @@ define([
                                     dojo.query('#btn_immediate_alternative_pay').addClass('disabled');
                                 }
                             } else {
-                                this.checkCurrentPayment();
+                                this.checkPaymentArm();
                             }
                         }
                     } else if (this.checkAction('draft', true)) {
@@ -2274,12 +2309,14 @@ define([
 
                     }
                 } else {
-                    if (this.immediateAlternatives !== null) {
+                    if (this.immediateAlternatives !== null && this.immediateAlternatives.length > 0) {
                         if (this.paymentCost > 0) {
                             dojo.query('#btn_immediate_alternative_pay').addClass('disabled');
                         } else {
                             dojo.query('#btn_immediate_alternative_pay').removeClass('disabled');
                         }
+                    } else {
+                        this.checkPaymentArm();
                     }
                 }
             },
@@ -2289,6 +2326,30 @@ define([
             checkCurrentPayment: function(execute = true) {
                 if (!this.paymentMode && this.immediateAlternatives === null) {
                     return false;
+                }
+                if (this.isMilitarySettle) {
+                    if (execute) {
+                        this.paymentMode = false;
+                        dojo.removeClass('hand_panel', 'paymentMode');
+                        dojo.removeClass('hand_panel', 'paymentModeScavenger');
+                        this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/playCardAndPay.html",
+                                      {
+                                          lock: true,
+                                          card: this.nextCardToPlay.id,
+                                          money: '',
+                                          goods: '',
+                                          rdcrashprogram: null,
+                                          arts: '',
+                                          scavenger: null,
+                                          mode: 'military',
+                                      }, this, function() {}, function(is_error) {
+                                          if (is_error) {
+                                              this.onDontPay();
+                                          }});
+                    }
+                    // The check of military strength was done prior to the
+                    // cardcost notification
+                    return true;
                 }
 
                 var cards = this.playerHand.getSelectedItems();
@@ -2440,8 +2501,6 @@ define([
                             break;
                     }
 
-                    this.playerHand.unselectAll();
-                    this.onCancelPhaseBonus();
                     var bCardBonus = this.prestige_action;
 
                     if (bCardBonus) {
@@ -2452,16 +2511,29 @@ define([
                         this.prestige_action = false;
                     }
 
-                    this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/choosePhase.html", {
-                        lock: true,
+                    this.playerHand.unselectAll();
+                    this.onCancelPhaseBonus();
+                    this.pending_phase_choice = {
                         phase: phase_id,
                         bonus: bonus_id,
                         cardbonus: bCardBonus
-                    }, this, function() {}, function() {});
+                    }
+
+                    this.checkPhaseSelectArm()
                 }
             },
 
             onPhaseCancel: function() {
+                for (var phase_id in this.current_phase_choices) {
+                    if (Object.hasOwn(this.current_phase_choices[phase_id], this.player_id)
+                            && this.current_phase_choices[phase_id][this.player_id] >= 10
+                            && this.current_phase_choices[phase_id][this.player_id] < 100) {
+                        this.gamedatas.gamestate.args.searchavail[this.player_id] = 1;
+                    }
+                }
+                if (this.pending_phase_choice != null && this.pending_phase_choice.cardbonus) {
+                        this.gamedatas.gamestate.args.searchavail[this.player_id] = 1;
+                }
                 this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/cancelPhase.html", {
                     lock: true
                 }, this, function() {}, function() {});
@@ -2501,11 +2573,11 @@ define([
             checkInitialDiscardHomeArm: function() {
                 console.log('checkInitialDiscardHomeArm');
 
-                const instant_execute = !this.initialDiscardNeedsConfirm();
-
                 const discard_hand = this.playerHand.getSelectedItems();
                 const discard_world = dojo.query('.selectedCard');
                 if (discard_hand.length == 2 && discard_world.length == 1) {
+                    const instant_execute = !this.initialDiscardNeedsConfirm();
+
                     if (instant_execute) {
                         this.onInitialDiscardHomeConfirm();
                     } else {
@@ -2555,6 +2627,25 @@ define([
                 if (!need_confirm) {
                     return false;
                 }
+                if (this.prefs[7].value == '2') {
+                    if (this.playerHasExploreMix()) {
+                        var n = Math.max(0, this.gamedatas.gamestate.args[this.player_id].draw - this.gamedatas.gamestate.args[this.player_id].keep);
+                    } else {
+                        var n = this.exploreKeepHowMany();
+                    }
+                    if (n == 1) {
+                        return false;
+                    }
+                }
+                return true;
+            },
+            onExploredSelectionChanged: function() {
+                console.log('onExploredSelectionChanged');
+                this.checkExploreArm()
+            },
+            checkExploreArm: function() {
+                console.log('checkExploreArm');
+
                 if (this.playerHasExploreMix()) {
                     var cards = this.playerHand.getSelectedItems();
                     var n = Math.max(0, this.gamedatas.gamestate.args[this.player_id].draw - this.gamedatas.gamestate.args[this.player_id].keep);
@@ -2562,34 +2653,23 @@ define([
                     var cards = this.exploreSet.getSelectedItems();
                     var n = this.exploreKeepHowMany();
                 }
-                if (this.prefs[7].value == '2' && n == 1) {
-                    return false;
-                } else {
-                    return cards.length == n;
-                }
-            },
-            onExploredSelectionChanged: function() {
-                console.log('onExploredSelectionChanged');
-
-                if (this.exploreNeedsConfirm()) {
-                    dojo.style('action_explore_done', 'display', 'inline');
-                } else {
-                    var cards = this.exploreSet.getSelectedItems();
-                    var tokeep = this.exploreKeepHowMany();
-                    if (cards.length == tokeep) {
-                        this.exploreKeepCards(cards);
+                if (cards.length == n) {
+                    const instant_execute = !this.exploreNeedsConfirm();
+                    if (instant_execute) {
+                        this.onExploreDone();
                     } else {
-                        dojo.style('action_explore_done', 'display', 'none');
+                        dojo.query('#action_explore_confirm').removeClass('disabled');
                     }
+                } else {
+                    dojo.query('#action_explore_confirm').addClass('disabled');
                 }
             },
-
             onExploreDone: function() {
                 if (typeof(this.gamedatas.gamestate.args[this.player_id]) != 'undefined' && typeof(this.gamedatas.gamestate.args[this.player_id].mix) != 'undefined') {
                     var mustDiscard = Math.max(0, this.gamedatas.gamestate.args[this.player_id].draw - this.gamedatas.gamestate.args[this.player_id].keep);
                     var cards = this.playerHand.getSelectedItems();
                     if (cards.length != mustDiscard) {
-                        dojo.style('action_explore_done', 'display', 'none');
+                        dojo.query('#action_explore_confirm').addClass('disabled');
                         this.showMessage("Invalid number of cards selected", 'error');
                     } else {
                         this.exploreDiscardCards(cards);
@@ -2598,13 +2678,104 @@ define([
                     var cards = this.exploreSet.getSelectedItems();
                     var tokeep = this.exploreKeepHowMany();
                     if (cards.length != tokeep) {
-                        dojo.style('action_explore_done', 'display', 'none');
+                        dojo.query('#action_explore_confirm').addClass('disabled');
                         this.showMessage("Invalid number of cards selected", 'error');
                     } else {
                         this.exploreKeepCards(cards);
                     }
                 }
             },
+
+
+            combinePhaseBonus: function(phase_id, first, second) {
+                // copy of function in game.php
+                //
+                // We are in two player case, and 2 cards was played on the same phase
+                // For phase 1 and 4 we do (sum + 1), the incerement signalling the double bonus
+                // For phase 2 and 3, we need to know which phase prestige is applied to
+                // 2 => 2 normal phases
+                // 12 => first is prestige, second is normal
+                // 22 => first is normal, second is prestige
+                // For phase 1 and 4, there is only one phase so it doesn't matter if prestige is chosen for first or second
+                // 2 for both bonuses
+                // 12 for both bonuses and prestige
+                // For phase 5 we too do (sum + 1) noting that the combination prestige+repair does not exist
+                if (phase_id == 1 && (first == 100 || second == 100)) {
+                    // + Orb case
+                    return first + second + 1;
+                } else if (phase_id == 2 || phase_id == 3) {
+                    // note that the order of insertion is preserved so this is the second choice
+                    return first + 2 + 2*second;
+                } else {
+                    if (first >= 10 || second >= 10) {
+                        return 12;
+                    } else if (phase_id == 5) {
+                        return first + second + 1;
+                    } else {
+                        return 2;
+                    }
+                }
+            },
+            addPhaseChoice: function(current, pending) {
+                const total_bonus = pending.bonus + (pending.cardbonus ? 10 : 0);
+                if (pending.phase != 7 && this.player_id in current[pending.phase]) {
+                    const number = parseInt(current[pending.phase][this.player_id]);
+                    current[pending.phase][this.player_id] = this.combinePhaseBonus(
+                        pending.phase, number, total_bonus).toString();
+                } else {
+                    current[pending.phase] = {[this.player_id]: total_bonus.toString()};
+                }
+                return current;
+            },
+            phaseSelectNeedsConfirm: function() {
+                return this.prefs[9].value != '2';
+            },
+            checkPhaseSelectArm: function() {
+                // if last phase to choose, check for confirmation
+                if (this.phaseSelectNeedsConfirm() && (this.numberPlayers() > 2 || this.phases_chosen > 0)) {
+                    choices = structuredClone(this.current_phase_choices);
+                    this.updatePhaseChoices(this.addPhaseChoice(choices, this.pending_phase_choice));
+                } else {
+                    this.onPhaseSelectConfirm();
+                }
+            },
+            onPhaseSelectConfirm: function() {
+                var callback = function() {};
+                if (this.pending_phase_choice.phase === 7) {
+                    callback = function() {
+                        this.showMessage(_("Your search action has been registered"), 'info');
+                    }
+                }
+                this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/choosePhase.html", {
+                    lock: true,
+                    phase: this.pending_phase_choice.phase,
+                    bonus: this.pending_phase_choice.bonus,
+                    cardbonus: this.pending_phase_choice.cardbonus,
+                }, this, function() {}, callback);
+            },
+
+            paymentNeedsConfirm: function() {
+                return this.prefs[10].value != '2';
+            },
+            checkPaymentArm: function() {
+                if (this.checkCurrentPayment(/* execute = */ false)) {
+                    if (this.paymentNeedsConfirm()) {
+                        dojo.query('#payment_confirm').removeClass('disabled');
+                    } else {
+                        this.onPaymentConfirm();
+                    }
+                    return true;
+                } else {
+                    dojo.query('#payment_confirm').addClass('disabled');
+                    return false;
+                }
+            },
+            onPaymentConfirm: function() {
+                if (!this.checkCurrentPayment(/* execute = */ true)) {
+                    this.showMessage("WARNING: Payment failed. Please reload by pressing F5.", 'error');
+                }
+            },
+
 
             onNothingToPlay: function() {
                 this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/nothingToPlay.html", {
@@ -2638,6 +2809,7 @@ define([
                 this.nextCardToPlay = null;
                 this.paymentCost = 0;
                 this.immediateAlternatives = null;
+                this.isMilitarySettle = false;
                 dojo.empty('generalactions');
                 this.updatePageTitle();
             },
@@ -2806,7 +2978,7 @@ define([
                             dojo.query('.selectedGood').removeClass('selectedGood');
                         }
                         dojo.addClass(evt.currentTarget.id, 'selectedGood');
-                        if (!this.checkCurrentPayment()) {
+                        if (!this.checkPaymentArm()) {
                             this.showMessage(_("This good is selected for discard = you can use 3 less cards for your payment"), 'info');
                         }
                     } else if (this.checkAction('militaryboost', true) && power_good_for_military && !this.paymentMode
@@ -2821,7 +2993,7 @@ define([
                     ) {
                         dojo.query('.selectedGood').removeClass('selectedGood');
                         dojo.addClass(evt.currentTarget.id, 'selectedGood');
-                        if (!this.checkCurrentPayment()) {
+                        if (!this.checkPaymentArm()) {
                             this.showMessage(_("This good is selected for discard = you can use 2 less cards for your payment"), 'info');
                         }
                     } else if (this.checkAction('selectGood', true)) {
@@ -2849,24 +3021,20 @@ define([
             onSearchAction: function() {
                 this.confirmationDialog(_("This search action can be done only once during the game, are you sure?"), dojo.hitch(this, function() {
 
-                    this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/choosePhase.html", {
-                        lock: true,
+                    this.pending_phase_choice = {
                         phase: 7,
                         bonus: 0,
                         cardbonus: true
-                    }, this, function() {}, function() {
-                        this.playerHand.unselectAll();
-                        this.onCancelPhaseBonus();
+                    }
+                    this.gamedatas.gamestate.args.searchavail[this.player_id] = 0;
 
-                        this.gamedatas.gamestate.args.searchavail[this.player_id] = 0;
-                        dojo.destroy('action_cancelphasebonus');
-                        dojo.destroy('action_phasebonus');
-                        dojo.destroy('action_search');
+                    this.checkPhaseSelectArm();
+                    this.playerHand.unselectAll();
+                    this.onCancelPhaseBonus();
 
-                        this.showMessage(_("Your search action has been registered"), 'info');
-                    });
-
-
+                    dojo.style('action_phasebonus', 'display', 'none');
+                    dojo.style('action_search', 'display', 'none');
+                    dojo.style('action_cancelphasebonus', 'display', 'none');
                 }));
             },
 
@@ -2892,9 +3060,11 @@ define([
             },
 
             onCancelPhaseBonus: function() {
-                if ($('action_phasebonus')) {
-                    dojo.style('action_phasebonus', 'display', 'inline');
-                    dojo.style('action_search', 'display', 'inline');
+                if (this.hasGamePrestige()) {
+                    if (this.gamedatas.gamestate.args.searchavail[this.player_id] == 1) {
+                        dojo.style('action_phasebonus', 'display', 'inline');
+                        dojo.style('action_search', 'display', 'inline');
+                    }
                     dojo.style('action_cancelphasebonus', 'display', 'none');
 
                     dojo.query('.boosted').style('display', 'none');
@@ -3234,7 +3404,7 @@ define([
                             dojo.removeClass('card_' + card_id, 'rdcrashprogramSelected');
                         } else {
                             dojo.addClass('card_' + card_id, 'rdcrashprogramSelected');
-                            if (!this.checkCurrentPayment()) {
+                            if (!this.checkPaymentArm()) {
                                 this.showMessage(_("You now have a cost reduction of 3 for this development."), 'info');
                             }
                         }
@@ -3815,7 +3985,7 @@ define([
                 var cards = this.playerHandArt.getSelectedItems();
 
                 // Make sure to use the artefacts used for payment if any
-                this.checkCurrentPayment();
+                this.checkPaymentArm();
 
                 if (cards.length == 1) {
                     var card = cards[0];
@@ -4452,7 +4622,11 @@ define([
             notif_phase_choices: function(notif) {
                 console.log('notif_phase_choices');
                 console.log(notif);
+                this.current_phase_choices = notif.args;
                 this.updatePhaseChoices(notif.args);
+                if (this.phases_chosen === 0) {
+                    dojo.style($('phasechoice_panel'), 'display', 'block');
+                }
             },
 
             notif_prestige_search: function(notif) {
@@ -4537,8 +4711,9 @@ define([
                 this.paymentCost = notif.args.cost;
                 this.nextCardToPlay = notif.args.card;
                 this.immediateAlternatives = notif.args.immediate_alternatives;
+                this.isMilitarySettle = notif.args.military_force && (this.immediateAlternatives.length == 0)
 
-                if (toint(this.paymentCost) > 0 || this.immediateAlternatives.length > 0) {
+                if (toint(this.paymentCost) > 0 || this.immediateAlternatives.length > 0 || this.prefs[10].value == '1') {
                     // Go to payment mode
                     this.paymentMode = true;
                     dojo.addClass('hand_panel', 'paymentMode');
@@ -4550,9 +4725,13 @@ define([
                     }
 
                     if (notif.args.isWorld) {
-                        $('pagemaintitletext').innerHTML = dojo.string.substitute(_('You must pay ${cost} cards for this world'), {
-                            cost: notif.args.cost
-                        });
+                        if (this.isMilitarySettle) {
+                            $('pagemaintitletext').innerHTML = _('You may conquer this world by military force');
+                        } else {
+                            $('pagemaintitletext').innerHTML = dojo.string.substitute(_('You must pay ${cost} cards for this world'), {
+                                cost: notif.args.cost
+                            });
+                        }
                     } else {
                         $('pagemaintitletext').innerHTML = dojo.string.substitute(_('You must pay ${cost} cards for this development'), {
                             cost: notif.args.cost
@@ -4643,6 +4822,7 @@ define([
                     this.nextCardToPlay = null;
                     this.paymentCost = 0;
                     this.immediateAlternatives = null;
+                    this.isMilitarySettle = false;
                 } else {
                     // Another player plays a development card to his tableau
                     this.addCardToTableau(notif.args.card);

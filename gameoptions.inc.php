@@ -190,6 +190,22 @@ $game_preferences = [
         ],
         'default' => 2
     ],
+    '8' => [
+        'name' => totranslate('Confirm initial discard'),
+        'needReload' => true,
+        'values' => [
+            1 => ['name' => totranslate('Always')],
+            2 => ['name' => totranslate('Never')]
+        ]
+    ],
+    '9' => [
+        'name' => totranslate('Confirm phase choice'),
+        'needReload' => true,
+        'values' => [
+            1 => ['name' => totranslate('Always')],
+            2 => ['name' => totranslate('Never')]
+        ]
+    ],
     '7' => [
         'name' => totranslate('Confirm explore'),
         'needReload' => true,
@@ -199,12 +215,12 @@ $game_preferences = [
             3 => ['name' => totranslate('Never')]
         ]
     ],
-    '8' => [
-        'name' => totranslate('Confirm initial discard'),
+    '10' => [
+        'name' => totranslate('Confirm develop and settle'),
         'needReload' => true,
         'values' => [
             1 => ['name' => totranslate('Always')],
             2 => ['name' => totranslate('Never')]
         ]
-    ]
+    ],
  ];
