@@ -11967,7 +11967,7 @@ ADD  `player_xeno_victory` TINYINT UNSIGNED NOT NULL DEFAULT  '0';");
 ADD `card_played_round` smallint(3) NOT NULL DEFAULT '-1',
 ADD `card_played_phase` smallint(3) NOT NULL DEFAULT '-1',
 ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
-            self::applyDbChangeToAllDB($sql);
+            self::applyDbUpgradeToAllDB($sql);
         }
     }
 
