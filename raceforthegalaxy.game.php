@@ -2133,7 +2133,7 @@ class RaceForTheGalaxy extends Table
     }
 
     // Get the number of cards to be discarded by each players
-    function getEndTurnDiscardNumber()
+    function getEndRoundDiscardNumber()
     {
         $result = array();
         $players = self::loadPlayersBasicInfos();
@@ -7451,9 +7451,9 @@ class RaceForTheGalaxy extends Table
         }
     }
 
-    function endTurnDiscard($card_ids)
+    function endRoundDiscard($card_ids)
     {
-        self::checkAction("endturndiscard");
+        self::checkAction("endrounddiscard");
 
         // Check that the cards are in player hand
         $cards = $this->cards->getCards($card_ids);
@@ -7465,7 +7465,7 @@ class RaceForTheGalaxy extends Table
             }
         }
 
-        $count = $this->getEndTurnDiscardNumber();
+        $count = $this->getEndRoundDiscardNumber();
         if ($count[ $player_id ] != count($cards)) {
             throw new feException("You must discard ".$count[ $player_id ]." cards");
         }
@@ -8288,9 +8288,9 @@ class RaceForTheGalaxy extends Table
         return $res;
     }
 
-    function argEndTurnDiscard()
+    function argEndRoundDiscard()
     {
-        return $this->getEndTurnDiscardNumber();
+        return $this->getEndRoundDiscardNumber();
     }
 
     function argInvasionGameResolution()
@@ -9987,12 +9987,12 @@ class RaceForTheGalaxy extends Table
 
         $this->gamestate->nextState('');
     }
-    function stEndTurnDiscard()
+    function stEndRoundDiscard()
     {
         $this->checkGoals('discard');
 
         // Players with more than 10 cards must discard
-        $to_discard = $this->getEndTurnDiscardNumber();
+        $to_discard = $this->getEndRoundDiscardNumber();
         $active_players = array();
         foreach ($to_discard as $player_id => $to_discard_nbr) {
             if ($to_discard_nbr > 0) {
@@ -10029,12 +10029,12 @@ class RaceForTheGalaxy extends Table
             self::setGameStateValue('xeno_current_wave', -1);
             self::notifyAllPlayers('updateWave', clienttranslate('No invasion this turn ...'), array('wave' => -1, 'remaining' => 0));
 
-            $this->gamestate->nextState('nextTurn');
+            $this->gamestate->nextState('nextRound');
         } elseif ($current_wave == -1) {   // Second turn
             self::setGameStateValue('xeno_current_wave', 0);
             self::notifyAllPlayers('updateWave', clienttranslate('No invasion this turn ...'), array('wave' => 1, 'remaining' => $this->getWaveRemaining()));
 
-            $this->gamestate->nextState('nextTurn');
+            $this->gamestate->nextState('nextRound');
         } else {
             // Update admiral disk
 
@@ -10145,7 +10145,7 @@ class RaceForTheGalaxy extends Table
             if (self::getGameStateValue('xeno_repulse_goal') <= $total_force) {
                 self::notifyAllPlayers('simpleNote', clienttranslate("The Empire successfully manages to repulse the Xenos!! Game ends immediately"), array());
 
-                $this->gamestate->nextState('nextTurn');
+                $this->gamestate->nextState('nextRound');
                 return ;
             }
 
@@ -10396,7 +10396,7 @@ class RaceForTheGalaxy extends Table
         return self::getObjectListFromDB($sql);
     }
 
-    function stEndTurn()
+    function stEndRound()
     {
         // Cards from Retrofit => back to retrofit player
         if ($this->cards->countCardInLocation('retrofit') > 0) {
@@ -10586,7 +10586,7 @@ class RaceForTheGalaxy extends Table
 
             self::DbQuery("DELETE FROM phase");
 
-            $this->gamestate->nextState('nextTurn');
+            $this->gamestate->nextState('nextRound');
         }
     }
 
@@ -10830,7 +10830,7 @@ class RaceForTheGalaxy extends Table
                 $limit = 8;
                 break;
             case 'Budget Surplus': // discard at the end of the turn
-                foreach ($this->getEndTurnDiscardNumber() as $player_id => $nbr) {
+                foreach ($this->getEndRoundDiscardNumber() as $player_id => $nbr) {
                     if ($nbr > 0) {
                         $winners[] = $player_id;
                     }
@@ -11512,7 +11512,7 @@ class RaceForTheGalaxy extends Table
                 || $state['name'] == 'warEffort'
             ) {
             $this->gamestate->setPlayerNonMultiactive($active_player, "phaseCleared");
-        } elseif ($state['name'] == 'endturndiscard') {
+        } elseif ($state['name'] == 'endrounddiscard') {
             $this->cards->moveAllCardsInLocation('hand', $this->getDiscard($active_player), $active_player, 0);   // Discard all
             $this->gamestate->setPlayerNonMultiactive($active_player, "allPlayersValid");
         } else {
