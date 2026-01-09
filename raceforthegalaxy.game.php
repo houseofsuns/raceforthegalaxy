@@ -11962,7 +11962,7 @@ ADD  `player_xeno_victory` TINYINT UNSIGNED NOT NULL DEFAULT  '0';");
             self::DbQuery("UPDATE orbcard SET card_location='deck' WHERE card_location='a'");
         }
 
-        if ($from_version <= 2511102040) {
+        if ($from_version <= 2512181316) {
             $sql = "ALTER TABLE `DBPREFIX_card`
 ADD `card_played_round` smallint(3) NOT NULL DEFAULT '-1',
 ADD `card_played_phase` smallint(3) NOT NULL DEFAULT '-1',
