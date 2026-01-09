@@ -2431,10 +2431,11 @@ class RaceForTheGalaxy extends Table
                 $bHasMediator = true;
             }
         }
+        $bHasSalvage = count($this->cards->getCardsOfTypeInLocation(218, null, 'tableau')) > 0;
 
         $cost = max(0, $cost);
 
-        if ($bUseMilitaryForce && $bHasMediator && $bContactSpecialistCase) {
+        if ($bUseMilitaryForce && ($bHasMediator || ($bHasSalvage && $cost > 0)) && $bContactSpecialistCase) {
             array_unshift($immediateAlternatives, ['kind' => 'military'], ['kind' => 'pay']);
         } elseif ($cost == 0 && count($immediateAlternatives) > 0 && (!$bMilitaryWorld || $bContactSpecialistCase)) {
             array_unshift($immediateAlternatives, ['kind' => 'pay']);
