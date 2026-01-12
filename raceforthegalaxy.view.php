@@ -41,6 +41,7 @@ class view_raceforthegalaxy_raceforthegalaxy extends game_view
         }
 
         $this->tpl['CONSUME_HELP'] = self::_("Click on a good, then click on the card you want to use to consume this good.");
+        $this->tpl['OORT_HELP'] = self::_("Click on Alien Oort Cloud Refinery to change its type.");
         $this->tpl['USE_GAMBLING_WORLD'] = self::_("Use gambling world");
         $this->tpl['MY_DECK'] = self::_("My drafted deck");
         $this->tpl['DISCARD_FOR_MILITARY_HELP'] = self::_("You may discard cards to temporary increase your military force :");

@@ -3632,6 +3632,7 @@ define([
                                || dojo.query('#good_place_' + card_id + ' .good_wrap').length > 0)
                           ) {
                     bDoNotSelectThisCard = true;
+                    dojo.style('oort_help', 'display', 'none');
 
                     // Choose Oort kind
                     this.getGoodChoice(_("Which kind do you want this world to be?"), dojo.hitch(this, function(kind) {
@@ -4841,6 +4842,7 @@ define([
                                           }
                                       });
                     }));
+                    dojo.style('oort_help', 'display', 'block');
                 } else {
                     this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/playCardAndPay.html",
                                   call_options, this, function() {}, function(is_error) {

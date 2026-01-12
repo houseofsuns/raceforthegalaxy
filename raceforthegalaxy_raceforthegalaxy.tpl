@@ -108,6 +108,7 @@ https://stackoverflow.com/questions/24077725/mobile-safari-sometimes-does-not-tr
         <div class="icon20 icon20_help"></div> {CONSUME_FOR_MILITARY_HELP}
         <span class="bgabutton bgabutton_blue" id="end_military_consume">{END_DISCARD}</span>
     </div>
+    <div id="oort_help" class="whiteblock" style="display:none;"><div class="icon20 icon20_help"></div> {OORT_HELP}</div>
     <div id="gambling_panel" style="display:none">
         {USE_GAMBLING_WORLD} :
         <span id="gambling_1" class="bgabutton bgabutton_blue gambling_button">1</span>
