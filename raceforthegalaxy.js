@@ -1245,7 +1245,7 @@ define([
                     }
                     if (this.isCurrentPlayerActive()) {
                         const selectionDone = (this.phases_chosen > 1
-                                               || (this.numberPlayers() > 2 && this.phases_chosen > 0));
+                                               || (this.numberPlayers() > 2 && this.phases_chosen > 0)); // FIXME psi-crystal
                         if (this.phaseSelectNeedsConfirm()) {
                             dojo.style('phase_select_confirm', 'display', 'inline');
                         }
@@ -1822,7 +1822,7 @@ define([
                         if (!this.isSpectator) {
                             this.addActionButton('action_phaseCancel', _("Cancel"), 'onPhaseCancel', null, false, 'red');
 
-                            if (this.phases_chosen === 0 || args.crystalplayer) {
+                            if (this.phases_chosen === 0) {
                                 dojo.style('action_phaseCancel', 'display', 'none');
                             }
                         }
@@ -2536,9 +2536,13 @@ define([
                 if (this.pending_phase_choice != null && this.pending_phase_choice.cardbonus) {
                         this.gamedatas.gamestate.args.searchavail[this.player_id] = 1;
                 }
-                this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/cancelPhase.html", {
-                    lock: true
-                }, this, function() {}, function() {});
+                if (this.gamedatas.gamestate.name == "phaseChoiceCrystal") {
+                    this.updatePhaseChoices(this.current_phase_choices);
+                } else {
+                    this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/cancelPhase.html", {
+                        lock: true
+                    }, this, function() {}, function() {});
+                }
             },
 
             initialDiscardNeedsConfirm: function() {
@@ -2734,7 +2738,7 @@ define([
             },
             checkPhaseSelectArm: function() {
                 // if last phase to choose, check for confirmation
-                if (this.phaseSelectNeedsConfirm() && (this.numberPlayers() > 2 || this.phases_chosen > 0)) {
+                if (this.phaseSelectNeedsConfirm() && (this.numberPlayers() > 2 || this.phases_chosen > 0)) { // FIXME psi-crystal
                     choices = structuredClone(this.current_phase_choices);
                     this.updatePhaseChoices(this.addPhaseChoice(choices, this.pending_phase_choice));
                 } else {
