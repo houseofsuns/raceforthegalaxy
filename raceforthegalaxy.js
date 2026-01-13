@@ -1124,11 +1124,9 @@ define([
                     var output = '<span class="phase_offset"></span>';
                     for (var player_id in choices[phase_id]) {
                         var bonus_id = toint(choices[phase_id][player_id]);
+                        var num_choices = 1;
                         if (bonus_id >= 10 && player_id == this.player_id) {
                             dojo.style('prestige_search_' + player_id, 'visibility', 'hidden');
-                        }
-                        if (player_id != '-1') {
-                            this.phases_chosen += 1;
                         }
                         var symbol = 'X';
                         if (phase_id == 1) {
@@ -1146,19 +1144,19 @@ define([
                                 symbol += '+5+0';
                             } else if (bonus_id === 2) {
                                 symbol += '+6+1';
-                                this.phases_chosen += 1;
+                                num_choices += 1;
                             } else if (bonus_id === 10) {
                                 symbol += '+7+2';
                             } else if (bonus_id === 11) {
                                 symbol += '+11+1';
                             } else if (bonus_id === 12) {
                                 symbol += '+12+2';
-                                this.phases_chosen += 1;
+                                num_choices += 1;
                             }
                         } else if (phase_id == 2 || phase_id == 3) {
                             if (bonus_id === 2) {
                                 symbol = 'XX';
-                                this.phases_chosen += 1;
+                                num_choices += 1;
                             }
 
                             if (phase_id == 2 && bonus_id === 10) {
@@ -1166,11 +1164,11 @@ define([
                             }
                             if (phase_id == 2 && bonus_id === 12) {
                                 symbol = '-3 X';
-                                this.phases_chosen += 1;
+                                num_choices += 1;
                             }
                             if (phase_id == 2 && bonus_id === 22) {
                                 symbol = 'X -3';
-                                this.phases_chosen += 1;
+                                num_choices += 1;
                             }
 
                             if (phase_id == 3 && bonus_id === 10) {
@@ -1178,11 +1176,11 @@ define([
                             }
                             if (phase_id == 3 && bonus_id === 12) {
                                 symbol = '-3+2 X';
-                                this.phases_chosen += 1;
+                                num_choices += 1;
                             }
                             if (phase_id == 3 && bonus_id === 22) {
                                 symbol = 'X -3+2';
-                                this.phases_chosen += 1;
+                                num_choices += 1;
                             }
                         } else if (phase_id == 4) {
                             if (bonus_id === 0) {
@@ -1191,14 +1189,14 @@ define([
                                 symbol = 'x2';
                             } else if (bonus_id === 2) {
                                 symbol = '$ x2';
-                                this.phases_chosen += 1;
+                                num_choices += 1;
                             } else if (bonus_id === 10) {
                                 symbol = '$+3 / x2';
                             } else if (bonus_id === 11) {
                                 symbol = 'x3';
                             } else if (bonus_id === 12) {
                                 symbol = '$+3 / x3';
-                                this.phases_chosen += 1;
+                                num_choices += 1;
                             }
                         } else if (phase_id == 5) {
                             if (Math.floor(bonus_id / 10) == 1) {
@@ -1220,6 +1218,9 @@ define([
                             var color = this.gamedatas.players[player_id].color;
                             output += '<span style="color:#' + color + '">' + symbol + '</span>';
                         }
+                        if (player_id == this.player_id) {
+                            this.phases_chosen += num_choices;
+                        }
                     }
                     if (output != '<span class="phase_offset"></span>') {
                         dojo.place(output, 'phase_selected_' + phase_id);
@@ -1231,7 +1232,8 @@ define([
                     }
                 }
 
-                if (this.gamedatas.gamestate.name == "phaseChoice"
+                if ((this.gamedatas.gamestate.name == "phaseChoice"
+                     || this.gamedatas.gamestate.name == "phaseChoiceCrystal")
                         // check that the buttons are already created (we are sometimes called earlier)
                         && dojo.query('#action_phaseCancel').length > 0) {
                     // If at least one phase has been selected, show the cancel button
