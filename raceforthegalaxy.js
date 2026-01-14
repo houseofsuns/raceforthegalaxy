@@ -1260,9 +1260,14 @@ define([
                         } else {
                             dojo.style('phasechoice_panel', 'display', 'block');
                             dojo.query('#phase_select_confirm').addClass('disabled');
-                            if(this.hasGamePrestige() && this.gamedatas.gamestate.args.searchavail[this.player_id] == 1) {
-                                dojo.style('action_phasebonus', 'display', 'inline');
-                                dojo.style('action_search', 'display', 'inline');
+                            if(this.hasGamePrestige()) {
+                                if (this.gamedatas.gamestate.args.searchavail[this.player_id] == 1) {
+                                    dojo.style('action_phasebonus', 'display', 'inline');
+                                    dojo.style('action_search', 'display', 'inline');
+                                } else {
+                                    dojo.style('action_phasebonus', 'display', 'none');
+                                    dojo.style('action_search', 'display', 'none');
+                                }
                             }
                         }
                     } else {
@@ -1817,6 +1822,10 @@ define([
                                 this.addActionButton('action_cancelphasebonus', _("Cancel bonus card use"), 'onCancelPhaseBonus');
                                 dojo.style('action_cancelphasebonus', 'display', 'none');
                                 this.addTooltipOnPrestigeSearchButtons();
+                                if (this.gamedatas.gamestate.args.searchavail[this.player_id] != 1) {
+                                    dojo.style('action_phasebonus', 'display', 'none');
+                                    dojo.style('action_search', 'display', 'none');
+                                }
                             }
                         }
                         if (!this.isSpectator) {
