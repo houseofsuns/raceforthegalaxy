@@ -2748,7 +2748,18 @@ define([
             checkPhaseSelectArm: function() {
                 // if last phase to choose, check for confirmation
                 if (this.phaseSelectNeedsConfirm() && (this.numberPlayers() > 2 || this.phases_chosen > 0)) { // FIXME psi-crystal
-                    choices = structuredClone(this.current_phase_choices);
+                    var choices;
+                    try {
+                        choices = structuredClone(this.current_phase_choices);
+                    } catch (e) {
+                        if (e instanceof ReferenceError) {
+                            // bail out if structuredClone is not available for now
+                            this.onPhaseSelectConfirm();
+                            return;
+                        } else {
+                            throw e;
+                        }
+                    }
                     this.updatePhaseChoices(this.addPhaseChoice(choices, this.pending_phase_choice));
                 } else {
                     this.onPhaseSelectConfirm();
