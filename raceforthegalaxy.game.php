@@ -2178,6 +2178,18 @@ class RaceForTheGalaxy extends Table
             return;
         }
 
+        $timing = self::getObjectFromDB("SELECT card_played_round round, card_played_phase phase, card_played_subphase subphase FROM card WHERE card_id = $card_id");
+        $cround = self::getGameStateValue('current_round');
+        $cphase = self::getGameStateValue('current_phase');
+        $csubphase = self::getGameStateValue('current_subphase');
+
+        // Check that the card was actually played right now
+        // Especially with all the settle subphases this is important
+        // The check could probably be done only on the subphase
+        if ($timing['round'] != $cround || $timing['phase'] != $cphase || $timing['subphase'] != $csubphase) {
+            return;
+        }
+
         $drawCard = 0;  // Number of card drawn if you play this card successfully
         $drawPr = 0;    // Number of prestige if .....
 
@@ -8720,23 +8732,6 @@ class RaceForTheGalaxy extends Table
         // after Ore-Rich World discard to put a good on it
         // but before Imperium Fuel Depot discard after settle
         $players = array_keys(self::loadPlayersBasicInfos());
-        if (self::getGameStateValue('improvedLogisticsPhase') == 5) {
-            // If this is the Terraforming Engineers sub-phase: only consider players owning Terraforming Engineers.
-            // This is a bandaid fix for bug #8577 where in the following scenario too much prestige is distributed:
-            // Player A has Improved Logistics; Player B has Terraforming Engineers.
-            // Player A settles two worlds the second of which gives a prestige.
-            // Player B replaces a world.
-            // Now Player A receives the prestige again after the Terraforming Engineers sub-phase.
-            $players = $this->playersThatMayUseTerraformingEngineers();
-        } elseif (self::getGameStateValue('improvedLogisticsPhase') == 3) {
-            // Same story with Imperium Supply Convoy
-            $players = $this->playersThatMayUseImperiumSupplyConvoy();
-        } elseif (self::getGameStateValue('improvedLogisticsPhase') == 4) {
-            // Do not intervene for Terraforming Project as the card is discarded
-        } elseif (self::getGameStateValue('improvedLogisticsPhase') == 2) {
-            // Do not intervene for Rebel Sneak Attack as the card is discarded
-        }
-
         foreach ($players as $player_id) {
             $this->phaseBonus($player_id);
         }
