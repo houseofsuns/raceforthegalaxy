@@ -5039,7 +5039,7 @@ define([
             notif_updateScore: function(notif) {
                 console.log('notif_updateScore');
                 console.log(notif);
-                this.scoreCtrl[notif.args.player_id].toValue(toint(notif.args.score));
+                this.bga.playerPanels.getScoreCounter(notif.args.player_id).toValue(toint(notif.args.score));
                 if (notif.args.vp) {
                     $('vp_nbr_' + notif.args.player_id).innerHTML = notif.args.vp;
                 }
