@@ -13468,7 +13468,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         $sql .= "VALUES ('$card_id', '$card_cost', 'hand', '".$player_id."', '0') ";
         self::DbQuery($sql);
 
-        $card_id = APP_DbObject::DbGetLastId();
+        $card_id = self::DbGetLastId();
         $card = $this->cards->getCard($card_id);
 
         self::notifyPlayer($player_id, 'drawCards', '', array($card));
@@ -13615,7 +13615,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         $sql .= "VALUES ('$card_id', 0, 'hand', $player_id) ";
         self::DbQuery($sql);
 
-        $card_id = APP_DbObject::DbGetLastId();
+        $card_id = self::DbGetLastId();
         $card = $this->orbcards->getCard($card_id);
         self::notifyPlayer($player_id, 'pickOrbCards', '', array(
             'cards' => array($card)
