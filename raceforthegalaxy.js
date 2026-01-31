@@ -508,8 +508,8 @@ define([
             initPreferences: function() {
                 // Card size
                 var card_size;
-                if (this.prefs[2].value > "0") {
-                    card_size = this.prefs[2].value;
+                if (this.bga.userPreferences.get(2).toString() > "0") {
+                    card_size = this.bga.userPreferences.get(2).toString();
                 } else {
                     // Choose a size that lets us fit 10 cards in width
                     var area_width = dojo.style('game_play_area', 'width');
@@ -534,8 +534,8 @@ define([
 
                 // Card on tooltip size
                 var tooltip_card_size = null;
-                if (this.prefs[3].value > "0") {
-                    tooltip_card_size = this.prefs[3].value;
+                if (this.bga.userPreferences.get(3).toString() > "0") {
+                    tooltip_card_size = this.bga.userPreferences.get(3).toString();
                 } else if (card_size == "1") {
                     // For tiny size, default to medium tooltip
                     tooltip_card_size = "3";
@@ -555,7 +555,7 @@ define([
                 }
 
                 // tooltip delay
-                switch (this.prefs[4].value) {
+                switch (this.bga.userPreferences.get(4).toString()) {
                     case 0: // auto
                     case "0":
                         if (tooltip_card_size > "1") {
@@ -2555,7 +2555,7 @@ define([
             },
 
             initialDiscardNeedsConfirm: function() {
-                return this.prefs[8].value != '2';
+                return this.bga.userPreferences.get(8).toString() != '2';
             },
             checkInitialDiscardArm: function(instant_execute = false) {
                 console.log('checkInitialDiscardArm');
@@ -2638,11 +2638,11 @@ define([
             exploreNeedsConfirm: function() {
                 var need_confirm = !this.checkAction("scavenge", true)
                                   && !this.checkAction("gamble", true)
-                                  && this.prefs[7].value != '3';
+                                  && this.bga.userPreferences.get(7).toString() != '3';
                 if (!need_confirm) {
                     return false;
                 }
-                if (this.prefs[7].value == '2') {
+                if (this.bga.userPreferences.get(7).toString() == '2') {
                     if (this.playerHasExploreMix()) {
                         var n = Math.max(0, this.gamedatas.gamestate.args[this.player_id].draw - this.gamedatas.gamestate.args[this.player_id].keep);
                     } else {
@@ -2743,7 +2743,7 @@ define([
                 return current;
             },
             phaseSelectNeedsConfirm: function() {
-                return this.prefs[9].value != '2';
+                return this.bga.userPreferences.get(9).toString() != '2';
             },
             checkPhaseSelectArm: function() {
                 // if last phase to choose, check for confirmation
@@ -2781,7 +2781,7 @@ define([
             },
 
             paymentNeedsConfirm: function() {
-                return this.prefs[10].value != '2';
+                return this.bga.userPreferences.get(10).toString() != '2';
             },
             checkPaymentArm: function() {
                 if (this.checkCurrentPayment(/* execute = */ false)) {
@@ -4740,7 +4740,7 @@ define([
                 this.immediateAlternatives = notif.args.immediate_alternatives;
                 this.isMilitarySettle = notif.args.military_force && (this.immediateAlternatives.length == 0)
 
-                if (toint(this.paymentCost) > 0 || this.immediateAlternatives.length > 0 || this.prefs[10].value == '1') {
+                if (toint(this.paymentCost) > 0 || this.immediateAlternatives.length > 0 || this.bga.userPreferences.get(10).toString() == '1') {
                     // Go to payment mode
                     this.paymentMode = true;
                     dojo.addClass('hand_panel', 'paymentMode');
