@@ -12,6 +12,8 @@
   */
 
 use Bga\GameFramework\Table;
+use Bga\GameFramework\UserException;
+use Bga\GameFramework\SystemException;
 
 class RaceForTheGalaxy extends Bga\GameFramework\Table
 {
@@ -2264,12 +2266,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $card = $this->cards->getCard($card_id);
 
         if ($card['location'] != 'hand' || $card['location_arg'] != $player_id) {
-            throw new feException("This card is not in your hand");
+            throw new SystemException("This card is not in your hand");
         }
 
         $card_type = $this->card_types[ $card['type'] ];
         if ($card_type['type'] != 'development') {
-            throw new feException(self::_('This is not a development'), true);
+            throw new UserException(self::_('This is not a development'));
         }
 
         $cost = $card_type['cost'];
@@ -2339,12 +2341,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $bOortCloud = $card['type'] == 220;
 
         if ($card['location'] != 'hand' || $card['location_arg'] != $player_id) {
-            throw new feException("This card is not in your hand");
+            throw new SystemException("This card is not in your hand");
         }
 
         $card_type = $this->card_types[ $card['type'] ];
         if ($card_type['type'] != 'world') {
-            throw new feException(self::_('This is not a world'), true);
+            throw new UserException(self::_('This is not a world'));
         }
 
         $bMilitaryWorld = false;
@@ -2383,12 +2385,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 if ($bContactSpecialistCase) {
                     // must use Contact Specialist; nothing to be done here
                 } else if ($bTerraformingProject) {
-                    throw new feException(self::_("You cannot settle a military world with Terraforming Project"), true);
+                    throw new UserException(self::_("You cannot settle a military world with Terraforming Project"));
                 } else {
                     if ($previous_type === null) {
-                        throw new feException(sprintf(self::_("Your military (%s) is not big enough"), $force), true);
+                        throw new UserException(sprintf(self::_("Your military (%s) is not big enough"), $force));
                     } else {
-                        throw new feException(sprintf(self::_("Your military (%s) is not big enough to conquer this world after the previous one."), $force), true);
+                        throw new UserException(sprintf(self::_("Your military (%s) is not big enough to conquer this world after the previous one."), $force));
                     }
                 }
             }
@@ -2396,13 +2398,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         if ($bTerraformingProject) {
             if ($this->getCardColorFromType($card_type) == 4) {
-                throw new feException(self::_("You cannot settle an Alien world with Terraforming Project"), true);
+                throw new UserException(self::_("You cannot settle an Alien world with Terraforming Project"));
             }
             $cost = 0;
         }
 
         if ($bConvoy && !$bMilitaryWorld) {
-            throw new feException(self::_("You can only conquer a military world with Imperium Supply Convoy"), true);
+            throw new UserException(self::_("You can only conquer a military world with Imperium Supply Convoy"));
         }
 
         if ($bPrestigeBonus && (!$bMilitaryWorld || $bContactSpecialistCase)) {
@@ -4001,7 +4003,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $original = $current;
 
         if ($current+$nbr < 0) {
-            throw new feException(self::_("You don't have enough Prestige to do this action"), true);
+            throw new UserException(self::_("You don't have enough Prestige to do this action"));
         }
 
         $current += $nbr;
@@ -4646,7 +4648,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         // Check that the card is in player's tableau
         if ($card['location'] != 'hiddentableau' || $card['location_arg'] != $player_id) {
-            throw new feException("This card is not in your tableau");
+            throw new SystemException("This card is not in your tableau");
         }
 
         // Discard start world
@@ -4686,13 +4688,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         if (count($cards_ids) != $cards_to_discard) {
-            throw new feException("You must discard $cards_to_discard cards");
+            throw new SystemException("You must discard $cards_to_discard cards");
         }
 
         // Check the two are in player's hand
         foreach ($cards_ids as $card_id) {
             if ($cards[ $card_id ]['location'] != 'hand' || $cards[ $card_id ]['location_arg'] != $player_id) {
-                throw new feException("This card is not in your hand");
+                throw new SystemException("This card is not in your hand");
             }
 
             // Move to discard
@@ -4748,11 +4750,11 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                     }
 
                     if ($prev_phase == 1 && $phase == 1 && $bonus == $prev_bonus) {  // Explore
-                        throw new feException(self::_("You already select this phase option"), true);
+                        throw new UserException(self::_("You already select this phase option"));
                     } elseif ($prev_phase == 4 && $phase == 4 && $bonus == $prev_bonus) { // Consume
-                        throw new feException(self::_("You already select this phase option"), true);
+                        throw new UserException(self::_("You already select this phase option"));
                     } elseif ($prev_phase == 5 && $phase == 5 && $bonus == $prev_bonus) { // Production
-                        throw new feException(self::_("You already select this phase option"), true);
+                        throw new UserException(self::_("You already select this phase option"));
                     }
                 }
             }
@@ -4760,7 +4762,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         if ($bBonusCard) {
             if (self::getUniqueValueFromDB("SELECT NOT player_search OR player_tmp_milforce OR player_tmp_gene_force FROM player WHERE player_id='".$player_id."'") == 1) {
-                throw new feException("You already used your prestige/search card");
+                throw new SystemException("You already used your prestige/search card");
             }
 
             if ($phase == 7) {
@@ -4771,7 +4773,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 // Instead, use tmpmilforce to keep track of the debt
 
                 if (self::getUniqueValueFromDB("SELECT player_prestige FROM player WHERE player_id=$player_id") == 0) {
-                    throw new feException(self::_("You don't have enough Prestige to do this action"), true);
+                    throw new UserException(self::_("You don't have enough Prestige to do this action"));
                 }
 
                 self::DbQuery("UPDATE player SET player_tmp_milforce = 1 WHERE player_id=$player_id");
@@ -4851,7 +4853,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $explored_cards = $this->getExploredCardNumber();
             $to_keep = $explored_cards[$player_id]['keep'];
             if ($to_keep != count($card_ids)) {
-                throw new feException("You must keep $to_keep cards !");
+                throw new SystemException("You must keep $to_keep cards !");
             }
         }
 
@@ -4859,7 +4861,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $cards = $this->cards->getCards($card_ids);
         foreach ($cards as $card) {
             if ($card['location'] != 'explored' || $card['location_arg'] != $player_id) {
-                throw new feException("Card ".$card['id']." is not in player explored zone");
+                throw new SystemException("Card ".$card['id']." is not in player explored zone");
             }
         }
 
@@ -4963,7 +4965,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             if ($bCloaking) {
                 $cloakingcard = $this->cards->getCard($options['cloaking']);
                 if (! $cloakingcard) {
-                    throw new feException("This card does not exist");
+                    throw new SystemException("This card does not exist");
                 }
                 $res = $this->getWorldCost($card_id, $cloakingcard['type']);
             } else {
@@ -4976,7 +4978,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         if (isset($options['mode'])) {
             if ($options['mode'] == 'military' && !$res['military_force']) {
-                throw new feException("Unable to use military force.");
+                throw new SystemException("Unable to use military force.");
             }
         } else {
             if ($res['military_force']) {
@@ -4986,10 +4988,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
         }
         if ($options['mode'] == 'military' && count($money)) {
-            throw new feException("No payment in military mode.");
+            throw new SystemException("No payment in military mode.");
         }
         if ($options['mode'] != 'military' && $options['mode'] != 'pay') {
-            throw new feException("Invalid mode value.");
+            throw new SystemException("Invalid mode value.");
         }
 
 
@@ -5003,7 +5005,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $dbres = self::DbQuery($sql);
         $row = mysql_fetch_assoc($dbres);
         if ($row) {
-            throw new feException(self::_("You can't have 2 cards of the same type in your tableau"), true);
+            throw new UserException(self::_("You can't have 2 cards of the same type in your tableau"));
         }
 
         // See if all money cards are in player hand and are a correct number
@@ -5011,11 +5013,11 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         foreach ($money_cards as $money_card) {
             if ($money_card['location'] != 'hand' || $money_card['location_arg'] != $player_id) {
-                throw new feException("This card is not in your hand");
+                throw new SystemException("This card is not in your hand");
             }
 
             if ($money_card['id'] == $card_id) {
-                throw new feException("You cannot pay the cost of a card with this card");
+                throw new SystemException("You cannot pay the cost of a card with this card");
             }
         }
 
@@ -5025,15 +5027,15 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             // Checks
             $colonyship = $this->cards->getCard($options['colonyship']);
             if (! $colonyship) {
-                throw new feException("This card does not exist");
+                throw new SystemException("This card does not exist");
             }
             if ($colonyship['location']!='tableau' || $colonyship['location_arg']!=$player_id) {
-                throw new feException("This card is not in your tableau");
+                throw new SystemException("This card is not in your tableau");
             }
             // Check that the card hasn't been played in this phase
             $previously_played = self::getUniqueValueFromDB("SELECT player_previously_played FROM player WHERE player_id=".$player_id);
             if ($previously_played == $colonyship['id']) {
-                throw new feException(self::_("No powers from this world may be used during this phase"), true);
+                throw new UserException(self::_("No powers from this world may be used during this phase"));
             }
 
             $card_name = $this->card_types[ $colonyship['type'] ]['name'];
@@ -5041,7 +5043,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             // Check this is not an alien world
             $world_color = $this->getCardColorFromType($card_type);
             if ($world_color == 4) {
-                throw new feException(sprintf(self::_("Alien technology world can't be settled with %s"), self::_($card_name)), true);
+                throw new UserException(sprintf(self::_("Alien technology world can't be settled with %s"), self::_($card_name)));
             }
 
             // Remove colony ship
@@ -5071,51 +5073,51 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                     ", true);
 
             if (! in_array($player_id, $players_with_engineers)) {
-                throw new feException("You cannot use Terraforming Engineers at this turn");
+                throw new SystemException("You cannot use Terraforming Engineers at this turn");
             }
 
             $to_replace = $this->cards->getCard($options['settlereplace']);
             if (! $to_replace) {
-                throw new feException("This card does not exist");
+                throw new SystemException("This card does not exist");
             }
             if ($to_replace['location']!='tableau' || $to_replace['location_arg']!=$player_id) {
-                throw new feException("This card is not in your tableau");
+                throw new SystemException("This card is not in your tableau");
             }
 
             $previously_played = self::getUniqueValueFromDB("SELECT player_previously_played FROM player WHERE player_id=$player_id");
             if ($options['settlereplace'] == $previously_played) {
-                throw new feException(self::_("You cannot replace a world which has been played in this phase"), true);
+                throw new UserException(self::_("You cannot replace a world which has been played in this phase"));
             }
 
             $to_replace_type = $this->card_types[ $to_replace['type'] ];
 
             if ($to_replace_type['type'] != 'world') {
-                throw new feException(self::_("You must replace a world"), true);
+                throw new UserException(self::_("You must replace a world"));
             }
 
             if (in_array('military', $card_type['category'])) {
-                throw new feException(self::_("Only non-military worlds can be replaced"), true);
+                throw new UserException(self::_("Only non-military worlds can be replaced"));
             }
             if (in_array('military', $to_replace_type['category'])) {
-                throw new feException(self::_("Only non-military worlds can be replaced"), true);
+                throw new UserException(self::_("Only non-military worlds can be replaced"));
             }
 
             if ($card_type['cost'] < $to_replace_type['cost'] || $card_type['cost'] > ($to_replace_type['cost']+3)) {
-                throw new feException("You can only choose a world with a cost between +0 and +3");
+                throw new SystemException("You can only choose a world with a cost between +0 and +3");
             }
 
             // Same kind
             // Note : it one or the other is the Alien Oort, they ARE from the same type.
             if ($to_replace['type'] != 220 && $card['type'] != 220) {
                 if ($this->getCardColorFromType($card_type) != $this->getCardColorFromType($to_replace_type)) {
-                    throw new feException(self::_("You must choose a world from the same kind (ie: same good color)"), true);
+                    throw new UserException(self::_("You must choose a world from the same kind (ie: same good color)"));
                 }
             }
             if ($card['type'] == 220) {
                 // Set the color of the Alien Oort Cloud Refinery by the constraints
                 $impliedType = $this->getCardColorFromType($to_replace_type);
                 if (isset($options['oort']) && $options['oort'] != $impliedType) {
-                    throw new feException(self::_("Invalid choice of color (must be same good color)"), true);
+                    throw new UserException(self::_("Invalid choice of color (must be same good color)"));
                 }
                 $options['oort'] = $impliedType;
             }
@@ -5140,17 +5142,17 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
         if (isset($options['cloaking'])) {
             if (self::checkAction('onlyremainingmilitary', false)) {
-                throw new feException(self::_("You cannot combine cloaking (military=>civil) with Imperium Supply Convoy"));
+                throw new UserException(self::_("You cannot combine cloaking (military=>civil) with Imperium Suppl Convoy"));
             }
 
             // Checks
             if ($cloakingcard['location']!='tableau' || $cloakingcard['location_arg']!=$player_id) {
-                throw new feException("This card is not in your tableau");
+                throw new SystemException("This card is not in your tableau");
             }
 
             // Check this is not a military world
             if (in_array('military', $card_type['category'])) {
-                throw new feException(self::_("You must choose a non-military world"), true);
+                throw new UserException(self::_("You must choose a non-military world"));
             }
 
             $card_name = $this->card_types[ $cloakingcard['type'] ]['name'];
@@ -5180,24 +5182,24 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             foreach ($options['goods'] as $good_id) {
                 $good = $this->cards->getCard($good_id);
                 if ($good['location'] != 'good') {
-                    throw new feException("Invalid good");
+                    throw new SystemException("Invalid good");
                 }
 
                 $good_host = $good['location_arg'];
                 $host = $this->cards->getCard($good_host);
                 if ($host['location'] != 'tableau' || $host['location_arg'] != $player_id) {
-                    throw new feException("This good is not in your tableau");
+                    throw new SystemException("This good is not in your tableau");
                 }
 
                 $good_type = self::getUniqueValueFromDB("SELECT card_status FROM card WHERE card_id='$good_id'");
 
                 if ($res['isWorld']) {
                     if ($good_type != 3) {
-                        throw new feException("This is not a gene good");
+                        throw new SystemException("This is not a gene good");
                     }
                 } else {
                     if ($good_type != 2) {
-                        throw new feException("This is not a rare good");
+                        throw new SystemException("This is not a rare good");
                     }
                 }
 
@@ -5223,7 +5225,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $count_cards = count($power_cards);
 
             if ($count_cards < $good_to_use) {
-                throw new feException(self::_("You do not have enough cards using these goods for this action"), true);
+                throw new UserException(self::_("You do not have enough cards using these goods for this action"));
             }
 
             if ($res['isWorld']) {
@@ -5254,10 +5256,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             // Checks
             $rdcrashprogram= $this->cards->getCard($options['rdcrashprogram']);
             if (! $rdcrashprogram) {
-                throw new feException("This card does not exist");
+                throw new SystemException("This card does not exist");
             }
             if ($rdcrashprogram['location']!='tableau' || $rdcrashprogram['location_arg']!=$player_id) {
-                throw new feException("This card is not in your tableau");
+                throw new SystemException("This card is not in your tableau");
             }
 
             $card_name = $this->card_types[ $rdcrashprogram['type'] ]['name'];
@@ -5286,22 +5288,22 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             foreach ($options['arts'] as $art_id) {
                 $art = $this->artefacts->getCard($art_id);
                 if ($art == null) {
-                    throw new feException("Invalid good");
+                    throw new SystemException("Invalid good");
                 }
 
                 if ($art['location'] != 'hand') {
-                    throw new feException("Invalid good");
+                    throw new SystemException("Invalid good");
                 }
 
                 if ($art['location_arg'] != $player_id) {
-                    throw new feException("This artifact is not in your tableau");
+                    throw new SystemException("This artifact is not in your tableau");
                 }
 
                 $art_type = $art['type'];
 
                 if ($art_type==1||$art_type==13) {
                     if (!$res['isWorld']) {
-                        throw new feException(self::_("This artifact can only be used to reduce non-military world cost"), true);
+                        throw new UserException(self::_("This artifact can only be used to reduce non-military world cost"));
                     }
 
                     $art_to_use[$art_id] = $art_type;
@@ -5309,17 +5311,17 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                     $artpoints += $this->artefact_types[ $art_type ]['vp'];
                 } elseif ($art_type == 4) {
                     if (!$res['isWorld']) {
-                        throw new feException(self::_("This artifact can only be used to reduce Gene world cost"), true);
+                        throw new UserException(self::_("This artifact can only be used to reduce Gene world cost"));
                     }
                     if ($this->getCardColorFromType($card_type) != 3) {
-                        throw new feException(self::_("This artifact can only be used to reduce Gene world cost"), true);
+                        throw new UserException(self::_("This artifact can only be used to reduce Gene world cost"));
                     }
                     $art_to_use[$art_id] = $art_type;
                     $art_cost_reduction += 2;
                     $artpoints += $this->artefact_types[ $art_type ]['vp'];
                 } elseif ($art_type == 7 || $art_type == 10) {
                     if ($res['isWorld']) {
-                        throw new feException(self::_("This artifact can only be used to reduce development cost"), true);
+                        throw new UserException(self::_("This artifact can only be used to reduce development cost"));
                     }
                     $art_to_use[$art_id] = $art_type;
                     $art_cost_reduction += (($art_type==7) ? 2 : 3) ;
@@ -5360,7 +5362,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
         }
         if ($options['mode'] == 'pay' && count($money) != $cost) {
-            throw new feException("This card cost $cost and not ".count($money));
+            throw new SystemException("This card cost $cost and not ".count($money));
         }
 
         // Discard money cards
@@ -5419,7 +5421,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         if (self::checkAction('onlymilitarysettle', false)) {
             if ($options['mode'] != 'military') {
-                throw new feException(self::_("You may only settle a military world using Rebel Sneak Attack"), true);
+                throw new UserException(self::_("You may only settle a military world using Rebel Sneak Attack"));
             }
 
             // Discard Rebel Sneak Attack
@@ -5431,7 +5433,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                          AND card_location_arg = $player_id", true);
 
             if ($sneak === null) {
-                throw new feException("Cannot find Rebel Sneak attack on tableau");
+                throw new SystemException("Cannot find Rebel Sneak attack on tableau");
             }
 
             $this->discardFromTableau($sneak);
@@ -5456,7 +5458,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                          AND card_location_arg = $player_id", true);
 
             if ($tproj === null) {
-                throw new feException("Cannot find Terraforming project on tableau");
+                throw new SystemException("Cannot find Terraforming project on tableau");
             }
 
             $this->discardFromTableau($tproj);
@@ -5550,10 +5552,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         //// Checks on source card
         $takeovercard = $this->cards->getCard($card_id);
         if (! $takeovercard) {
-            throw new feException("This card does not exist");
+            throw new SystemException("This card does not exist");
         }
         if ($takeovercard['location']!='tableau' || $takeovercard['location_arg']!=$player_id) {
-            throw new feException("This card is not in your tableau");
+            throw new SystemException("This card is not in your tableau");
         }
 
         if ($takeovercard['type'] == 140) {
@@ -5569,13 +5571,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         } elseif ($takeovercard['type'] == 195) {
             $targetfilter = 'militaryforce';
         } else {
-            throw new feException("This card has no takeover power");
+            throw new SystemException("This card has no takeover power");
         }
 
         // Has the card already been used in this phase
         $card_status = self::getUniqueValueFromDB("SELECT card_status FROM card WHERE card_id=$card_id");
         if ($card_status == '-1') {
-            throw new feException(self::_("Already used"), true);
+            throw new UserException(self::_("Already used"));
         }
 
         // => okay, we may do a takeover using this card!
@@ -5585,10 +5587,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         // Check that target is a military world in another player's tableau
         $target_card = $this->cards->getCard($target_id);
         if (! $target_card) {
-            throw new feException("This card does not exist");
+            throw new SystemException("This card does not exist");
         }
         if ($target_card['location']!='tableau' || $target_card['location_arg']==$player_id) {
-            throw new feException("This card is not in one of your opponents tableau");
+            throw new SystemException("This card is not in one of your opponents tableau");
         }
 
         $opponent_id = $target_card['location_arg'];
@@ -5596,7 +5598,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         // Has the card been played in this phase
         $played = self::getObjectFromDB("SELECT player_just_played AS just, player_previously_played AS previously FROM player WHERE player_id=$opponent_id");
         if ($played['previously'] == $target_id) {
-            throw new feException(self::_("You cannot target a world placed in this phase"), true);
+            throw new UserException(self::_("You cannot target a world placed in this phase"));
         }
 
         $card_type = $this->card_types[ $target_card['type'] ];
@@ -5612,9 +5614,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 }
             }
             if (is_null($imperiumInvasionFleet)) {
-                throw new feException(self::_("You can only takeover military worlds"), true);
+                throw new UserException(self::_("You can only takeover military worlds"));
             } elseif ($card_type['type'] != 'world') {
-                throw new feException(self::_("You can only takeover worlds"), true);
+                throw new UserException(self::_("You can only takeover worlds"));
             }
         }
 
@@ -5622,12 +5624,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         if ($targetfilter == 'militaryforce') {
             // Check that military force of this opponent is at least 1
             if (self::getUniqueValueFromDB("SELECT player_milforce FROM player WHERE player_id='$opponent_id'") <= 0) {
-                throw new feException(self::_("This opponent does not have a military force of at least one."), true);
+                throw new UserException(self::_("This opponent does not have a military force of at least one."));
             }
         } elseif ($targetfilter == 'rebel') {
             // Check if target is a rebel world
             if (! in_array('rebel', $card_type['category'])) {
-                throw new feException(self::_("This is not a REBEL military world"), true);
+                throw new UserException(self::_("This is not a REBEL military world"));
             }
 
             // The attacker is using IIF to attack Rebel Cantina. The defender is vulnerable to the attack
@@ -5651,7 +5653,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 }
 
                 if (! $bAtLeastOne) {
-                    throw new feException(self::_("This opponent has no Rebel military world and is not vulnerable to this takeover effect."), true);
+                    throw new UserException(self::_("This opponent has no Rebel military world and is not vulnerable to this takeover effect."));
                 }
             }
         } elseif ($targetfilter == 'imperium') {
@@ -5670,7 +5672,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
 
             if (! $bAtLeastOne) {
-                throw new feException(self::_("This opponent has no Imperium card and is not vulnerable to this takeover effect."), true);
+                throw new UserException(self::_("This opponent has no Imperium card and is not vulnerable to this takeover effect."));
             }
         }
 
@@ -5804,13 +5806,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         } else {
             $good = $this->cards->getCard($good_id);
             if ($good['location'] != 'good') {
-                throw new feException("Invalid good");
+                throw new SystemException("Invalid good");
             }
 
             $good_host = $good['location_arg'];
             $host = $this->cards->getCard($good_host);
             if ($host['location'] != 'tableau' || $host['location_arg'] != $player_id) {
-                throw new feException("This good is not in your tableau");
+                throw new SystemException("This good is not in your tableau");
             }
 
             $good_type = self::getUniqueValueFromDB("SELECT card_status FROM card WHERE card_id='$good_id'");
@@ -5824,14 +5826,14 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         foreach ($card_type['powers'][3] as $power) {
             if ($power['power'] == 'good_for_military_defense') {
                 if (!$bInvasionDefense) {
-                    throw new feException(self::_("This power can be used only during the Invasion step"), true);
+                    throw new UserException(self::_("This power can be used only during the Invasion step"));
                 }
             } elseif ($power['power'] != 'good_for_military') {
                 continue;
             }
 
             if (is_int($power['good']) && $power['good'] != $good_type) {
-                throw new feException(self::_("Wrong type of good"), true);
+                throw new UserException(self::_("Wrong type of good"));
             }
 
             $force = $power['arg']['force'];
@@ -5839,17 +5841,17 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         if (is_null($force)) {
-            throw new feException(self::_("This card has no temporary military power"), true);
+            throw new UserException(self::_("This card has no temporary military power"));
         }
 
         // Check that the card hasn't been played in this phase
         $previously_played = self::getUniqueValueFromDB("SELECT player_previously_played FROM player WHERE player_id=$player_id");
         if ($previously_played == $card_id) {
-            throw new feException(self::_("No powers from this world may be used during this phase"), true);
+            throw new UserException(self::_("No powers from this world may be used during this phase"));
         }
 
         if (self::getUniqueValueFromDB("SELECT card_status FROM card WHERE card_id='$card_id'") == -1) {
-            throw new feException(self::_("This power has already been used"), true);
+            throw new UserException(self::_("This power has already been used"));
         }
 
         // Discard this good
@@ -5938,16 +5940,16 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         // Check that this card is in tableau
         $tactics = $this->cards->getCard($card_id);
         if (! $tactics) {
-            throw new feException("This card does not exist");
+            throw new SystemException("This card does not exist");
         }
         if ($tactics['location']!='tableau' || $tactics['location_arg']!=$player_id) {
-            throw new feException("This card is not in your tableau");
+            throw new SystemException("This card is not in your tableau");
         }
 
         // Has the card already been used in this phase
         $card_status = self::getUniqueValueFromDB("SELECT card_status FROM card WHERE card_id=$card_id");
         if ($card_status == '-1') {
-            throw new feException(self::_("Already used"), true);
+            throw new UserException(self::_("Already used"));
         }
 
         // After the initial settle (during takeover resolution, or improved logistics etc)
@@ -5991,16 +5993,16 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         // Check that this card is in tableau
         $tactics = $this->cards->getCard($card_id);
         if (! $tactics) {
-            throw new feException("This card does not exist");
+            throw new SystemException("This card does not exist");
         }
         if ($tactics['location']!='tableau' || $tactics['location_arg']!=$player_id) {
-            throw new feException("This card is not in your tableau");
+            throw new SystemException("This card is not in your tableau");
         }
 
         // Check that the card hasn't been played in this phase
         $previously_played = self::getUniqueValueFromDB("SELECT player_previously_played FROM player WHERE player_id=$player_id");
         if ($previously_played == $card_id) {
-            throw new feException(self::_("No powers from this world may be used during this phase"), true);
+            throw new UserException(self::_("No powers from this world may be used during this phase"));
         }
 
         if ($tactics['type'] == 302) {
@@ -6063,7 +6065,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $to_discard = $this->cards->getCards($discard_id);
             foreach ($to_discard as $card) {
                 if ($card['location'] != 'hand' || $card['location_arg'] != $player_id) {
-                    throw new feException("This card is not in your hand");
+                    throw new SystemException("This card is not in your hand");
                 }
             }
 
@@ -6077,12 +6079,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $used_mercenaries = self::getUniqueValueFromDB("SELECT card_status FROM card WHERE card_id='$card_id'") * -1 ;
 
             if ($used_mercenaries == $max_mercenaries) {
-                throw new feException(self::_("This power has already been used"), true);
+                throw new UserException(self::_("This power has already been used"));
             }
 
             $numDiscard = sizeof($to_discard);
             if ($used_mercenaries + $numDiscard > $max_mercenaries) {
-                throw new feException(sprintf(self::_("You can discard up to %s card(s) with this power"), $max_mercenaries - $used_mercenaries), true);
+                throw new UserException(sprintf(self::_("You can discard up to %s card(s) with this power"), $max_mercenaries - $used_mercenaries));
             }
 
             self::DbQuery("UPDATE card SET card_status=card_status-$numDiscard WHERE card_id='$card_id'");
@@ -6148,14 +6150,14 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         $card = $this->cards->getCard($card_id);
         if (! $card) {
-            throw new feException("This card does not exist");
+            throw new SystemException("This card does not exist");
         }
         if ($card['location']!='hand' || $card['location_arg']!=$player_id) {
-            throw new feException("This card is not in your hand");
+            throw new SystemException("This card is not in your hand");
         }
 
         if (self::getUniqueValueFromDB("SELECT player_tmp_gene_force FROM player WHERE player_id=$player_id") >= 1) {
-            throw new feException(self::_("Your bunker power can be used only once per turn"), true);
+            throw new UserException(self::_("Your bunker power can be used only once per turn"));
         }
 
         $sql = "UPDATE player SET player_tmp_xenoforce=player_tmp_xenoforce+2, player_tmp_gene_force='1' WHERE player_id=$player_id";
@@ -6219,17 +6221,16 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $dbres = self::DbQuery($sql);
         $row = mysql_fetch_assoc($dbres);
         if (! $row) {
-            throw new feException(self::_("You can only sell your own goods"), true);
+            throw new UserException(self::_("You can only sell your own goods"));
         }
         $good_type = $row['card_status'];
         $world_id = $row['world_id'];
 
         $world_type = $row['world_type'];
         if ($world_type == 220 || $world_type == 246) {
-            throw new feException(
+            throw new UserException(
                 sprintf(self::_("You cannot sell a good from %s"),
-                        $this->card_types[ $world_type ]['name']),
-                true);
+                        $this->card_types[ $world_type ]['name']));
         }
 
         $price = $this->getSellPrice($player_id, $good_type, $world_id);
@@ -6274,7 +6275,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $dbres = self::DbQuery($sql);
         $row = mysql_fetch_assoc($dbres);
         if (! $row) {
-            throw new feException(self::_("You can only discard your own goods"), true);
+            throw new UserException(self::_("You can only discard your own goods"));
         }
         $good_type = $row['card_status'];
         $world_id = $row['world_id'];
@@ -6369,7 +6370,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $dbres = self::DbQuery($sql);
             $row = mysql_fetch_assoc($dbres);
             if (! $row) {
-                throw new feException("Unknow good");
+                throw new SystemException("Unknow good");
             }
             $good_type = $row['card_status'];
             $good_from_world_id = $row['world_id'];
@@ -6383,7 +6384,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $dbres = self::DbQuery($sql);
         $row = mysql_fetch_assoc($dbres);
         if (! $row) {
-            throw new feException("Unknow world");
+            throw new SystemException("Unknow world");
         }
         $world_type_id = $row['card_type'];
         $world_status = $row['card_status'];
@@ -6392,7 +6393,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         if (isset($world_type['powers'][4])) {
             $consumption_power = $world_type['powers'][4][0];
         } else {
-            throw new feException(self::_("This world has no consumption power"), true);
+            throw new UserException(self::_("This world has no consumption power"));
         }
 
         // Check if this world consumption power correspond to this kind of resource
@@ -6401,7 +6402,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         if ($consumption_power['power'] == 'consume') {
             if (in_array('*', $consumption_power['arg']['input'])) {   // Could be any type
             } elseif (! in_array($good_type, $consumption_power['arg']['input'])) {
-                throw new feException(self::_("Wrong type of good"), true);
+                throw new UserException(self::_("Wrong type of good"));
             }
         } elseif ($consumption_power['power'] == 'consumeall') {
             // Consume all remaining resources
@@ -6410,13 +6411,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             // Consume a good like you sell it
             $bConsumeForSell = true;
         } else {
-            throw new feException(self::_("This world has no consumption power"), true);
+            throw new UserException(self::_("This world has no consumption power"));
         }
 
 
         if (isset($consumption_power['arg']['fromthisworld'])) {
             if ($good_from_world_id != $world_id) {
-                throw new feException(self::_("You must use a Good coming from this world"), true);
+                throw new UserException(self::_("You must use a Good coming from this world"));
             }
         }
 
@@ -6429,7 +6430,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $can_be_used = $this->getPossibleConsumptionCards($player_id)[ $player_id ];
         if ($power_in_use !== null && $world_id != $card_id_in_use) {
             if (in_array($power_in_use['card_id'], $can_be_used['mand'])) {
-                throw new feException(sprintf(self::_("You must fully use the consume power of %s"), $this->nameToColor($this->card_types[$card_type_in_use]['nametr'])), true);
+                throw new UserException(sprintf(self::_("You must fully use the consume power of %s"), $this->nameToColor($this->card_types[$card_type_in_use]['nametr'])));
             } else {
                 // The current power only has artefact to consume which is optional. So we can switch to another power, but we have to mark the current one as used
                 self::DbQuery("UPDATE card SET card_status=-1 WHERE card_id=$card_id_in_use");
@@ -6437,7 +6438,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         if ($world_status == -1 || $world_type_id == 253 && $world_status == 1) {
-            throw new feException(self::_('The consumption power of this world has been used already'), true);
+            throw new UserException(self::_('The consumption power of this world has been used already'));
         }
 
         $bUseNewWorld = false;
@@ -6447,7 +6448,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $can_be_used = $can_be_used[ $player_id ];
             if ((! in_array($world_id, $can_be_used['mand']))
              && ( ! in_array($world_id, $can_be_used['opt']))) {
-                throw new feException(self::_("You don't have enough goods to use this consumption power"), true);
+                throw new UserException(self::_("You don't have enough goods to use this consumption power"));
             }
 
             $bUseNewWorld = true;
@@ -6467,7 +6468,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             if (in_array($good_type, $already_consumed)) {
                 if ($card_type_in_use == 287 && $good_type == 3) {  // Note : Adaptable Uplift Race can ALWAYS accept Genes, even if a Gene has been consumed already
                 } else {
-                    throw new feException(self::_("This type of good has already been consumed with this power"), true);
+                    throw new UserException(self::_("This type of good has already been consumed with this power"));
                 }
             }
             $already_consumed[] = $good_type;
@@ -6641,7 +6642,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         if (count($card_ids) > 2) {
-            throw new feException("You can discard up to 2 cards");
+            throw new SystemException("You can discard up to 2 cards");
         }
 
         $player_id = self::getCurrentPlayerId();
@@ -6652,7 +6653,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             // Consumed using Prestige Trade bonus
             $phaseBonus = $this->getPhaseChoice(4);
             if ($phaseBonus[ $player_id ] != 10 && $phaseBonus[ $player_id ] != 12) {
-                throw new feException("Prestige Trade action has not been chosen");
+                throw new SystemException("Prestige Trade action has not been chosen");
             }
         } else {
             // Check that consumecard_card_id exists, is in player's tableau and has this power
@@ -6664,7 +6665,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $dbres = self::DbQuery($sql);
             $row = mysql_fetch_assoc($dbres);
             if (! $row) {
-                throw new feException("This card is not in your tableau");
+                throw new SystemException("This card is not in your tableau");
             }
 
             $consumecard_type_id = $row['card_type'];
@@ -6672,7 +6673,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $consumecard_type = $this->card_types[ $consumecard_type_id ];
 
             if ($consumecard_status == -1 || $consumecard_type_id == 253 && $consumecard_status == 2) {
-                throw new feException(self::_('Already used'), true);
+                throw new UserException(self::_('Already used'));
             }
 
             if (isset($consumecard_type['powers'][$phase])) {
@@ -6683,20 +6684,20 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                     }
                 }
                 if (! isset ($consumption_power)) {
-                    throw new feException("No consumecard power for this card");
+                    throw new SystemException("No consumecard power for this card");
                 }
             } else {
-                throw new feException("This card has no consumption power");
+                throw new SystemException("This card has no consumption power");
             }
 
             if (isset($consumption_power['arg']['inputfactor'])) {
                 if (count($card_ids) !=  $consumption_power['arg']['inputfactor']) {
-                    throw new feException("You must discard exactly ".$consumption_power['arg']['inputfactor'] ." cards to use this power");
+                    throw new SystemException("You must discard exactly ".$consumption_power['arg']['inputfactor'] ." cards to use this power");
                 }
             }
             elseif (isset($consumption_power['arg']['repeat'])) {
                 if (count($card_ids) >  $consumption_power['arg']['repeat']) {
-                    throw new feException("You can't discard more than ".$consumption_power['arg']['repeat'] ." cards to use this power");
+                    throw new SystemException("You can't discard more than ".$consumption_power['arg']['repeat'] ." cards to use this power");
                 }
             }
         }
@@ -6705,7 +6706,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $cards = $this->cards->getCards($card_ids);
         foreach ($cards as $card) {
             if ($card['location']!='hand' || $card['location_arg']!=$player_id) {
-                throw new feException("This card is not in your hand");
+                throw new SystemException("This card is not in your hand");
             }
         }
 
@@ -6790,7 +6791,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $dbres = self::DbQuery($sql);
         $row = mysql_fetch_assoc($dbres);
         if (! $row) {
-            throw new feException("This card is not in your tableau");
+            throw new SystemException("This card is not in your tableau");
         }
 
         $consumecard_type_id = $row['card_type'];
@@ -6798,16 +6799,16 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $consumecard_type = $this->card_types[ $consumecard_type_id ];
 
         if ($consumecard_status == -1) {
-            throw new feException(self::_('Already used'), true);
+            throw new UserException(self::_('Already used'));
         }
 
         if (isset($consumecard_type['powers'][4])) {
             $consumption_power = $consumecard_type['powers'][4][0];
             if ($consumption_power['power'] != 'consume') {
-                throw new feException("No consumecard power for this card");
+                throw new SystemException("No consumecard power for this card");
             }
         } else {
-            throw new feException("This card has no consumption power");
+            throw new SystemException("This card has no consumption power");
         }
 
         // Check enough prestige
@@ -6883,7 +6884,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                      AND (card_id!=player_previously_played OR player_previously_played IS NULL)");
 
         if ($card === null) {
-            throw new feException("Your Wormhole Prospectors has been used already");
+            throw new SystemException("Your Wormhole Prospectors has been used already");
         }
 
 
@@ -6928,7 +6929,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         self::checkAction('consume');
 
         if ($number < 1 || $number > 7) {
-            throw new feException("Bad number");
+            throw new SystemException("Bad number");
         }
 
         $player_id = self::getCurrentPlayerId();
@@ -6942,7 +6943,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                      AND (card_id!=player_previously_played OR player_previously_played IS NULL)");
 
         if ($card === null) {
-            throw new feException("Your Gambling world has been used already");
+            throw new SystemException("Your Gambling world has been used already");
         }
 
 
@@ -6952,10 +6953,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         if (isset($gambling_type['powers'][4])) {
             $consumption_power = $gambling_type['powers'][4][1];
             if ($consumption_power['power'] != 'gambling') {
-                throw new feException("No gambling power for this card");
+                throw new SystemException("No gambling power for this card");
             }
         } else {
-            throw new feException("This card has no consumption power");
+            throw new SystemException("This card has no consumption power");
         }
 
         $sql = "UPDATE player SET player_previously_played='$gambling_card_id' WHERE player_id='$player_id' ";// So we don't use it twice. Note that we cannot use status cause it is already use for the other consumption power
@@ -7019,7 +7020,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 AND (card_id!=player_previously_played OR player_previously_played IS NULL)");
 
         if ($card === null) {
-            throw new feException("Your Gambling world has been used already");
+            throw new SystemException("Your Gambling world has been used already");
         }
 
         $gambling_card_id=$card['id'];
@@ -7028,10 +7029,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         if (isset($gambling_type['powers'][4])) {
             $consumption_power = $gambling_type['powers'][4][1];
             if ($consumption_power['power'] != 'rvi_gambling') {
-                throw new feException("No gambling power for this card");
+                throw new SystemException("No gambling power for this card");
             }
         } else {
-            throw new feException("This card has no consumption power");
+            throw new SystemException("This card has no consumption power");
         }
 
         $sql = "UPDATE player SET player_previously_played='$gambling_card_id' WHERE player_id='$player_id' ";// So we don't use it twice. Note that we cannot use status cause it is already use for the other consumption power
@@ -7041,7 +7042,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $ante_card_type = $this->card_types[ $ante_card['type'] ];
 
         if ($ante_card['location'] != 'hand' || $ante_card['location_arg'] != $player_id) {
-            throw new feException("This card is not in your hand");
+            throw new SystemException("This card is not in your hand");
         }
 
         self::notifyAllPlayers('simpleNote', clienttranslate('${player_name} uses Gambling World to ante ${card_name}'), array(
@@ -7053,7 +7054,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         $cost = intval($ante_card_type['cost']);
         if ($cost < 1 || $cost > 6) {
-            throw new feException(self::_("You must choose a card of cost or defense between 1 and 6"), true);
+            throw new UserException(self::_("You must choose a card of cost or defense between 1 and 6"));
         }
 
         $win = false;
@@ -7107,7 +7108,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $power_in_use = $this->getConsumePowerInUse();
             if ($power_in_use && in_array($power_in_use['card_id'], $can_be_used['mand'])) {
                 $card_type_in_use = $power_in_use['card_type'];
-                throw new feException(sprintf(self::_("You must fully use the consume power of %s"), $this->nameToColor($this->card_types[$card_type_in_use]['nametr'])), true);
+                throw new UserException(sprintf(self::_("You must fully use the consume power of %s"), $this->nameToColor($this->card_types[$card_type_in_use]['nametr'])));
             }
 
             if ((count($can_be_used['mand'])) == 0) {
@@ -7121,7 +7122,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                     }
                     $text .= $this->nameToColor($this->card_types[ $card['type'] ]['nametr']);
                 }
-                throw new feException(self::_("You still have some consumption power to use:").' '.$text, true);
+                throw new UserException(self::_("You still have some consumption power to use:").' '.$text);
             }
         }
     }
@@ -7147,14 +7148,14 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         // Check this card
         $card = $this->cards->getCard($card_id);
         if (! $card) {
-            throw new feException("This card does not exists");
+            throw new SystemException("This card does not exists");
         }
         if ($card['location'] != 'tableau' && $card['location_arg'] != $player_id) {
-            throw new feException("This card is not in your tableau");
+            throw new SystemException("This card is not in your tableau");
         }
 
         if (!is_null(self::getUniqueValueFromDB("SELECT pp_card_id FROM player_production WHERE pp_card_id=$card_id"))) {
-            throw new feException(self::_("This world has already produced a good in this phase"), true);
+            throw new UserException(self::_("This world has already produced a good in this phase"));
         }
 
         $card_type = $this->card_types[ $card['type'] ];
@@ -7170,10 +7171,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         if (! in_array('windfall', $card_type['category'])) {
             foreach ($possibilities as $power) {
                 if ($power['type'] == 'windfallproduceifdiscard' && $power['reason'] == $card_id) {
-                    throw new feException(self::_("To use this power, select a card from your hand to discard, then click on the windfall world you want to produce on"), true);
+                    throw new UserException(self::_("To use this power, select a card from your hand to discard, then click on the windfall world you want to produce on"));
                 }
             }
-            throw new feException(self::_("This is not a windfall world"), true);
+            throw new UserException(self::_("This is not a windfall world"));
         }
 
         $windfall_type = $card_type['windfalltype'];
@@ -7234,10 +7235,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         if ($possibility_to_use == null) {
-            throw new feException(self::_("None of your powers allow you to produce on this world"), true);
+            throw new UserException(self::_("None of your powers allow you to produce on this world"));
         }
         if ($this->cards->countCardInLocation('good', $card_id) != 0) {
-            throw new feException(self::_('There is already a good in this world'), true);
+            throw new UserException(self::_('There is already a good in this world'));
         }
 
         ////// At this step, we have a possibility for sure
@@ -7388,28 +7389,28 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         // Check this card
         $card = $this->cards->getCard($card_id);
         if (! $card) {
-            throw new feException("This card does not exists");
+            throw new SystemException("This card does not exists");
         }
         if ($card['location'] != 'tableau' && $card['location_arg'] != $player_id) {
-            throw new feException("This card is not in your tableau");
+            throw new SystemException("This card is not in your tableau");
         }
 
         $card_type = $this->card_types[ $card['type'] ];
 
         if ($card_type['powers'][5][0]['power'] != 'produceifdiscard') {
-            throw new feException("This world has no produce if discard power");
+            throw new SystemException("This world has no produce if discard power");
         }
 
         // Check if there is a resource already in this world
         if ($this->cards->countCardInLocation('good', $card_id) != 0) {
-            throw new feException(self::_('There is already a good in this world'), true);
+            throw new UserException(self::_('There is already a good in this world'));
         }
 
         $card_ids = array($discard_id);
         $cards = $this->cards->getCards($card_ids);
         foreach ($cards as $card) {
             if ($card['location'] != 'hand' || $card['location_arg'] != $player_id) {
-                throw new feException("This card is not in your hand");
+                throw new SystemException("This card is not in your hand");
             }
         }
 
@@ -7468,13 +7469,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $player_id = self::getCurrentPlayerId();
         foreach ($cards as $card) {
             if ($card['location'] != 'hand' || $card['location_arg'] != $player_id) {
-                throw new feException("This card is not in your hand");
+                throw new SystemException("This card is not in your hand");
             }
         }
 
         $count = $this->getEndRoundDiscardNumber();
         if ($count[ $player_id ] != count($cards)) {
-            throw new feException("You must discard ".$count[ $player_id ]." cards");
+            throw new SystemException("You must discard ".$count[ $player_id ]." cards");
         }
 
         // Is there Retrofit ?
@@ -7510,13 +7511,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $player_id = self::getCurrentPlayerId();
         foreach ($cards as $card) {
             if ($card['location'] != 'hand' || $card['location_arg'] != $player_id) {
-                throw new feException("This card is not in your hand");
+                throw new SystemException("This card is not in your hand");
             }
         }
 
         $count = $this->getDevelopDiscard();
         if ($count[ $player_id ] != count($cards)) {
-            throw new feException("You must discard ".$count[ $player_id ]." cards");
+            throw new SystemException("You must discard ".$count[ $player_id ]." cards");
         }
 
         // Move to discard
@@ -7541,7 +7542,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $player_id = self::getCurrentPlayerId();
         foreach ($cards as $card) {
             if ($card['location'] != 'hand' || $card['location_arg'] != $player_id) {
-                throw new feException("This card is not in your hand");
+                throw new SystemException("This card is not in your hand");
             }
         }
 
@@ -7549,7 +7550,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $count = $this->getSettleDiscard();
 
         if ($count[ $player_id ] != count($cards)) {
-            throw new feException("You must discard ".$count[ $player_id ]." cards");
+            throw new SystemException("You must discard ".$count[ $player_id ]." cards");
         }
 
         // Move to discard
@@ -7574,12 +7575,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         foreach ($cards as $card) {
             if ($card['location'] != 'hand' || $card['location_arg'] != $player_id) {
-                throw new feException("This card is not in your hand");
+                throw new SystemException("This card is not in your hand");
             }
         }
 
         if (count($cards) != 1) {
-            throw new feException("You must discard 1 cards");
+            throw new SystemException("You must discard 1 cards");
         }
 
         // Move to discard
@@ -7626,18 +7627,18 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $player_id = self::getCurrentPlayerId();
         foreach ($cards as $card) {
             if ($card['location'] != 'hand' || $card['location_arg'] != $player_id) {
-                throw new feException("This card is not in your hand");
+                throw new SystemException("This card is not in your hand");
             }
         }
 
         $nbr = $this->getExploredCardNumber();
         if ($nbr[ $player_id ]['mix'] !== true) {
-            throw new feException("You have no Exploremix power");
+            throw new SystemException("You have no Exploremix power");
         }
 
         $to_discard = max(0, $nbr[ $player_id ]['draw'] - $nbr[ $player_id ]['keep']);
         if ($to_discard != count($card_ids)) {
-            throw new feException("You must discard exactly $to_discard cards");
+            throw new SystemException("You must discard exactly $to_discard cards");
         }
 
         // Move to discard
@@ -7790,7 +7791,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                     }
                 }
             } else {
-                throw new feException("This category does not exists");
+                throw new SystemException("This category does not exists");
             }
 
             if ($bDoesThisCardMatch) {
@@ -7856,15 +7857,15 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         // Check that the card is in player's tableau
         if ($card['location'] != 'tableau' || $card['location_arg'] != $player_id) {
-            throw new feException("This card is not in your tableau");
+            throw new SystemException("This card is not in your tableau");
         }
 
         if ($this->card_types[ $card['type'] ]['type'] != 'world') {
-            throw new feException(self::_("You must select a world"), true);
+            throw new UserException(self::_("You must select a world"));
         }
 
         if (self::getUniqueValueFromDB("SELECT card_damaged FROM card WHERE card_id='$card_id'") != 0) {
-            throw new feException(self::_("This world has been damaged already"), true);
+            throw new UserException(self::_("This world has been damaged already"));
         }
 
         $this->damageWorld($card_id);
@@ -7882,16 +7883,16 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         // Check that the card is in player's tableau
         if ($card['location'] != 'tableau' || $card['location_arg'] != $player_id) {
-            throw new feException("This card is not in your tableau");
+            throw new SystemException("This card is not in your tableau");
         }
 
         if ($this->card_types[ $card['type'] ]['type'] != 'world') {
-            throw new feException(self::_("You must select a world"), true);
+            throw new UserException(self::_("You must select a world"));
         }
 
         $real_type = self::getUniqueValueFromDB("SELECT card_damaged FROM card WHERE card_id='$card_id'");
         if ($real_type == 0) {
-            throw new feException("You must choose a damaged world");
+            throw new SystemException("You must choose a damaged world");
         }
 
         $notifargs = array(
@@ -7930,13 +7931,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 if ($good_id != 0) {
                     $good = $this->cards->getCard($good_id);
                     if ($good['location'] != 'good') {
-                        throw new feException("Invalid good");
+                        throw new SystemException("Invalid good");
                     }
 
                     $good_host = $good['location_arg'];
                     $host = $this->cards->getCard($good_host);
                     if ($host['location'] != 'tableau' || $host['location_arg'] != $player_id) {
-                        throw new feException("This good is not in your tableau");
+                        throw new SystemException("This good is not in your tableau");
                     }
 
                     // Discard the good
@@ -7959,7 +7960,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
                     foreach ($cards as $card) {
                         if ($card['location'] != 'hand' || $card['location_arg'] != $player_id) {
-                            throw new feException("This card is not in your hand");
+                            throw new SystemException("This card is not in your hand");
                         }
                     }
 
@@ -7975,7 +7976,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
                     $log = clienttranslate('${player_name} repairs ${world} by discarding 2 cards.');
                 } else {
-                    throw new feException(self::_("You must choose 2 cards OR 1 resource to discard to repair this world"), true);
+                    throw new UserException(self::_("You must choose 2 cards OR 1 resource to discard to repair this world"));
                 }
             }
         }
@@ -10903,7 +10904,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 $winners = self::getObjectListFromDb("SELECT player_id FROM player WHERE player_vp >= 3 AND player_prestige>=2", true);
                 break;
             default:
-                throw new feException("Unknow goal : ".$goal_type['name']);
+                throw new SystemException("Unknow goal : ".$goal_type['name']);
         }
         if (! is_null($progress)) {
             if ($goal_type['type'] == 'first') {
@@ -11174,10 +11175,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $card = $this->cards->getCard($card_id);
 
         if (! $card) {
-            throw new feException("Card not found");
+            throw new SystemException("Card not found");
         }
         if ($card['location']!='hand' || $card['location_arg'] != $player_id) {
-            throw new feException("This card is not in your hand");
+            throw new SystemException("This card is not in your hand");
         }
 
         // Place this card in player's draft
@@ -11503,7 +11504,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $this->cards->moveAllCardsInLocation('hand', $this->getDiscard($active_player), $active_player, 0);   // Discard all
             $this->gamestate->setPlayerNonMultiactive($active_player, "allPlayersValid");
         } else {
-            throw new feException("Zombie mode not supported at this game state:".$state['name']);
+            throw new SystemException("Zombie mode not supported at this game state:".$state['name']);
         }
     }
 
@@ -11966,7 +11967,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         $player_id = self::getActivePlayerId();
 
         if (self::getGameStateValue('orbactionnbr') == 0) {
-            throw new feException(self::_("You can only do 2 of the 3 Orb actions so you cannot do the Draw action"), true);
+            throw new UserException(self::_("You can only do 2 of the 3 Orb actions so you cannot do the Draw action"));
         }
 
         $card = $this->orbcards->pickCard('deck', $player_id);
@@ -11985,7 +11986,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
                 'deck' => $deck
                ));
         } else {
-            throw new feException(self::_("There is no remaining orb card : you should pass instead."), true);
+            throw new UserException(self::_("There is no remaining orb card : you should pass instead."));
         }
         $this->gamestate->nextState('orbDraw');
     }
@@ -12025,7 +12026,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         $state = $this->gamestate->getCurrentMainState()->name;
         if ($state == 'orbActionMove') {
             if (self::getGameStateValue('orbteamhasmoved')) {
-                throw new feException("You cannot skip the action if you have moved a team");
+                throw new SystemException("You cannot skip the action if you have moved a team");
             }
             $player_id = self::getActivePlayerId();
             if (!$this->orbcards->countCardInLocation('hand', $player_id)) {
@@ -12098,15 +12099,15 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         $team = self::getObjectFromDB("SELECT team_x x, team_y y, team_player, team_cannotmove FROM orbteam WHERE team_id='$team_id'");
 
         if ($team == null) {
-            throw new feException("this team does not exists");
+            throw new SystemException("this team does not exists");
         }
 
         if ($team['team_player'] != self::getActivePlayerId()) {
-            throw new feException("this team does not belong to you");
+            throw new SystemException("this team does not belong to you");
         }
 
         if ($team['team_cannotmove'] == 1) {
-            throw new feException(self::_("This team discovered an artifact this turn and cannot move again."), true);
+            throw new UserException(self::_("This team discovered an artifact this turn and cannot move again."));
         }
 
         self::setGameStateValue('orbteam', $team_id);
@@ -12185,18 +12186,18 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         $team = self::getObjectFromDB("SELECT team_x x, team_y y, team_player FROM orbteam WHERE team_id='$team_id'");
 
         if ($team == null) {
-            throw new feException("this team does not exists");
+            throw new SystemException("this team does not exists");
         }
 
         if ($team['team_player'] != self::getActivePlayerId()) {
-            throw new feException("this team does not belong to you");
+            throw new SystemException("this team does not belong to you");
         }
 
         if ($x == $team['x'] && $y == $team['y']) {
             $this->gamestate->nextState('unselect');
         } else {
             if (! isset($moves[ $x.'_'.$y ])) {
-                throw new feException(self::_("This is imposible to move here"), true);
+                throw new UserException(self::_("This is imposible to move here"));
             }
 
             // Pick the shortest path
@@ -12304,20 +12305,20 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         $team = self::getObjectFromDB("SELECT team_x x, team_y y, team_player FROM orbteam WHERE team_id='$team_id'");
 
         if ($team == null) {
-            throw new feException("this team does not exists");
+            throw new SystemException("this team does not exists");
         }
 
         if ($team['team_player'] != self::getActivePlayerId()) {
-            throw new feException("this team does not belong to you");
+            throw new SystemException("this team does not belong to you");
         }
 
         $target = self::getUniqueValueFromDB("SELECT content FROM orb WHERE x='$x' AND y='$y'");
 
         if ($target == null) {
-            throw new feException("Invalid destination");
+            throw new SystemException("Invalid destination");
         }
         if ($target != 'D' && $target != 'd') {
-            throw new feException(self::_("You must choose a Sas (blue) square"), true);
+            throw new UserException(self::_("You must choose a Sas (blue) square"));
         }
 
         $sql = "UPDATE orbteam SET team_x='$x', team_y='$y' WHERE team_id='$team_id'";
@@ -12356,11 +12357,11 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         $team = self::getObjectFromDB("SELECT team_x x, team_y y, team_player FROM orbteam WHERE team_id='$team_id'");
 
         if ($team == null) {
-            throw new feException("this team does not exists");
+            throw new SystemException("this team does not exists");
         }
 
         if ($team['team_player'] != self::getActivePlayerId()) {
-            throw new feException("this team does not belong to you");
+            throw new SystemException("this team does not belong to you");
         }
 
         // Military = permanent + temporary + against alien = Alien Robot Sentry
@@ -12543,7 +12544,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
     {
         $args['error'] = $msg;
         if ($bConfirmed) {
-            throw new feException(self::_($msg), true);
+            throw new UserException(self::_($msg));
         } else {
             self::notifyPlayer(self::getCurrentPlayerId(), 'putCardOnOrb', '', $args);
         }
@@ -12577,7 +12578,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         }
 
         if ($currentTeamCard === null) {
-            throw new feException("Could not find the orb card at team place ".$team['x'].','.$team['y']);
+            throw new SystemException("Could not find the orb card at team place ".$team['x'].','.$team['y']);
         }
 
         // We've found the topmost card on which the team is standing. Record visible squares.
@@ -12617,12 +12618,12 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
 
 
         if ($card == null) {
-            throw new feException("This orb card does not exists");
+            throw new SystemException("This orb card does not exists");
         }
 
         if ($bCheck) {
             if ($card['location'] != 'hand' && $card['location_arg'] != self::getActivePlayerId()) {
-                throw new feException("This orb card is not in your hand");
+                throw new SystemException("This orb card is not in your hand");
             }
         }
 
@@ -12634,14 +12635,14 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         if ($state == 'additionalSas') {
             // Must check if this is a Sas card
             if ($card['type'] != 43 && $card['type'] != 44) {
-                throw new feException(self::_("You must place the new airlock card which is in your hand"), true);
+                throw new UserException(self::_("You must place the new airlock card which is in your hand"));
             }
         }
         if ($state == 'breedingTube') {
             $lastest = self::getUniqueValueFromDB("SELECT player_previously_played FROM player WHERE player_id='$player_id'");
 
             if ($lastest != $id) {
-                throw new feException(self::_("You must choose the very latest orb card you just draw"), true);
+                throw new UserException(self::_("You must choose the very latest orb card you just draw"));
             }
 
             $currentTeamCard = $this->getCardUnderCurrentTeam();
@@ -13001,7 +13002,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             $y=1;
         } else {
             if (isset($teams[$x]) && isset($teams[$x][$y])) {
-                throw new feException(self::_("There is already a team there"), true);
+                throw new UserException(self::_("There is already a team there"));
             }
 
 
@@ -13012,7 +13013,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
              || ($x==-2 && $y == 2)
             ) {
             } else {
-                throw new feException(self::_("You must choose a corner of the sas"), true);
+                throw new UserException(self::_("You must choose a corner of the sas"));
             }
         }
 
@@ -13162,13 +13163,13 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         $team_id = self::getGameStateValue('orbteam');
         $art = $this->artefacts->getCard($artifact_id);
         if ($art == null) {
-            throw new feException("Invalid artifact");
+            throw new SystemException("Invalid artifact");
         }
         if ($art['location'] != 'hand') {
-            throw new feException("Invalid artifact");
+            throw new SystemException("Invalid artifact");
         }
         if ($art['location_arg'] != $player_id) {
-            throw new feException("Invalid artifact");
+            throw new SystemException("Invalid artifact");
         }
 
         $state = $this->gamestate->getCurrentMainState()->name;
@@ -13186,7 +13187,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             self::checkAction('useCrossBarier');
 
             if ($art['type'] != 6 && $art['type'] != 8 && $art['type'] != 11 && $art['type'] != 12) {
-                throw new feException("Invalid artifact");
+                throw new SystemException("Invalid artifact");
             }
 
             $bConsumeArt = true;
@@ -13199,7 +13200,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             self::checkAction('useCrossBarier');
 
             if ($art['type'] != 3) {
-                throw new feException("Invalid artifact");
+                throw new SystemException("Invalid artifact");
             }
 
             $bConsumeArt = true;
@@ -13213,7 +13214,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             self::checkAction('useCrossBarier');
 
             if ($art['type'] != 5) {
-                throw new feException("Invalid artifact");
+                throw new SystemException("Invalid artifact");
             }
 
             $bConsumeArt = true;
@@ -13226,7 +13227,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             self::checkAction('militaryboost');
 
             if ($art['type'] != 6 && $art['type'] != 8 && $art['type'] != 11 && $art['type'] != 12 && $art['type'] != 4) {
-                throw new feException("Invalid artifact");
+                throw new SystemException("Invalid artifact");
             }
 
             $boost = 1;
@@ -13261,7 +13262,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             self::checkAction('sell');
 
             if ($art['type'] != 2 && $art['type'] != 9) {
-                throw new feException("Invalid artifact");
+                throw new SystemException("Invalid artifact");
             }
 
             $bConsumeArt = true;
@@ -13289,7 +13290,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             self::checkAction('consume');
 
             if ($art['type'] != 2 && $art['type'] != 9) {
-                throw new feException("Invalid artifact");
+                throw new SystemException("Invalid artifact");
             }
 
             $bConsumeArt = true;
@@ -13299,7 +13300,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             self::checkAction('militaryboost');
 
             if ($art['type'] != 2 && $art['type'] != 9) {
-                throw new feException("Invalid artifact");
+                throw new SystemException("Invalid artifact");
             }
 
             $bConsumeArt = true;
@@ -13553,7 +13554,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         }
 
         if (count($card_type_ids) == 0) {
-            throw new feException("Can't find card $card_name");
+            throw new SystemException("Can't find card $card_name");
         }
 
         $sql = "SELECT card_id FROM card WHERE card_type IN (";
@@ -13561,7 +13562,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         $sql .= ") AND card_location='deck' LIMIT 1";
         $card_id = self::getUniqueValueFromDB($sql);
         if ($card_id == null) {
-            throw new feException("Can't find card $card_name in the deck");
+            throw new SystemException("Can't find card $card_name in the deck");
         }
         return $this->cards->getCard($card_id);
     }
