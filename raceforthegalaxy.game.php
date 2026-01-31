@@ -9267,7 +9267,11 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             self::DbQuery("UPDATE player SET player_just_played='".$takeover['player_takeover_target']."', player_takeover_target=NULL WHERE player_id='".$takeover['player_id']."'");
 
             // Mark the card as "taken over" (card_status = -2)
-            self::DbQuery("UPDATE card SET card_status=-2 WHERE card_id=".$takeover['player_takeover_target']);
+            // Also update placement information (this counts as new placement)
+            $cround = self::getGameStateValue('current_round');
+            $cphase = self::getGameStateValue('current_phase');
+            $csubphase = self::getGameStateValue('current_subphase');
+            self::DbQuery("UPDATE card SET card_status=-2, card_played_round=$cround, card_played_phase=$cphase, card_played_subphase=$csubphase WHERE card_id=".$takeover['player_takeover_target']);
 
             // + remove all other takeovers with the same targets
             $same_target = self::getObjectListFromDB("SELECT player_id FROM player WHERE player_takeover_target='".$takeover['player_takeover_target']."'  ", true);
@@ -11955,6 +11959,20 @@ ADD `card_played_round` smallint(3) NOT NULL DEFAULT '-1',
 ADD `card_played_phase` smallint(3) NOT NULL DEFAULT '-1',
 ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             self::applyDbUpgradeToAllDB($sql);
+        }
+
+        if ($from_version <= 2601310938) {
+            $state = $this->gamestate->state()['name'];
+            if ($state == 'settlediscard') {
+                $active_players = $this->gamestate->getActivePlayerList();
+                $card_in_hands = $this->cards->countCardsByLocationArgs('hand');
+                foreach($active_players as $player_id) {
+                    $card_in_hand = isset($card_in_hands[ $player_id ]) ? $card_in_hands[ $player_id ] : 0;
+                    if ($card_in_hand == 0) {
+                        $this->gamestate->setPlayerNonMultiactive($player_id, "done");
+                    }
+                }
+            }
         }
     }
 
