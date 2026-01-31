@@ -853,7 +853,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $damaged_worlds = self::getCollectionFromDB("SELECT card_id, card_damaged FROM card WHERE card_damaged!='0'", true);
         // Exclude cards that were "just played" (not supposed to be visible by other players with a refresh)
         $just_played_by_others = self::getObjectListFromDB("SELECT player_just_played FROM player WHERE player_id!=".$player_id, true);
-        $dev_phase = $this->gamestate->state()['name'] == 'develop';
+        $dev_phase = $this->gamestate->getCurrentMainState()->name == 'develop';
 
 
         if (count($tableau) != $this->cards->countCardsInLocation('tableau')) {
@@ -915,7 +915,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         $result['phase_choices'] = $this->getPhaseChoices();
-        $state = $this->gamestate->state();
+        $state = $this->gamestate->getCurrentMainState()->toArray();
         $players = self::loadPlayersBasicInfos();
         if ($state['name'] == 'phaseChoice') {
             $result['phase_choices'] = $this->getPhaseChoices(self::getCurrentPlayerId());
@@ -4630,7 +4630,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     // Works for both activplayer and multiactiveplayer state types
     function nextState($next)
     {
-        $state = $this->gamestate->state();
+        $state = $this->gamestate->getCurrentMainState()->toArray();
         $player_id = self::getCurrentPlayerId();
 
         if ($state['type'] == 'activeplayer') {
@@ -4680,7 +4680,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         // Ancient World (107)
         $bAncient = (self::getUniqueValueFromDB("SELECT card_id FROM card WHERE card_type='107' AND card_location='tableau' AND card_location_arg='$player_id'") !== null);
 
-        $state = $this->gamestate->state();
+        $state = $this->gamestate->getCurrentMainState()->toArray();
         if ($bAncient) {
             if ($state['name'] == "initialDiscard") {
                 $cards_to_discard = 3;
@@ -5796,7 +5796,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         // After the initial settle (during takeover resolution, or improved logistics etc)
         // no need to defer notifications
-        $state = $this->gamestate->state();
+        $state = $this->gamestate->getCurrentMainState()->toArray();
         $bDefered = $state['name'] == 'settle' && self::getGameStateValue('improvedLogisticsPhase') == 0;
 
         if (substr($good_id, 0, 9) == 'artifact_') {
@@ -5922,7 +5922,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                    ));
         }
 
-        $state = $this->gamestate->state();
+        $state = $this->gamestate->getCurrentMainState()->toArray();
         if ($state['name'] == 'takeover_attackerboost' || $state['name'] == 'takeover_defenderboost') {
             $this->gamestate->nextState("boost");
         }
@@ -5956,7 +5956,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         // After the initial settle (during takeover resolution, or improved logistics etc)
         // no need to defer notifications
-        $state = $this->gamestate->state();
+        $state = $this->gamestate->getCurrentMainState()->toArray();
         $bDefered = $state['name'] == 'settle' && self::getGameStateValue('improvedLogisticsPhase') == 0;
 
         if ($tactics['type'] == 186) { // Alien Booby Trap
@@ -5975,7 +5975,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $this->givePrestige($player_id, -1, $bDefered, 186);
         }
 
-        $state = $this->gamestate->state();
+        $state = $this->gamestate->getCurrentMainState()->toArray();
         if ($state['name'] == 'takeover_attackerboost' || $state['name'] == 'takeover_defenderboost') {
             $this->gamestate->nextState("boost");
         }
@@ -5989,7 +5989,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         // After the initial settle (during takeover resolution, or improved logistics etc)
         // no need to defer notifications
-        $state = $this->gamestate->state();
+        $state = $this->gamestate->getCurrentMainState()->toArray();
         $bDefered = $state['name'] == 'settle' && self::getGameStateValue('improvedLogisticsPhase') == 0;
 
         // Check that this card is in tableau
@@ -6133,7 +6133,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             self::notifyPlayer($player_id, 'mercenary_used', '', array('card' => $card_id));
         }
 
-        $state = $this->gamestate->state();
+        $state = $this->gamestate->getCurrentMainState()->toArray();
         if ($state['name'] == 'takeover_attackerboost' || $state['name'] == 'takeover_defenderboost') {
             $this->gamestate->nextState("boost");
         }
@@ -8243,7 +8243,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         // Don't show attacker temp military for defense boost phase as the attacker can no longer use it at this point
-        $state = $this->gamestate->state();
+        $state = $this->gamestate->getCurrentMainState()->toArray();
         if ($state['name'] == 'takeover_attackerboost') {
             $tmp_attack = $this->remainingTempMilitary($takeover['player_id']);
             if ($tmp_attack > 0) {
@@ -11830,7 +11830,7 @@ ADD  `player_xeno_victory` TINYINT UNSIGNED NOT NULL DEFAULT  '0';");
                 self::applyDbUpgradeToAllDB("ALTER TABLE DBPREFIX_orbteam ADD team_move INT UNSIGNED NOT NULL DEFAULT 0,
     ADD `team_crossbarrier` tinyint(4) NOT NULL DEFAULT 0,
     ADD `team_crosswall` tinyint(4) NOT NULL DEFAULT 0;");
-                $state = $this->gamestate->state();
+                $state = $this->gamestate->getCurrentMainState()->toArray();
                 if ($state['name'] == 'orbActionMove') {
                     $player_id = self::getActivePlayerId();
                     $team_move = $this->getPlayerSurveyTeamMoves($player_id);
@@ -11880,7 +11880,7 @@ ADD  `player_xeno_victory` TINYINT UNSIGNED NOT NULL DEFAULT  '0';");
         }
 
         if ($from_version <= 2101242309) {
-            $state = $this->gamestate->state()['name'];
+            $state = $this->gamestate->getCurrentMainState()->name;
             $expansion = self::getGameStateValue('expansion');
             if ($state == 'explore' && $expansion != 7 && $expansion != 8) {
                 $cards = $this->cards->getCardsInLocation('explored');
@@ -11891,7 +11891,7 @@ ADD  `player_xeno_victory` TINYINT UNSIGNED NOT NULL DEFAULT  '0';");
         }
 
         if ($from_version <= 2101250815) {
-            $state = $this->gamestate->state()['name'];
+            $state = $this->gamestate->getCurrentMainState()->name;
             $expansion = self::getGameStateValue('expansion');
             if ($state == 'explore' && ($expansion == 7 || $expansion == 8)) {
                 $this->stExplore();
@@ -11906,7 +11906,7 @@ ADD  `player_xeno_victory` TINYINT UNSIGNED NOT NULL DEFAULT  '0';");
 
         if ($from_version <= 2101250845) {
             if (self::getGameStateValue('draft') == 2) {
-                $state = $this->gamestate->state()['name'];
+                $state = $this->gamestate->getCurrentMainState()->name;
                 if ($state == 'draft') {
                     $this->cards->moveAllCardsInLocation('hand', 'deck');
                     $this->cards->moveAllCardsInLocation('drafted', 'deck');
@@ -11928,7 +11928,7 @@ ADD  `player_xeno_victory` TINYINT UNSIGNED NOT NULL DEFAULT  '0';");
         }
 
         if ($from_version <= 2101251544) {
-            $state = $this->gamestate->state()['name'];
+            $state = $this->gamestate->getCurrentMainState()->name;
             if ($state == 'phaseChoiceCrystal') {
                 $current_player = self::getUniqueValueFromDB('SELECT global_value FROM global WHERE global_id=2');
                 if ($current_player == 0) {
@@ -12027,7 +12027,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
     {
         self::checkAction('orbSkip');
         // Skip this phase
-        $state = $this->gamestate->state()['name'];
+        $state = $this->gamestate->getCurrentMainState()->name;
         if ($state == 'orbActionMove') {
             if (self::getGameStateValue('orbteamhasmoved')) {
                 throw new feException("You cannot skip the action if you have moved a team");
@@ -12616,7 +12616,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             self::checkAction('orbPlay');
         }
 
-        $state = $this->gamestate->state()['name'];
+        $state = $this->gamestate->getCurrentMainState()->name;
         $card = $this->orbcards->getCard($id);
         $args = [ 'card_id' => $id, 'x' => $x, 'y' => $y, 'ori' => $ori ];
 
@@ -13176,7 +13176,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             throw new feException("Invalid artifact");
         }
 
-        $state = $this->gamestate->state()['name'];
+        $state = $this->gamestate->getCurrentMainState()->name;
         $bConsumeArt = false;
         $bDefered = $state == 'settle';
         $log = '';
