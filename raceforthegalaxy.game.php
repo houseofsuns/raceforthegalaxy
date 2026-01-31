@@ -51,19 +51,15 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         require('cards.inc.php');
 
-        $this->cards = self::getNew("module.common.deck");
-        $this->cards->init("card");
+        $this->cards = $this->deckFactory->createDeck("card");
         $this->cards->autoreshuffle = true;
         $this->cards->autoreshuffle_trigger = array('obj' => $this, 'method' => 'deckAutoReshuffle');
 
-        $this->orbcards = self::getNew("module.common.deck");
-        $this->orbcards->init("orbcard");
+        $this->orbcards = $this->deckFactory->createDeck("orbcard");
 
-        $this->artefacts = self::getNew("module.common.deck");
-        $this->artefacts->init("artefact");
+        $this->artefacts = $this->deckFactory->createDeck("artefact");
 
-        $this->invasioncards = self::getNew("module.common.deck");
-        $this->invasioncards->init("invasion");
+        $this->invasioncards = $this->deckFactory->createDeck("invasion");
         $this->invasioncards->autoreshuffle = true;
         $this->invasioncards->autoreshuffle_trigger = array('obj' => $this, 'method' => 'invasiondeckAutoReshuffle');
     }
