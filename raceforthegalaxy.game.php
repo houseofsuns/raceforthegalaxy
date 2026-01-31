@@ -11424,8 +11424,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             if (isset($goods[ $player_id ])) {
                 $aux += $goods[ $player_id ];
             }
-            $sql = "UPDATE player SET player_score_aux='$aux' WHERE player_id='$player_id' ";
-            self::DbQuery($sql);
+            $this->bga->playerScoreAux->set($player_id, $aux);
         }
 
         $this->gamestate->nextState('');
