@@ -13,9 +13,7 @@
 
 use Bga\GameFramework\Table;
 
-require_once(APP_GAMEMODULE_PATH.'module/table/table.game.php');
-
-class RaceForTheGalaxy extends Table
+class RaceForTheGalaxy extends Bga\GameFramework\Table
 {
     private $notif_defered_id = 1;
     private $bUpdateCardCount = false;
