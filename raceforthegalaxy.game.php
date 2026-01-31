@@ -11966,6 +11966,20 @@ ADD `card_played_phase` smallint(3) NOT NULL DEFAULT '-1',
 ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             self::applyDbUpgradeToAllDB($sql);
         }
+
+        if ($from_version <= 2601310938) {
+            $state = $this->gamestate->state()['name'];
+            if ($state == 'settlediscard') {
+                $active_players = $this->gamestate->getActivePlayerList();
+                $card_in_hands = $this->cards->countCardsByLocationArgs('hand');
+                foreach($active_players as $player_id) {
+                    $card_in_hand = isset($card_in_hands[ $player_id ]) ? $card_in_hands[ $player_id ] : 0;
+                    if ($card_in_hand == 0) {
+                        $this->gamestate->setPlayerNonMultiactive($player_id, "done");
+                    }
+                }
+            }
+        }
     }
 
     ///////////////////////////////////////////////////////////
