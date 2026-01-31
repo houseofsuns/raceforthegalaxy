@@ -1,0 +1,6 @@
+Migrated comments from the old gameoptions.inc.php that did not survive the
+migration to the JSON format:
+
+- option 103 is not used; // Be careful : 103 is used as a constant in the game.
+- preset hands sets other option 201; // ELO OFF hardcoded framework option // 1 if OFF
+

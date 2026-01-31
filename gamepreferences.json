@@ -1,0 +1,184 @@
+{
+    "1": {
+        "name": "Design",
+        "needReload": true,
+        "values": {
+            "1": {
+                "name": "Race for the Galaxy",
+                "cssPref": "new_design"
+            },
+            "2": {
+                "name": "Board Game Arena",
+                "cssPref": "old_design"
+            }
+        }
+    },
+    "2": {
+        "name": "Card size",
+        "needReload": true,
+        "values": [
+            {
+                "name": "Auto"
+            },
+            {
+                "name": "Tiny",
+                "cssPref": "card_size_tiny"
+            },
+            {
+                "name": "Small",
+                "cssPref": "card_size_small"
+            },
+            {
+                "name": "Medium",
+                "cssPref": "card_size_medium"
+            },
+            {
+                "name": "Large",
+                "cssPref": "card_size_large"
+            },
+            {
+                "name": "Huge",
+                "cssPref": "card_size_huge"
+            }
+        ]
+    },
+    "3": {
+        "name": "Card on tooltip",
+        "needReload": true,
+        "values": [
+            {
+                "name": "Auto"
+            },
+            {
+                "name": "Off"
+            },
+            {
+                "name": "Small",
+                "cssPref": "card_tooltip_size_small"
+            },
+            {
+                "name": "Medium",
+                "cssPref": "card_tooltip_size_medium"
+            },
+            {
+                "name": "Large",
+                "cssPref": "card_tooltip_size_large"
+            },
+            {
+                "name": "Huge",
+                "cssPref": "card_tooltip_size_huge"
+            }
+        ]
+    },
+    "4": {
+        "name": "Tooltip delay (ms)",
+        "needReload": true,
+        "values": [
+            {
+                "name": "Auto"
+            },
+            {
+                "name": "0"
+            },
+            {
+                "name": "200"
+            },
+            {
+                "name": "400"
+            },
+            {
+                "name": "600"
+            },
+            {
+                "name": "800"
+            },
+            {
+                "name": "1000"
+            }
+        ]
+    },
+    "5": {
+        "name": "Card name color",
+        "needReload": true,
+        "values": {
+            "1": {
+                "name": "Black",
+                "cssPref": "card_name_black"
+            },
+            "2": {
+                "name": "White",
+                "cssPref": "card_name_white"
+            }
+        }
+    },
+    "6": {
+        "name": "6 cost development scoring display",
+        "needReload": true,
+        "values": {
+            "1": {
+                "name": "Never",
+                "cssPref": "sixdev_scoring_no"
+            },
+            "2": {
+                "name": "Hover \/ Tap",
+                "cssPref": "sixdev_scoring_hover_tap"
+            },
+            "3": {
+                "name": "Always",
+                "cssPref": "sixdev_scoring_yes"
+            }
+        },
+        "default": 2
+    },
+    "8": {
+        "name": "Confirm initial discard",
+        "needReload": true,
+        "values": {
+            "1": {
+                "name": "Always"
+            },
+            "2": {
+                "name": "Never"
+            }
+        }
+    },
+    "9": {
+        "name": "Confirm phase choice",
+        "needReload": true,
+        "values": {
+            "1": {
+                "name": "Always"
+            },
+            "2": {
+                "name": "Never"
+            }
+        }
+    },
+    "7": {
+        "name": "Confirm explore",
+        "needReload": true,
+        "values": {
+            "1": {
+                "name": "Always"
+            },
+            "2": {
+                "name": "Only multiple cards"
+            },
+            "3": {
+                "name": "Never"
+            }
+        }
+    },
+    "10": {
+        "name": "Confirm develop and settle",
+        "needReload": true,
+        "values": {
+            "1": {
+                "name": "Always"
+            },
+            "2": {
+                "name": "Never"
+            }
+        }
+    }
+}

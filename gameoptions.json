@@ -1,0 +1,340 @@
+{
+    "100": {
+        "name": "Expansion",
+        "values": {
+            "1": {
+                "name": "Base game",
+                "tmdisplay": "Base game"
+            },
+            "2": {
+                "name": "The Gathering Storm",
+                "tmdisplay": "The Gathering Storm",
+                "premium": true,
+                "nobeginner": true
+            },
+            "3": {
+                "name": "Rebel vs Imperium + The Gathering Storm",
+                "tmdisplay": "Rebel vs Imperium + The Gathering Storm",
+                "premium": true,
+                "nobeginner": true
+            },
+            "4": {
+                "name": "Rebel vs Imperium + The Gathering Storm + Brink of War",
+                "tmdisplay": "Rebel vs Imperium + The Gathering Storm + Brink of War",
+                "premium": true,
+                "nobeginner": true
+            },
+            "5": {
+                "name": "Alien Artifacts (with Orb)",
+                "tmdisplay": "Alien Artifacts (+ Orb)",
+                "premium": true,
+                "nobeginner": true
+            },
+            "6": {
+                "name": "Alien Artifacts (no Orb)",
+                "tmdisplay": "Alien Artifacts (no Orb)",
+                "premium": true,
+                "nobeginner": true
+            },
+            "7": {
+                "name": "Xeno Invasion (with Invasion)",
+                "tmdisplay": "Xeno Invasion (+ Invasion)",
+                "premium": true,
+                "nobeginner": true
+            },
+            "8": {
+                "name": "Xeno Invasion (no Invasion)",
+                "tmdisplay": "Xeno Invasion (no Invasion)",
+                "premium": true,
+                "nobeginner": true
+            }
+        },
+        "startcondition": {
+            "1": [
+                {
+                    "type": "maxplayers",
+                    "value": 4,
+                    "message": "Base game is only available for 4 players maximum."
+                }
+            ],
+            "2": [
+                {
+                    "type": "maxplayers",
+                    "value": 5,
+                    "message": "The Gathering Storm is only available for 5 players maximum."
+                }
+            ],
+            "3": [],
+            "4": [],
+            "5": [
+                {
+                    "type": "maxplayers",
+                    "value": 5,
+                    "message": "Alien Artifacts is only available for 5 players maximum."
+                }
+            ],
+            "6": [
+                {
+                    "type": "maxplayers",
+                    "value": 5,
+                    "message": "Alien Artifacts is only available for 5 players maximum."
+                }
+            ],
+            "7": [
+                {
+                    "type": "maxplayers",
+                    "value": 5,
+                    "message": "Xeno Invasion is only available for 5 players maximum."
+                }
+            ],
+            "8": [
+                {
+                    "type": "maxplayers",
+                    "value": 5,
+                    "message": "Xeno Invasion is only available for 5 players maximum."
+                }
+            ]
+        }
+    },
+    "106": {
+        "name": "Goals",
+        "values": {
+            "1": {
+                "name": "On",
+                "tmpdisplay": "Goals",
+                "nobeginner": true
+            },
+            "0": {
+                "name": "Off"
+            }
+        },
+        "displaycondition": [
+            {
+                "type": "otheroption",
+                "id": 100,
+                "value": [
+                    2,
+                    3,
+                    4
+                ]
+            }
+        ]
+    },
+    "102": {
+        "name": "Takeovers",
+        "values": {
+            "0": {
+                "name": "Random"
+            },
+            "2": {
+                "name": "No takeover"
+            },
+            "1": {
+                "name": "Allow takeovers",
+                "tmdisplay": "Takeovers",
+                "premium": true,
+                "nobeginner": true
+            },
+            "3": {
+                "name": "2-Player Rebel vs Imperium Takeover Scenario",
+                "tmdisplay": "RvI scenario",
+                "premium": true,
+                "nobeginner": true
+            }
+        },
+        "displaycondition": [
+            {
+                "type": "otheroption",
+                "id": 100,
+                "value": [
+                    3,
+                    4
+                ]
+            }
+        ],
+        "startcondition": {
+            "0": [],
+            "2": [],
+            "1": [],
+            "3": [
+                {
+                    "type": "maxplayers",
+                    "value": 2,
+                    "message": "Rebel vs Imperium Takeover Scenario is available for 2 players only."
+                }
+            ]
+        },
+        "disable": true
+    },
+    "104": {
+        "name": "New Worlds",
+        "values": {
+            "2": {
+                "name": "Enabled"
+            },
+            "1": {
+                "name": "Disabled"
+            }
+        },
+        "displaycondition": [
+            {
+                "type": "otheroptionisnot",
+                "id": 105,
+                "value": 1
+            }
+        ]
+    },
+    "105": {
+        "name": "Preset hands",
+        "values": [
+            {
+                "name": "Off"
+            },
+            {
+                "name": "On (all players)",
+                "tmpdisplay": "Preset hands"
+            },
+            {
+                "name": "On (just beginners)",
+                "tmpdisplay": "Preset hands"
+            }
+        ],
+        "displaycondition": [
+            {
+                "type": "otheroption",
+                "id": 201,
+                "value": 1
+            },
+            {
+                "type": "otheroptionisnot",
+                "id": 100,
+                "value": [
+                    3,
+                    4
+                ]
+            },
+            {
+                "type": "otheroptionisnot",
+                "id": 101,
+                "value": [
+                    2,
+                    3,
+                    4
+                ]
+            }
+        ]
+    },
+    "101": {
+        "name": "Draft variant",
+        "values": {
+            "1": {
+                "name": "No draft"
+            },
+            "2": {
+                "name": "Draft 2-3 players",
+                "tmdisplay": "Draft",
+                "premium": true,
+                "nobeginner": true
+            },
+            "3": {
+                "name": "Draft 2-5 players",
+                "tmdisplay": "Draft",
+                "premium": true,
+                "nobeginner": true
+            },
+            "4": {
+                "name": "Draft 2-6 players",
+                "tmdisplay": "Draft",
+                "premium": true,
+                "nobeginner": true
+            }
+        },
+        "displaycondition": [
+            {
+                "type": "otheroption",
+                "id": 100,
+                "value": [
+                    2,
+                    3,
+                    4
+                ]
+            },
+            {
+                "type": "otheroptionisnot",
+                "id": 102,
+                "value": 3
+            },
+            {
+                "type": "otheroptionisnot",
+                "id": 105,
+                "value": [
+                    1,
+                    2
+                ]
+            }
+        ],
+        "startcondition": {
+            "1": [],
+            "2": [
+                {
+                    "type": "maxplayers",
+                    "value": 3,
+                    "message": "Draft option is available for 3 players maximum with this expansion"
+                }
+            ],
+            "3": [
+                {
+                    "type": "maxplayers",
+                    "value": 5,
+                    "message": "Draft option is available for 5 players maximum with this expansion"
+                },
+                {
+                    "type": "otheroptionisnot",
+                    "id": 100,
+                    "value": 2,
+                    "message": "5 player draft option requires at least Rebel vs Imperium"
+                }
+            ],
+            "4": [
+                {
+                    "type": "otheroptionisnot",
+                    "id": 100,
+                    "value": 2,
+                    "message": "6 player draft option requires Brink of War"
+                },
+                {
+                    "type": "otheroptionisnot",
+                    "id": 100,
+                    "value": 3,
+                    "message": "6 player draft option requires Brink of War"
+                }
+            ]
+        },
+        "disable": true
+    },
+    "107": {
+        "name": "Reuse draft",
+        "values": [
+            {
+                "name": "Off"
+            },
+            {
+                "name": "Save this draft for future game"
+            },
+            {
+                "name": "Load draft from previous game"
+            }
+        ],
+        "displaycondition": [
+            {
+                "type": "otheroption",
+                "id": 101,
+                "value": [
+                    2,
+                    3,
+                    4
+                ]
+            }
+        ]
+    }
+}
