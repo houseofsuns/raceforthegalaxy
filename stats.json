@@ -1,0 +1,187 @@
+{
+    "table": {
+        "turn_number": {
+            "id": 10,
+            "name": "Number of turn",
+            "type": "int"
+        },
+        "phase_played": {
+            "id": 11,
+            "name": "Number of phase played",
+            "type": "int"
+        },
+        "phase_explore": {
+            "id": 12,
+            "name": "Number of explore phase played",
+            "type": "int"
+        },
+        "phase_develop": {
+            "id": 13,
+            "name": "Number of develop phase played",
+            "type": "int"
+        },
+        "phase_settle": {
+            "id": 14,
+            "name": "Number of settle phase played",
+            "type": "int"
+        },
+        "phase_consume": {
+            "id": 15,
+            "name": "Number of consume phase played",
+            "type": "int"
+        },
+        "phase_produce": {
+            "id": 16,
+            "name": "Number of produce phase played",
+            "type": "int"
+        }
+    },
+    "player": {
+        "start_world": {
+            "id": 34,
+            "name": "Start World",
+            "type": "int"
+        },
+        "milforce": {
+            "id": 10,
+            "name": "Final military force",
+            "type": "int"
+        },
+        "good_produced": {
+            "id": 11,
+            "name": "Number of goods produced",
+            "type": "int"
+        },
+        "tableau_count": {
+            "id": 12,
+            "name": "Final number of cards in tableau",
+            "type": "int"
+        },
+        "chips_count": {
+            "id": 13,
+            "name": "Victory point chips",
+            "type": "int"
+        },
+        "sixcostdev_points": {
+            "id": 14,
+            "name": "Points wins with 6 cost development",
+            "type": "int"
+        },
+        "tableau_points": {
+            "id": 15,
+            "name": "Points wins with card on tableau",
+            "type": "int"
+        },
+        "goal_first_points": {
+            "id": 27,
+            "name": "Points wins with `first` goals",
+            "type": "int"
+        },
+        "goal_most_points": {
+            "id": 28,
+            "name": "Points wins with `most` goals",
+            "type": "int"
+        },
+        "prestige_points": {
+            "id": 29,
+            "name": "Points from prestige chips",
+            "type": "int"
+        },
+        "artefact_points": {
+            "id": 30,
+            "name": "Points from alien artefacts",
+            "type": "int"
+        },
+        "defense_award_points": {
+            "id": 31,
+            "name": "Points from defense awards",
+            "type": "int"
+        },
+        "greatest_admiral_points": {
+            "id": 32,
+            "name": "Points from Greatest Admiral",
+            "type": "int"
+        },
+        "greatest_contributor_points": {
+            "id": 33,
+            "name": "Points from Greatest Contributor",
+            "type": "int"
+        },
+        "explore_p1_count": {
+            "id": 16,
+            "name": "Explore +1\/+1 count",
+            "type": "int"
+        },
+        "explore_p5_count": {
+            "id": 17,
+            "name": "Explore +5\/+0 count",
+            "type": "int"
+        },
+        "develop_count": {
+            "id": 18,
+            "name": "Develop count",
+            "type": "int"
+        },
+        "settle_count": {
+            "id": 19,
+            "name": "Settle count",
+            "type": "int"
+        },
+        "consumesell_count": {
+            "id": 20,
+            "name": "Consume (sell) count",
+            "type": "int"
+        },
+        "consumex2_count": {
+            "id": 21,
+            "name": "Consume (x2) count",
+            "type": "int"
+        },
+        "produce_count": {
+            "id": 22,
+            "name": "Produce count",
+            "type": "int"
+        },
+        "cards_drawn": {
+            "id": 23,
+            "name": "Total number of cards drawn",
+            "type": "int"
+        }
+    },
+    "value_labels": {
+        "34": {
+            "-6": "Gateway Station",
+            "-5": "Abandoned Mine Squatters",
+            "-4": "Terraforming Colonists",
+            "-3": "Galactic Trade Emissaries",
+            "-2": "Industrial Robots",
+            "-1": "Star Nomad Raiders",
+            "0": "Old Earth",
+            "1": "Epsilon Eridani",
+            "2": "Alpha Centauri",
+            "3": "New Sparta",
+            "4": "Earth's Lost Colony",
+            "5": "Separatist Colony",
+            "6": "Ancient Race",
+            "7": "Damaged Alien Factory",
+            "8": "Doomed World",
+            "9": "Rebel Cantina",
+            "10": "Galactic Developers",
+            "11": "Imperium Warlord",
+            "12": "Galactic Scavengers",
+            "13": "Uplift Mercenary Force",
+            "14": "Alien Research Team",
+            "15": "Rebel Freedom Fighters",
+            "105": "Sentient Robots",
+            "106": "Alien Artifact Hunters",
+            "107": "Rebel Mutineers",
+            "108": "Uplift Researchers",
+            "109": "Frontier Capital",
+            "205": "Alien First Contact Team",
+            "206": "Starry Rift Pioneers",
+            "207": "Rebel Cadre",
+            "208": "Terraforming Surveyors",
+            "209": "Anti-Xeno Defense Post"
+        }
+    }
+}
