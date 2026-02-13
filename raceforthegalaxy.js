@@ -66,7 +66,7 @@ define([
                 console.log("start creating player boards");
                 for (var player_id in gamedatas.players) {
                     var player = gamedatas.players[player_id];
-                    var player_board_div = $('player_board_' + player_id);
+                    var player_board_div = this.bga.playerPanels.getElement(player_id);
                     dojo.place(this.format_block('jstpl_player_board', {
                         id: player.id
                     }), player_board_div);
