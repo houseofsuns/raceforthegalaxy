@@ -11962,7 +11962,8 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         }
 
         if ($from_version <= 2601310938) {
-            $state = $this->gamestate->state()['name'];
+            
+            $state = $this->gamestate->getCurrentMainState()->name;
             if ($state == 'settlediscard') {
                 $active_players = $this->gamestate->getActivePlayerList();
                 $card_in_hands = $this->cards->countCardsByLocationArgs('hand');
