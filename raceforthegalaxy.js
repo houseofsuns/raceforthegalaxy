@@ -1,5 +1,4 @@
 // RFTG main javascript
-
 define([
         "dojo", "dojo/_base/declare",
         "ebg/core/gamegui",
@@ -32,6 +31,9 @@ define([
                 this.card_size = null;
                 this.tooltip_card_size = null;
                 this.tooltip_delay = 0;
+                // Mobile long-press behavior tuning.
+                this.tooltip_long_press_delay = 450;
+                this.tooltip_long_press_click_suppression = 350;
 
                 this.playerHand = null;
                 this.playerHandOrb = null;
@@ -57,11 +59,354 @@ define([
                 this.phases_chosen = 0;
                 this.current_phase_choices = null;
                 this.pending_phase_choice = {};
+                this.tooltips = {};
+                this.tooltipsInfos = {};
+                // Tracks the currently-open long-press tooltip (if any).
+                this.currentLongPressTooltip = null;
+                // Time window used to swallow synthetic click events after long-press.
+                this.longPressSuppressUntil = 0;
+                this.masterTooltipCleanupObserver = null;
+
+            },
+
+            isTouchInterface: function() {
+                return dojo.hasClass('ebd-body', 'touch-device');
+            },
+            consumeEvent: function(evt) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                if (evt.stopImmediatePropagation) {
+                    evt.stopImmediatePropagation();
+                }
+            },
+            setMobileTooltipOverlayVisible: function(visible) {
+                // Toggles the dimmed background behind centered mobile tooltips.
+                if (visible) {
+                    dojo.addClass($('ebd-body'), 'rftg-mobile-tooltip-overlay-visible');
+                } else {
+                    dojo.removeClass($('ebd-body'), 'rftg-mobile-tooltip-overlay-visible');
+                }
+            },
+            cancelMasterTooltipLayoutCleanup: function() {
+                if (this.masterTooltipCleanupObserver !== null) {
+                    this.masterTooltipCleanupObserver.disconnect();
+                    this.masterTooltipCleanupObserver = null;
+                }
+            },
+            updateMasterTooltipLayout: function() {
+                var tooltipNode = $('dijit__MasterTooltip_0');
+                if (!tooltipNode) {
+                    this.setMobileTooltipOverlayVisible(false);
+                    return;
+                }
+                // Clear the temporary "closing" style before opening/repositioning.
+                dojo.removeClass(tooltipNode, 'rftg-mobile-tooltip-closing');
+                // On small touch screens, center tooltips; otherwise keep the default anchored layout.
+                // Use visual viewport so browser UI chrome is accounted for.
+                if (this.isTouchInterface() && window.visualViewport.width <= 800) {
+                    dojo.addClass(tooltipNode, 'rftg-mobile-tooltip-centered');
+                    this.setMobileTooltipOverlayVisible(true);
+                } else {
+                    dojo.removeClass(tooltipNode, 'rftg-mobile-tooltip-centered');
+                    this.setMobileTooltipOverlayVisible(false);
+                }
+            },
+            scheduleMasterTooltipLayoutCleanup: function() {
+                this.cancelMasterTooltipLayoutCleanup();
+                var cleanup = dojo.hitch(this, function() {
+                    if (this.currentLongPressTooltip) {
+                        return;
+                    }
+                    var tooltipNode = $('dijit__MasterTooltip_0');
+                    if (!tooltipNode) {
+                        this.setMobileTooltipOverlayVisible(false);
+                        this.cancelMasterTooltipLayoutCleanup();
+                        return;
+                    }
+                    dojo.removeClass(tooltipNode, 'rftg-mobile-tooltip-centered');
+                    dojo.removeClass(tooltipNode, 'rftg-mobile-tooltip-closing');
+                    this.setMobileTooltipOverlayVisible(false);
+                    this.cancelMasterTooltipLayoutCleanup();
+                });
+
+                var tooltipNode = $('dijit__MasterTooltip_0');
+                if (!tooltipNode) {
+                    cleanup();
+                    return;
+                }
+
+                this.masterTooltipCleanupObserver = new MutationObserver(function() {
+                    var node = $('dijit__MasterTooltip_0');
+                    if (!node) {
+                        cleanup();
+                        return;
+                    }
+                    if (dojo.hasClass(node, 'dijitTooltipHidden')) {
+                        cleanup();
+                    }
+                });
+                this.masterTooltipCleanupObserver.observe(tooltipNode, {
+                    attributes: true,
+                    attributeFilter: ['class']
+                });
+            },
+            closeCurrentLongPressTooltip: function() {
+                // Remove the overlay immediately so dismiss feels responsive.
+                this.setMobileTooltipOverlayVisible(false);
+                if (!this.currentLongPressTooltip) {
+                    return;
+                }
+                var tooltipNode = $('dijit__MasterTooltip_0');
+                if (tooltipNode) {
+                    // Hide the master tooltip node during close to avoid visual flicker.
+                    dojo.addClass(tooltipNode, 'rftg-mobile-tooltip-closing');
+                }
+                this.currentLongPressTooltip.tooltip.close(this.currentLongPressTooltip.target);
+                this.currentLongPressTooltip = null;
+                this.scheduleMasterTooltipLayoutCleanup();
+            },
+            findLongPressTarget: function(container, startNode, selector) {
+                if (!selector) {
+                    return container;
+                }
+                // Support delegated targets like ".breeding_tube" inside a container.
+                var node = startNode;
+                if (node && node.nodeType !== 1) {
+                    node = node.parentElement;
+                }
+                if (!node || !node.closest) {
+                    return null;
+                }
+                var target = node.closest(selector);
+                if (!target || !container.contains(target)) {
+                    return null;
+                }
+                return target;
+            },
+            registerLongPressTooltip: function(container, tooltip, selector) {
+                if (!this.isTouchInterface() || !container || !tooltip) {
+                    return;
+                }
+
+                var handlerKey = selector || '__self';
+                if (!container._rftgLongPressHandlers) {
+                    container._rftgLongPressHandlers = {};
+                }
+                var oldState = container._rftgLongPressHandlers[handlerKey];
+                if (oldState) {
+                    if (oldState.timer !== null) {
+                        clearTimeout(oldState.timer);
+                    }
+                    container.removeEventListener('touchstart', oldState.onTouchStart, false);
+                    container.removeEventListener('touchmove', oldState.onTouchMove, false);
+                    container.removeEventListener('touchend', oldState.onTouchEnd, false);
+                    container.removeEventListener('touchcancel', oldState.onTouchCancel, false);
+                    container.removeEventListener('contextmenu', oldState.onContextMenu, true);
+                }
+
+                var state = {
+                    timer: null,
+                    target: null,
+                    // True after the long-press timer fired and tooltip opened.
+                    longPressTriggered: false
+                };
+                var clearTimer = function() {
+                    if (state.timer !== null) {
+                        clearTimeout(state.timer);
+                        state.timer = null;
+                    }
+                };
+
+                state.onTouchStart = dojo.hitch(this, function(evt) {
+                    state.target = this.findLongPressTarget(container, evt.target, selector);
+                    if (!state.target) {
+                        return;
+                    }
+                    state.longPressTriggered = false;
+                    clearTimer();
+                    state.timer = setTimeout(dojo.hitch(this, function() {
+                        state.timer = null;
+                        // Only one long-press tooltip should be visible at a time.
+                        this.closeCurrentLongPressTooltip();
+                        this.cancelMasterTooltipLayoutCleanup();
+                        tooltip.open(state.target);
+                        this.updateMasterTooltipLayout();
+                        this.longPressSuppressUntil = Date.now() + this.tooltip_long_press_click_suppression;
+                        state.longPressTriggered = true;
+                        this.currentLongPressTooltip = {
+                            tooltip: tooltip,
+                            target: state.target
+                        };
+                    }), this.tooltip_long_press_delay);
+                });
+                state.onTouchMove = function() {
+                    // Finger movement cancels pending long-press.
+                    state.target = null;
+                    clearTimer();
+                };
+                state.onTouchEnd = dojo.hitch(this, function(evt) {
+                    if (state.longPressTriggered) {
+                        // Long-press should not also count as a normal tap/click.
+                        this.longPressSuppressUntil = Date.now() + this.tooltip_long_press_click_suppression;
+                        this.consumeEvent(evt);
+                    }
+                    state.longPressTriggered = false;
+                    state.target = null;
+                    clearTimer();
+                });
+                state.onTouchCancel = function() {
+                    state.longPressTriggered = false;
+                    state.target = null;
+                    clearTimer();
+                };
+                state.onContextMenu = dojo.hitch(this, function(evt) {
+                    // Suppress browser context menu on elements with long-press tooltip.
+                    var target = this.findLongPressTarget(container, evt.target, selector);
+                    if (target) {
+                        this.consumeEvent(evt);
+                    }
+                });
+
+                container.addEventListener('touchstart', state.onTouchStart, false);
+                container.addEventListener('touchmove', state.onTouchMove, false);
+                container.addEventListener('touchend', state.onTouchEnd, false);
+                container.addEventListener('touchcancel', state.onTouchCancel, false);
+                container.addEventListener('contextmenu', state.onContextMenu, true);
+                container._rftgLongPressHandlers[handlerKey] = state;
+            },
+            createManagedTooltipForNode: function(node, contentProvider, showDelay) {
+                if (!node) {
+                    return null;
+                }
+                var tooltip = null;
+                if (this.isTouchInterface()) {
+                    // On touch we open tooltips manually via long-press handlers.
+                    tooltip = new dijit.Tooltip({
+                        position: this.defaultTooltipPosition,
+                        getContent: function() {
+                            return (typeof contentProvider === 'function') ? contentProvider(node) : contentProvider;
+                        }
+                    });
+                    this.registerLongPressTooltip(node, tooltip);
+                } else {
+                    // On desktop, keep the standard hover-driven Dojo tooltip behavior.
+                    tooltip = new dijit.Tooltip({
+                        connectId: [node.id],
+                        position: this.defaultTooltipPosition,
+                        showDelay: showDelay,
+                        getContent: function() {
+                            return (typeof contentProvider === 'function') ? contentProvider(node) : contentProvider;
+                        }
+                    });
+                    dojo.connect(node, 'onclick', tooltip, 'close');
+                }
+                return tooltip;
+            },
+            attachDesktopTooltipHoverClose: function(id, tooltip) {
+                if (this.isTouchInterface() || !tooltip) {
+                    return;
+                }
+                // Copied from addTooltipHtml() in ly_studio.js
+                this.tooltipsInfos[id] = {
+                  hideOnHoverEvt: null
+                };
+                dojo.connect(tooltip, '_onHover', dojo.hitch(this, function () {
+                  if ((this.tooltipsInfos[id].hideOnHoverEvt === null) && $('dijit__MasterTooltip_0')) {
+                    this.tooltipsInfos[id].hideOnHoverEvt = dojo.connect($('dijit__MasterTooltip_0'), 'onmouseenter', tooltip, 'close');
+                  }
+                }));
+            },
+            addTooltip: function(nodeId, helpStringTranslated, actionStringTranslated, delay) {
+                if (!this.isTouchInterface()) {
+                    this.inherited(arguments);
+                    return;
+                }
+                var node = $(nodeId);
+                if (!node) {
+                    return;
+                }
+                var html = '<div class="midSizeDialog">' + helpStringTranslated;
+                if (actionStringTranslated !== '') {
+                    html += '<hr/>' + actionStringTranslated;
+                }
+                html += '</div>';
+                this.addTooltipHtml(nodeId, html, delay);
+            },
+            addTooltipHtml: function(nodeId, html, delay) {
+                if (!this.isTouchInterface()) {
+                    this.inherited(arguments);
+                    return;
+                }
+                var node = $(nodeId);
+                if (!node) {
+                    return;
+                }
+                if (this.tooltips[nodeId]) {
+                    this.tooltips[nodeId].destroy();
+                }
+                var tooltipDelay = (typeof delay === 'undefined') ? this.tooltip_delay : delay;
+                this.tooltips[nodeId] = this.createManagedTooltipForNode(node, function() {
+                    return html;
+                }, tooltipDelay);
+            },
+            addTooltipToClass: function(cssclass, helpStringTranslated, actionStringTranslated, delay) {
+                if (!this.isTouchInterface()) {
+                    this.inherited(arguments);
+                    return;
+                }
+                dojo.query('.' + cssclass).forEach(dojo.hitch(this, function(node) {
+                    if (!node.id) {
+                        node.id = 'tt_' + cssclass + '_' + Math.random().toString(36).slice(2);
+                    }
+                    this.addTooltip(node.id, helpStringTranslated, actionStringTranslated, delay);
+                }));
+            },
+            addTooltipHtmlToClass: function(cssclass, html, delay) {
+                if (!this.isTouchInterface()) {
+                    this.inherited(arguments);
+                    return;
+                }
+                dojo.query('.' + cssclass).forEach(dojo.hitch(this, function(node) {
+                    if (!node.id) {
+                        node.id = 'tt_' + cssclass + '_' + Math.random().toString(36).slice(2);
+                    }
+                    this.addTooltipHtml(node.id, html, delay);
+                }));
             },
 
             setup: function(gamedatas) {
-                console.log("user preferences");
                 this.initPreferences();
+
+                if (this.isTouchInterface()) {
+                    // Close an open long-press tooltip when the user touches
+                    // outside of it.
+                    document.addEventListener('touchstart', dojo.hitch(this, function(evt) {
+                        if (!this.currentLongPressTooltip) {
+                            return;
+                        }
+                        var tooltipNode = $('dijit__MasterTooltip_0');
+                        // Taps inside the tooltip should not dismiss it.
+                        if (tooltipNode && tooltipNode.contains(evt.target)) {
+                            return;
+                        }
+                        this.closeCurrentLongPressTooltip();
+                        // Consume this event so the underlying game element is not activated.
+                        this.consumeEvent(evt);
+                    }), true);
+
+                    // Swallow synthetic click emitted right after long-press.
+                    document.addEventListener('click', dojo.hitch(this, function(evt) {
+                        if (Date.now() >= this.longPressSuppressUntil) {
+                            return;
+                        }
+                        this.consumeEvent(evt);
+                    }), true);
+
+                    // Disable native long-press context menu on touch devices.
+                    document.addEventListener('contextmenu', dojo.hitch(this, function(evt) {
+                        this.consumeEvent(evt);
+                    }), true);
+                }
 
                 console.log("start creating player boards");
                 for (var player_id in gamedatas.players) {
@@ -481,16 +826,23 @@ define([
                         'text': _("There is a breeding tube on this space")
                     })
                 );
-                new dijit.Tooltip({
-                    connectId: "orbsquares",
-                    selector: ".breeding_tube",
-                    getContent: function(){
-                        // On mobile, disable tooltip if a team is selected as the tooltip is triggered by tapping the artifact
-                        if (dojo.hasClass('ebd-body', 'notouch-device') || dojo.query('.teamSelected').length == 0) {
+                if (this.isTouchInterface()) {
+                    var breedingTubeTooltip = new dijit.Tooltip({
+                        position: this.defaultTooltipPosition,
+                        getContent: function(){
                             return $('orbsquares').getAttribute('tooltipText');
                         }
-                    }
-                });
+                    });
+                    this.registerLongPressTooltip($('orbsquares'), breedingTubeTooltip, '.breeding_tube');
+                } else {
+                    new dijit.Tooltip({
+                        connectId: "orbsquares",
+                        selector: ".breeding_tube",
+                        getContent: function(){
+                            return $('orbsquares').getAttribute('tooltipText');
+                        }
+                    });
+                }
 
                 this.setupNotifications();
 
@@ -504,8 +856,8 @@ define([
                     node.innerHTML = this.gamedatas.prestigeleadercount;
                 }));
             },
-
             initPreferences: function() {
+                console.log("user preferences");
                 // Card size
                 var card_size;
                 if (this.bga.userPreferences.get(2).toString() > "0") {
@@ -758,11 +1110,8 @@ define([
                     $(card_div).setAttribute('oort', this.gamedatas.good_types[kind]);
                 }
 
-                this.tooltips[id] = new dijit.Tooltip({
-                    connectId: [ id ],
-                    position: this.defaultTooltipPosition,
-                    showDelay: this.tooltip_delay,
-                    getContent: function(node) {
+                var isTouchDevice = this.isTouchInterface();
+                this.tooltips[id] = this.createManagedTooltipForNode($(id), function(node) {
                         // If we're trading, don't show the tooltip to not disrupt the price tooltip from the good.
                         // On mobile, if we're consuming, don't show the tooltip, it's triggered by tapping the good.
                         var price = false;
@@ -771,7 +1120,7 @@ define([
                             price = goodsell.hasAttribute('price');
                         }
                         var selectedGood = node.querySelector('.selectedGood');
-                        if (price || dojo.hasClass('ebd-body', 'touch-device') && selectedGood)
+                        if (price || (isTouchDevice && selectedGood))
                         {
                             return;
                         }
@@ -791,18 +1140,8 @@ define([
                         tooltip += '</div>';
                         return tooltip;
 
-                    }
-                })
-                // Copied from addTooltipHtml() in ly_studio.js
-                dojo.connect($(id), 'onclick', this.tooltips[id], 'close');
-                this.tooltipsInfos[id] = {
-                  hideOnHoverEvt: null
-                };
-                dojo.connect(this.tooltips[id], '_onHover', dojo.hitch(this, function () {
-                  if ((this.tooltipsInfos[id].hideOnHoverEvt === null) && $('dijit__MasterTooltip_0')) {
-                    this.tooltipsInfos[id].hideOnHoverEvt = dojo.connect($('dijit__MasterTooltip_0'), 'onmouseenter', this.tooltips[id], 'close');
-                  }
-                }));
+                    }, this.tooltip_delay);
+                this.attachDesktopTooltipHoverClose(id, this.tooltips[id]);
 
                 // Categories as classes
                 for (var i in this.gamedatas.card_types[card_type_id].category) {
@@ -941,29 +1280,15 @@ define([
                     $(id).setAttribute('progress', goal_type.progress);
                 }
 
-                this.tooltips[id] = new dijit.Tooltip({
-                    connectId: [ id ],
-                    position: this.defaultTooltipPosition,
-                    showDelay: this.tooltip_delay,
-                    getContent: function(node) {
+                this.tooltips[id] = this.createManagedTooltipForNode($(id), function(node) {
                         var tooltip = node.getAttribute('tooltip');
                         if (node.hasAttribute('progress')) {
                             tooltip += '<hr/>' + node.getAttribute('progress');
                         }
                         tooltip += '</div>';
                         return tooltip;
-                    }
-                })
-                // Copied from addTooltipHtml() in ly_studio.js
-                dojo.connect($(id), 'onclick', this.tooltips[id], 'close');
-                this.tooltipsInfos[id] = {
-                  hideOnHoverEvt: null
-                };
-                dojo.connect(this.tooltips[id], '_onHover', dojo.hitch(this, function () {
-                  if ((this.tooltipsInfos[id].hideOnHoverEvt === null) && $('dijit__MasterTooltip_0')) {
-                    this.tooltipsInfos[id].hideOnHoverEvt = dojo.connect($('dijit__MasterTooltip_0'), 'onmouseenter', this.tooltips[id], 'close');
-                  }
-                }));
+                    }, this.tooltip_delay);
+                this.attachDesktopTooltipHoverClose(id, this.tooltips[id]);
 
 
                 if (card_type_id == 226) {
@@ -1321,16 +1646,13 @@ define([
 
                 dojo.connect($('good_' + good.good_id), 'onclick', this, 'onClickOnGood');
 
-                this.tooltips['goodsell_' + good.good_id] = new dijit.Tooltip({
-                    connectId: [ 'goodsell_' + good.good_id ],
-                    getContent: function(node) {
+                this.tooltips['goodsell_' + good.good_id] = this.createManagedTooltipForNode($('goodsell_' + good.good_id), function(node) {
                         var price = node.getAttribute('price');
                         if (price != null)
                         {
                             return _('Trade price: ') + price;
                         }
-                    }
-                });
+                    }, this.tooltip_delay);
             },
             updateWindfallPowers: function(possibilities) {
                 if (!this.isCurrentPlayerActive()) {
