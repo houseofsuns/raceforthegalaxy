@@ -151,13 +151,13 @@ html.new_design {
 
     /* Force small-screen tooltips into a modal-like centered position. */
     #ebd-body.touch-device #dijit__MasterTooltip_0.rftg-mobile-tooltip-centered:not(.dijitTooltipHidden) {
-        position: fixed !important;
+        position: fixed;
         top: 50% !important;
         left: 50% !important;
-        right: auto !important;
-        bottom: auto !important;
+        right: auto;
+        bottom: auto;
         margin: 0;
-        transform: translate(-50%, -50%) !important;
+        transform: translate(-50%, -50%);
         max-width: calc(100vw - 16px);
         z-index: 3000;
     }
@@ -176,8 +176,8 @@ html.new_design {
 
     /* During close transition, hide the master node to avoid flicker/ghost boxes. */
     #ebd-body.touch-device #dijit__MasterTooltip_0.rftg-mobile-tooltip-closing {
-        display: none !important;
-        pointer-events: none !important;
+        display: none;
+        pointer-events: none;
     }
 }
 

@@ -275,14 +275,14 @@ define([
                 container.addEventListener('contextmenu', state.onContextMenu, true);
                 container._rftgLongPressHandlers[handlerKey] = state;
             },
-            ensureTooltipNodeId: function(node, prefix) {
+            ensureNodeId: function(node) {
                 if (node.id) {
                     return node.id;
                 }
                 var candidate = '';
                 do {
                     this.tooltipNodeIdCounter += 1;
-                    candidate = 'tt_' + prefix + '_' + this.tooltipNodeIdCounter;
+                    candidate = 'autoid_' + this.tooltipNodeIdCounter;
                 } while ($(candidate));
                 node.id = candidate;
                 return candidate;
@@ -334,10 +334,6 @@ define([
                     this.inherited(arguments);
                     return;
                 }
-                var node = $(nodeId);
-                if (!node) {
-                    return;
-                }
                 var html = '<div class="midSizeDialog">' + helpStringTranslated;
                 if (actionStringTranslated !== '') {
                     html += '<hr/>' + actionStringTranslated;
@@ -368,7 +364,7 @@ define([
                     return;
                 }
                 dojo.query('.' + cssclass).forEach(dojo.hitch(this, function(node) {
-                    this.addTooltip(this.ensureTooltipNodeId(node, cssclass), helpStringTranslated, actionStringTranslated, delay);
+                    this.addTooltip(this.ensureNodeId(node), helpStringTranslated, actionStringTranslated, delay);
                 }));
             },
             addTooltipHtmlToClass: function(cssclass, html, delay) {
@@ -377,7 +373,7 @@ define([
                     return;
                 }
                 dojo.query('.' + cssclass).forEach(dojo.hitch(this, function(node) {
-                    this.addTooltipHtml(this.ensureTooltipNodeId(node, cssclass), html, delay);
+                    this.addTooltipHtml(this.ensureNodeId(node), html, delay);
                 }));
             },
 
