@@ -66,6 +66,7 @@ define([
                 // Time window used to swallow synthetic click events after long-press.
                 this.longPressSuppressUntil = 0;
                 this.masterTooltipCleanupObserver = null;
+                this.tooltipNodeIdCounter = 0;
 
             },
 
@@ -79,7 +80,7 @@ define([
                     evt.stopImmediatePropagation();
                 }
             },
-            setMobileTooltipOverlayVisible: function(visible) {
+            setMobileTooltipOverlayVisibility: function(visible) {
                 // Toggles the dimmed background behind centered mobile tooltips.
                 if (visible) {
                     dojo.addClass($('ebd-body'), 'rftg-mobile-tooltip-overlay-visible');
@@ -96,7 +97,7 @@ define([
             updateMasterTooltipLayout: function() {
                 var tooltipNode = $('dijit__MasterTooltip_0');
                 if (!tooltipNode) {
-                    this.setMobileTooltipOverlayVisible(false);
+                    this.setMobileTooltipOverlayVisibility(false);
                     return;
                 }
                 // Clear the temporary "closing" style before opening/repositioning.
@@ -105,10 +106,10 @@ define([
                 // Use visual viewport so browser UI chrome is accounted for.
                 if (this.isTouchInterface() && window.visualViewport.width <= 800) {
                     dojo.addClass(tooltipNode, 'rftg-mobile-tooltip-centered');
-                    this.setMobileTooltipOverlayVisible(true);
+                    this.setMobileTooltipOverlayVisibility(true);
                 } else {
                     dojo.removeClass(tooltipNode, 'rftg-mobile-tooltip-centered');
-                    this.setMobileTooltipOverlayVisible(false);
+                    this.setMobileTooltipOverlayVisibility(false);
                 }
             },
             scheduleMasterTooltipLayoutCleanup: function() {
@@ -119,13 +120,13 @@ define([
                     }
                     var tooltipNode = $('dijit__MasterTooltip_0');
                     if (!tooltipNode) {
-                        this.setMobileTooltipOverlayVisible(false);
+                        this.setMobileTooltipOverlayVisibility(false);
                         this.cancelMasterTooltipLayoutCleanup();
                         return;
                     }
                     dojo.removeClass(tooltipNode, 'rftg-mobile-tooltip-centered');
                     dojo.removeClass(tooltipNode, 'rftg-mobile-tooltip-closing');
-                    this.setMobileTooltipOverlayVisible(false);
+                    this.setMobileTooltipOverlayVisibility(false);
                     this.cancelMasterTooltipLayoutCleanup();
                 });
 
@@ -152,7 +153,7 @@ define([
             },
             closeCurrentLongPressTooltip: function() {
                 // Remove the overlay immediately so dismiss feels responsive.
-                this.setMobileTooltipOverlayVisible(false);
+                this.setMobileTooltipOverlayVisibility(false);
                 if (!this.currentLongPressTooltip) {
                     return;
                 }
@@ -274,6 +275,18 @@ define([
                 container.addEventListener('contextmenu', state.onContextMenu, true);
                 container._rftgLongPressHandlers[handlerKey] = state;
             },
+            ensureTooltipNodeId: function(node, prefix) {
+                if (node.id) {
+                    return node.id;
+                }
+                var candidate = '';
+                do {
+                    this.tooltipNodeIdCounter += 1;
+                    candidate = 'tt_' + prefix + '_' + this.tooltipNodeIdCounter;
+                } while ($(candidate));
+                node.id = candidate;
+                return candidate;
+            },
             createManagedTooltipForNode: function(node, contentProvider, showDelay) {
                 if (!node) {
                     return null;
@@ -355,10 +368,7 @@ define([
                     return;
                 }
                 dojo.query('.' + cssclass).forEach(dojo.hitch(this, function(node) {
-                    if (!node.id) {
-                        node.id = 'tt_' + cssclass + '_' + Math.random().toString(36).slice(2);
-                    }
-                    this.addTooltip(node.id, helpStringTranslated, actionStringTranslated, delay);
+                    this.addTooltip(this.ensureTooltipNodeId(node, cssclass), helpStringTranslated, actionStringTranslated, delay);
                 }));
             },
             addTooltipHtmlToClass: function(cssclass, html, delay) {
@@ -367,10 +377,7 @@ define([
                     return;
                 }
                 dojo.query('.' + cssclass).forEach(dojo.hitch(this, function(node) {
-                    if (!node.id) {
-                        node.id = 'tt_' + cssclass + '_' + Math.random().toString(36).slice(2);
-                    }
-                    this.addTooltipHtml(node.id, html, delay);
+                    this.addTooltipHtml(this.ensureTooltipNodeId(node, cssclass), html, delay);
                 }));
             },
 
@@ -1110,8 +1117,7 @@ define([
                     $(card_div).setAttribute('oort', this.gamedatas.good_types[kind]);
                 }
 
-                var isTouchDevice = this.isTouchInterface();
-                this.tooltips[id] = this.createManagedTooltipForNode($(id), function(node) {
+                this.tooltips[id] = this.createManagedTooltipForNode($(id), dojo.hitch(this, function(node) {
                         // If we're trading, don't show the tooltip to not disrupt the price tooltip from the good.
                         // On mobile, if we're consuming, don't show the tooltip, it's triggered by tapping the good.
                         var price = false;
@@ -1120,7 +1126,7 @@ define([
                             price = goodsell.hasAttribute('price');
                         }
                         var selectedGood = node.querySelector('.selectedGood');
-                        if (price || (isTouchDevice && selectedGood))
+                        if (price || (this.isTouchInterface() && selectedGood))
                         {
                             return;
                         }
@@ -1140,7 +1146,7 @@ define([
                         tooltip += '</div>';
                         return tooltip;
 
-                    }, this.tooltip_delay);
+                    }), this.tooltip_delay);
                 this.attachDesktopTooltipHoverClose(id, this.tooltips[id]);
 
                 // Categories as classes

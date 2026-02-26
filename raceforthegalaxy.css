@@ -156,10 +156,10 @@ html.new_design {
         left: 50% !important;
         right: auto !important;
         bottom: auto !important;
-        margin: 0 !important;
+        margin: 0;
         transform: translate(-50%, -50%) !important;
-        max-width: calc(100vw - 16px) !important;
-        z-index: 3000 !important;
+        max-width: calc(100vw - 16px);
+        z-index: 3000;
     }
 
     /* Keep tooltip content readable on short/narrow screens. */
