@@ -80,9 +80,14 @@ define([
                     evt.stopImmediatePropagation();
                 }
             },
-            setMobileTooltipOverlayVisibility: function(visible) {
-                // Toggles the dimmed background behind centered mobile tooltips.
-                if (visible) {
+            isSmallTouchscreen: function() {
+                return this.isTouchInterface() && window.visualViewport.width <= 800;
+            },
+            setLongPressTooltipVisibility: function(visible) {
+                if (!this.isTouchInterface()) {
+                    return;
+                }
+                if (visible && this.isSmallTouchscreen()) {
                     dojo.addClass($('ebd-body'), 'rftg-mobile-tooltip-overlay-visible');
                 } else {
                     dojo.removeClass($('ebd-body'), 'rftg-mobile-tooltip-overlay-visible');
@@ -97,20 +102,16 @@ define([
             updateMasterTooltipLayout: function() {
                 var tooltipNode = $('dijit__MasterTooltip_0');
                 if (!tooltipNode) {
-                    this.setMobileTooltipOverlayVisibility(false);
+                    this.setLongPressTooltipVisibility(false);
                     return;
                 }
                 // Clear the temporary "closing" style before opening/repositioning.
                 dojo.removeClass(tooltipNode, 'rftg-mobile-tooltip-closing');
                 // On small touch screens, center tooltips; otherwise keep the default anchored layout.
-                // Use visual viewport so browser UI chrome is accounted for.
-                if (this.isTouchInterface() && window.visualViewport.width <= 800) {
+                if (this.isSmallTouchscreen()) {
                     dojo.addClass(tooltipNode, 'rftg-mobile-tooltip-centered');
-                    this.setMobileTooltipOverlayVisibility(true);
-                } else {
-                    dojo.removeClass(tooltipNode, 'rftg-mobile-tooltip-centered');
-                    this.setMobileTooltipOverlayVisibility(false);
                 }
+                this.setLongPressTooltipVisibility(true);
             },
             scheduleMasterTooltipLayoutCleanup: function() {
                 this.cancelMasterTooltipLayoutCleanup();
@@ -119,14 +120,11 @@ define([
                         return;
                     }
                     var tooltipNode = $('dijit__MasterTooltip_0');
-                    if (!tooltipNode) {
-                        this.setMobileTooltipOverlayVisibility(false);
-                        this.cancelMasterTooltipLayoutCleanup();
-                        return;
+                    if (tooltipNode) {
+                        dojo.removeClass(tooltipNode, 'rftg-mobile-tooltip-centered');
+                        dojo.removeClass(tooltipNode, 'rftg-mobile-tooltip-closing');
                     }
-                    dojo.removeClass(tooltipNode, 'rftg-mobile-tooltip-centered');
-                    dojo.removeClass(tooltipNode, 'rftg-mobile-tooltip-closing');
-                    this.setMobileTooltipOverlayVisibility(false);
+                    this.setLongPressTooltipVisibility(false);
                     this.cancelMasterTooltipLayoutCleanup();
                 });
 
@@ -153,7 +151,7 @@ define([
             },
             closeCurrentLongPressTooltip: function() {
                 // Remove the overlay immediately so dismiss feels responsive.
-                this.setMobileTooltipOverlayVisibility(false);
+                this.setLongPressTooltipVisibility(false);
                 if (!this.currentLongPressTooltip) {
                     return;
                 }
@@ -268,24 +266,12 @@ define([
                     }
                 });
 
-                container.addEventListener('touchstart', state.onTouchStart, false);
-                container.addEventListener('touchmove', state.onTouchMove, false);
-                container.addEventListener('touchend', state.onTouchEnd, false);
+                container.addEventListener('touchstart', state.onTouchStart, { passive: false });
+                container.addEventListener('touchmove', state.onTouchMove, { passive: false });
+                container.addEventListener('touchend', state.onTouchEnd, { passive: false });
                 container.addEventListener('touchcancel', state.onTouchCancel, false);
                 container.addEventListener('contextmenu', state.onContextMenu, true);
                 container._rftgLongPressHandlers[handlerKey] = state;
-            },
-            ensureNodeId: function(node) {
-                if (node.id) {
-                    return node.id;
-                }
-                var candidate = '';
-                do {
-                    this.tooltipNodeIdCounter += 1;
-                    candidate = 'autoid_' + this.tooltipNodeIdCounter;
-                } while ($(candidate));
-                node.id = candidate;
-                return candidate;
             },
             createManagedTooltipForNode: function(node, contentProvider, showDelay) {
                 if (!node) {
@@ -364,16 +350,14 @@ define([
                     return;
                 }
                 dojo.query('.' + cssclass).forEach(dojo.hitch(this, function(node) {
-                    this.addTooltip(this.ensureNodeId(node), helpStringTranslated, actionStringTranslated, delay);
-                }));
-            },
-            addTooltipHtmlToClass: function(cssclass, html, delay) {
-                if (!this.isTouchInterface()) {
-                    this.inherited(arguments);
-                    return;
-                }
-                dojo.query('.' + cssclass).forEach(dojo.hitch(this, function(node) {
-                    this.addTooltipHtml(this.ensureNodeId(node), html, delay);
+                    // Generate an ID for the node if it doesn't have one.
+                    // `this.inherited()` does this on desktop, but we have to
+                    // do it ourselves here.
+                    if (!node.id) {
+                        node.id = dojox.uuid.generateRandomUuid();
+                    }
+
+                    this.addTooltip(node.id, helpStringTranslated, actionStringTranslated, delay);
                 }));
             },
 
@@ -381,28 +365,25 @@ define([
                 this.initPreferences();
 
                 if (this.isTouchInterface()) {
-                    // Close an open long-press tooltip when the user touches
-                    // outside of it.
-                    document.addEventListener('touchstart', dojo.hitch(this, function(evt) {
-                        if (!this.currentLongPressTooltip) {
-                            return;
-                        }
-                        var tooltipNode = $('dijit__MasterTooltip_0');
-                        // Taps inside the tooltip should not dismiss it.
-                        if (tooltipNode && tooltipNode.contains(evt.target)) {
-                            return;
-                        }
-                        this.closeCurrentLongPressTooltip();
-                        // Consume this event so the underlying game element is not activated.
-                        this.consumeEvent(evt);
-                    }), true);
-
-                    // Swallow synthetic click emitted right after long-press.
                     document.addEventListener('click', dojo.hitch(this, function(evt) {
-                        if (Date.now() >= this.longPressSuppressUntil) {
-                            return;
+                        if (Date.now() < this.longPressSuppressUntil) {
+                            this.consumeEvent(evt);
                         }
-                        this.consumeEvent(evt);
+
+                        // If a modal tooltip is open, dismiss it if you click
+                        // outside of it.
+                        if (this.currentLongPressTooltip) {
+                            var tooltipNode = $('dijit__MasterTooltip_0');
+                            // Clicks inside the tooltip should not dismiss it.
+                            if (tooltipNode && tooltipNode.contains(evt.target)) {
+                                return;
+                            }
+                            this.longPressSuppressUntil = Date.now() + this.tooltip_long_press_click_suppression;
+                            this.closeCurrentLongPressTooltip();
+                            // Consume this click event so that any underlying
+                            // game element is not activated.
+                            this.consumeEvent(evt);
+                        }
                     }), true);
 
                     // Disable native long-press context menu on touch devices.
