@@ -66,7 +66,6 @@ define([
                 // Time window used to swallow synthetic click events after long-press.
                 this.longPressSuppressUntil = 0;
                 this.masterTooltipCleanupObserver = null;
-                this.tooltipNodeIdCounter = 0;
 
             },
 
