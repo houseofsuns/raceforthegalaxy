@@ -122,12 +122,63 @@ html.new_design {
 
 /**** tooltips ****/
 
+/* iOS/Safari: disable native long-press callout menu on game surface. */
+#ebd-body.touch-device {
+    -webkit-touch-callout: none;
+}
+
 .cardtooltip {
     max-width: 262px;
 }
 
 .militarytooltip {
 	display: inline-block;
+}
+
+@media (max-width: 800px) {
+    /* Dim the board while a centered mobile tooltip is open. */
+    #ebd-body.touch-device.rftg-mobile-tooltip-overlay-visible::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: rgba(0, 0, 0, 0.45);
+        pointer-events: none;
+        z-index: 2500;
+    }
+
+    /* Force small-screen tooltips into a modal-like centered position. */
+    #ebd-body.touch-device #dijit__MasterTooltip_0.rftg-mobile-tooltip-centered:not(.dijitTooltipHidden) {
+        position: fixed;
+        top: 50% !important;
+        left: 50% !important;
+        right: auto;
+        bottom: auto;
+        margin: 0;
+        transform: translate(-50%, -50%);
+        max-width: calc(100vw - 16px);
+        z-index: 3000;
+    }
+
+    /* Keep tooltip content readable on short/narrow screens. */
+    #ebd-body.touch-device #dijit__MasterTooltip_0.rftg-mobile-tooltip-centered:not(.dijitTooltipHidden) .dijitTooltipContainer {
+        max-width: calc(100vw - 24px);
+        max-height: calc(100vh - 24px);
+        overflow: auto;
+    }
+
+    /* Centered modal tooltip does not need an anchor arrow. */
+    #ebd-body.touch-device #dijit__MasterTooltip_0.rftg-mobile-tooltip-centered:not(.dijitTooltipHidden) .dijitTooltipConnector {
+        display: none;
+    }
+
+    /* During close transition, hide the master node to avoid flicker/ghost boxes. */
+    #ebd-body.touch-device #dijit__MasterTooltip_0.rftg-mobile-tooltip-closing {
+        display: none;
+        pointer-events: none;
+    }
 }
 
 /** cards **/
