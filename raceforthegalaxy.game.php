@@ -4920,7 +4920,11 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     function nothingToPlay()
     {
         self::checkAction("nothingToPlay");
-        $this->gamestate->setPlayerNonMultiactive(self::getCurrentPlayerId(), "phaseCleared");
+        $transition = "phaseCleared";
+        if ($this->gamestate->getCurrentMainState()->name == 'consumesell') {
+            $transition = "sellcleared";
+        }
+        $this->gamestate->setPlayerNonMultiactive(self::getCurrentPlayerId(), $transition);
     }
 
     // Try to play this development or world if possible without cost and
@@ -8314,6 +8318,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     function argConsumeSell()
     {
         $res = [];
+        $can_pass = [];
         // Get all goods and the world they are on
         $sql = "SELECT good.card_id,
             good.card_status as good_type,
@@ -8327,7 +8332,30 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         foreach ($this->getCollectionFromDB($sql) as $good_id  => $row) {
             $res[$good_id] = $this->getSellPrice($row['player_id'], $row['good_type'], $row['world_id']);
         }
-        return $res;
+
+        foreach (self::loadPlayersBasicInfos() as $player_id => $player) {
+            $sell_targets = $this->getAllGoodsOfPlayer($player_id, true);
+            if (count($sell_targets) == 0) {
+                continue;
+            }
+
+            $has_tableau_good = false;
+            foreach ($sell_targets as $sell_target) {
+                if (!(is_string($sell_target['id']) && strpos($sell_target['id'], 'artefact_') === 0)) {
+                    $has_tableau_good = true;
+                    break;
+                }
+            }
+
+            if (!$has_tableau_good) {
+                $can_pass[] = $player_id;
+            }
+        }
+
+        return array(
+            'prices' => $res,
+            'canPass' => $can_pass,
+        );
     }
     function argConsume()
     {
@@ -9511,9 +9539,16 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
 
             $sell_targets = $player_to_sell_targets[$player_id];
+            $has_tableau_good = false;
+            foreach ($sell_targets as $sell_target) {
+                if (!(is_string($sell_target['id']) && strpos($sell_target['id'], 'artefact_') === 0)) {
+                    $has_tableau_good = true;
+                    break;
+                }
+            }
 
-            // If only one valid sell target, automatically sell it.
-            if (count($sell_targets) == 1) {
+            // Artifact-only sells are optional; only auto-sell when the sole target is a tableau good.
+            if (count($sell_targets) == 1 && $has_tableau_good) {
                 $good = reset($sell_targets);
                 $good_id = $good['id'];
                 if (is_string($good_id) && strpos($good_id, 'artefact_') === 0) {

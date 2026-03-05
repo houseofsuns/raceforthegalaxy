@@ -552,7 +552,7 @@ $machinestates = array(
         "action" => "stConsumesell",
         "type" => "multipleactiveplayer",
         "args" => "argConsumesell",
-        "possibleactions" => array("sell"),
+        "possibleactions" => array("sell", "nothingToPlay"),
         "transitions" => array("phaseNotSelected" => 60,   // Note: meaning = no "consume" phase at all
                                 "nosell" => 51,             // Note: meaning = no player in position to sell (because no resource or no "seel" special phase)
                                 "sellcleared" => 51         // Note: meaning = all players who can make a sell made a sell
