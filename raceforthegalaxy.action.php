@@ -628,4 +628,10 @@ class action_raceforthegalaxy extends APP_GameAction
         $this->game->drawForEachGood($card_id);
         self::ajaxResponse();
     }
+    public function refreshLiveSixDevState()
+    {
+        self::setAjaxMode();
+        $this->game->refreshLiveSixDevState();
+        self::ajaxResponse();
+    }
 }
