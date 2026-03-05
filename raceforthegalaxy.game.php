@@ -6208,54 +6208,115 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     function sell($card_id)
     {
         self::checkAction("sell");
-
         $player_id = self::getCurrentPlayerId();
+        $this->executeGoodSellForPlayer($player_id, $card_id);
+    }
 
-        // Check that card_id refers to a good in player's tableau & get its type
-        $sql = "SELECT good.card_id,good.card_status,world.card_id world_id, world.card_type world_type FROM card good ";
-        $sql .= "INNER JOIN card world ON world.card_id=good.card_location_arg ";
-        $sql .= "WHERE good.card_id='$card_id' ";
-        $sql .= "AND good.card_location='good' ";
-        $sql .= "AND world.card_location='tableau' ";   // .. world must be is in current player tableau
-        $sql .= "AND world.card_location_arg=$player_id";
-        $dbres = self::DbQuery($sql);
-        $row = mysql_fetch_assoc($dbres);
-        if (! $row) {
+    function executeGoodSellForPlayer($player_id, $good_id, $setNonMultiactive = true)
+    {
+        $sql = "SELECT good.card_status good_type, world.card_id world_id, world.card_type world_type "
+             . "FROM card good "
+             . "INNER JOIN card world ON world.card_id=good.card_location_arg "
+             . "WHERE good.card_id='$good_id' "
+             . "AND good.card_location='good' "
+             . "AND world.card_location='tableau' "
+             . "AND world.card_location_arg='$player_id'";
+        $sell_target = self::getObjectFromDB($sql);
+        if (!$sell_target) {
             throw new UserException(self::_("You can only sell your own goods"));
         }
-        $good_type = $row['card_status'];
-        $world_id = $row['world_id'];
-
-        $world_type = $row['world_type'];
-        if ($world_type == 220 || $world_type == 246) {
+        if ($sell_target['world_type'] == 220 || $sell_target['world_type'] == 246) {
             throw new UserException(
                 sprintf(self::_("You cannot sell a good from %s"),
-                        $this->card_types[ $world_type ]['name']));
+                        $this->card_types[ $sell_target['world_type'] ]['name']));
         }
+
+        $players = self::loadPlayersBasicInfos();
+        $player_name = $players[$player_id]['player_name'];
+        $good_type = intval($sell_target['good_type']);
+        $world_id = intval($sell_target['world_id']);
 
         $price = $this->getSellPrice($player_id, $good_type, $world_id);
 
         // Consume this resource
-        $this->cards->moveCard($card_id, $this->getDiscard($player_id), 0);
+        $this->cards->moveCard($good_id, $this->getDiscard($player_id), 0);
         self::notifyAllPlayers('consume', '', array(
                         "player_id" => $player_id,
-                        "player_name" => self::getCurrentPlayerName(),
-                        "good_id" => $card_id
+                        "player_name" => $player_name,
+                        "good_id" => $good_id
                    ));
 
         // Give cards to player
         self::notifyAllPlayers('drawCards_log', clienttranslate('${player_name} sells a ${good_name} for ${card_nbr} card(s)'),
                                     array(
                                         "i18n" => array("good_name"),
-                                        "player_name" => self::getCurrentPlayerName(),
+                                        "player_name" => $player_name,
                                         "player_id" => $player_id,
                                         "card_nbr" => $price,
                                         "good_name" => $this->good_types_untr[ $good_type ]
                                    ));
         $this->drawCardForPlayer($player_id, $price);
 
+        if ($setNonMultiactive) {
+            $this->gamestate->setPlayerNonMultiactive($player_id, "sellcleared");
+        }
+    }
 
-        $this->gamestate->setPlayerNonMultiactive($player_id, "sellcleared");
+    function executeArtifactSellForPlayer($player_id, $artifact_id, $setNonMultiactive = true)
+    {
+        $sql = "SELECT card_type FROM artefact "
+             . "WHERE card_id='$artifact_id' "
+             . "AND card_location='hand' "
+             . "AND card_location_arg='$player_id' "
+             . "AND card_type IN ('2', '9')";
+        $sell_target = self::getObjectFromDB($sql);
+        if (!$sell_target) {
+            throw new SystemException("Invalid artifact");
+        }
+
+        $players = self::loadPlayersBasicInfos();
+        $player_name = $players[$player_id]['player_name'];
+        $artifact_type = intval($sell_target['card_type']);
+        $price = 5 + $this->getSellBonusForGoodType($player_id, 4, 0);
+
+        // Give cards to player
+        $this->drawCardForPlayer($player_id, $price);
+        self::notifyAllPlayers('drawCards_log', clienttranslate('${player_name} sells a ${good_name} for ${card_nbr} card(s)'),
+                                    array(
+                                        "i18n" => array("good_name"),
+                                        "player_name" => $player_name,
+                                        "player_id" => $player_id,
+                                        "card_nbr" => $price,
+                                        "good_name" => $this->good_types_untr[ 4 ]
+                                   ));
+
+        $this->artefacts->moveCard($artifact_id, 'tableau', $player_id);
+        self::notifyAllPlayers('consumeArtifact', clienttranslate('${player_name} uses an artifact as an Alien resource'), array(
+                            "player_id" => $player_id,
+                            "player_name" => $player_name,
+                            "artifact_id" => $artifact_id,
+                            "artifact_type" => $artifact_type
+                       ));
+
+        $artpoints = $this->artefact_types[ $artifact_type ]['vp'];
+        if ($artpoints > 0) {
+            $pscore = $this->updatePlayerScore($player_id, $artpoints, false);
+            self::incStat($artpoints, 'artefact_points', $player_id);
+
+            self::notifyAllPlayers('updateScore', clienttranslate('${player_name} scores ${score_delta} with artifact(s).'),
+                                            array(
+                                                "player_name" => $player_name,
+                                                "player_id" => $player_id,
+                                                "score" => $pscore['score'],
+                                                "vp" => $pscore['vp'],
+                                                "score_delta" => $artpoints,
+                                                "vp_delta" => 0     // Note: "consumption" vp
+                                           ));
+        }
+
+        if ($setNonMultiactive) {
+            $this->gamestate->setPlayerNonMultiactive($player_id, "sellcleared");
+        }
     }
 
     // Player is discarding a resource contributing to war effort
@@ -9431,13 +9492,38 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         self::incStat(1, 'phase_played');
         self::incStat(1, 'phase_consume');
-        $players_to_active = array();
+        $player_to_sell_targets = array();
         foreach ($player_phases as $player_id => $phase_option) {
-            if ($phase_option == 0 || $phase_option == 2 || $phase_option==10 || $phase_option==12) {    // sell good or "sell good + x2" or sell+bonus or sell+x2+bonus
-            // Check there is at least one good to sell
-                if (count($this->getAllGoodsOfPlayer($player_id, true)) > 0) {
-                    $players_to_active[] = $player_id;
+            // sell good or "sell good + x2" or sell+bonus or sell+x2+bonus
+            if ($phase_option == 0 || $phase_option == 2 || $phase_option == 10 || $phase_option == 12) {
+                // Check there is at least one legal sell target (tableau good or artifact)
+                $sell_targets = $this->getAllGoodsOfPlayer($player_id, true);
+                if (count($sell_targets) > 0) {
+                    $player_to_sell_targets[$player_id] = $sell_targets;
                 }
+            }
+        }
+
+        $players_to_active = array();
+        foreach ($this->getTurnOrder() as $player_id) {
+            if (!isset($player_to_sell_targets[$player_id])) {
+                continue;
+            }
+
+            $sell_targets = $player_to_sell_targets[$player_id];
+
+            // If only one valid sell target, automatically sell it.
+            if (count($sell_targets) == 1) {
+                $good = reset($sell_targets);
+                $good_id = $good['id'];
+                if (is_string($good_id) && strpos($good_id, 'artefact_') === 0) {
+                    $artifact_id = intval(substr($good_id, strlen('artefact_')));
+                    $this->executeArtifactSellForPlayer($player_id, $artifact_id, false);
+                } else {
+                    $this->executeGoodSellForPlayer($player_id, intval($good_id), false);
+                }
+            } elseif (count($sell_targets) > 1) {
+                $players_to_active[] = $player_id;
             }
         }
 
@@ -13279,31 +13365,8 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         }
         if ($reason == 'sell') {
             self::checkAction('sell');
-
-            if ($art['type'] != 2 && $art['type'] != 9) {
-                throw new SystemException("Invalid artifact");
-            }
-
-            $bConsumeArt = true;
-            $log = clienttranslate('${player_name} uses an artifact as an Alien resource');
-            $price = 5;
-            $good_type = 4;
-            $price += $this->getSellBonusForGoodType($player_id, 4, 0);
-
-
-            // Give cards to player
-            $this->drawCardForPlayer($player_id, $price);
-            self::notifyAllPlayers('drawCards_log', clienttranslate('${player_name} sells a ${good_name} for ${card_nbr} card(s)'),
-                                        array(
-                                            "i18n" => array("good_name"),
-                                            "player_name" => $player_name,
-                                            "player_id" => $player_id,
-                                            "card_nbr" => $price,
-                                            "good_name" => $this->good_types_untr[ $good_type ]
-                                       ));
-
-
-            $this->gamestate->setPlayerNonMultiactive($player_id, "sellcleared");
+            $this->executeArtifactSellForPlayer($player_id, $artifact_id);
+            return;
         }
         if ($reason == 'consume') {
             self::checkAction('consume');
