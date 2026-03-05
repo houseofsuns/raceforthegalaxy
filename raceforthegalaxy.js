@@ -1883,8 +1883,8 @@ define([
                     case 'consumesell':
                         this.setActivePhase('consume');
                         dojo.query('.goodsell').style('display', 'block');
-                        for (var good_id in args.args) {
-                            $(`goodsell_${good_id}`).setAttribute('price', args.args[good_id]);
+                        for (var good_id in args.args.prices) {
+                            $(`goodsell_${good_id}`).setAttribute('price', args.args.prices[good_id]);
                         }
                         break;
                     case 'consume':
@@ -2278,6 +2278,11 @@ define([
                                 this.lastPaymentTitle = $('pagemaintitletext').innerHTML;
                                 $('pagemaintitletext').innerHTML = _("You must choose one card to keep");
                             }
+                        }
+                        break;
+                    case 'consumesell':
+                        if (this.isCurrentPlayerActive() && dojo.indexOf(args.canPass, this.player_id) != -1) {
+                            this.addActionButton('action_nothing_to_play', _("Pass"), 'onNothingToPlay');
                         }
                         break;
                     case 'productionwindfall':
