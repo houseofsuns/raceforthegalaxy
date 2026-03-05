@@ -180,5 +180,18 @@
                 "name": "Never"
             }
         }
+    },
+    "11": {
+        "name": "Live 6-cost development VP display",
+        "needReload": true,
+        "values": {
+            "1": {
+                "name": "Off"
+            },
+            "2": {
+                "name": "On"
+            }
+        },
+        "default": 1
     }
 }
