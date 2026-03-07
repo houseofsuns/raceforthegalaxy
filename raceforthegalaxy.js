@@ -3133,6 +3133,7 @@ define([
                 }
 
                 this.playerHand.unselectAll();
+                dojo.query('.selectedGood').removeClass('selectedGood');
                 this.paymentMode = false;
                 dojo.removeClass('hand_panel', 'paymentMode');
                 dojo.removeClass('hand_panel', 'paymentModeScavenger');
@@ -3644,7 +3645,11 @@ define([
                             cloaking: card_id,
                             money: '',
                             mode: 'military',
-                        }, this, function() {}, function() {});
+                        }, this, function() {}, function(is_error) {
+                                if (is_error) {
+                                    this.onDontPay();
+                                }
+                            });
 
                     }
 
