@@ -13605,12 +13605,6 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         $this->drawCardForPlayer(self::getCurrentPlayerId(), $n);
     }
 
-    function drawArtefact($type)
-    {
-        $player_id = self::getCurrentPlayerId();
-        $artefact = $this->artefacts->pickCard($type, $player_id);
-    }
-
     function debug_money() {
         $this->money();
     }
@@ -13637,11 +13631,18 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             ));
     }
 
-    // Add this artefact to current player
-    function debug_aa(int $player_id, int $artefact_id)
+    // Add this artefact to a player's hand
+    function debug_aa(int $player_id, int $artefact_type_id)
     {
-        $sql = "INSERT INTO `artefact` (`card_type`, `card_type_arg`, `card_location`, `card_location_arg`) VALUES ('$artefact_id', 0, 'hand', $player_id) ";
+        $sql = "INSERT INTO `artefact` (`card_type`, `card_type_arg`, `card_location`, `card_location_arg`) VALUES ('$artefact_type_id', 0, 'hand', $player_id) ";
         self::DbQuery($sql);
+        $card_id = self::DbGetLastId();
+        $artefact = $this->artefacts->getCard($card_id);
+        // Studio debug helpers bypass the normal orb pickup flow, so we need
+        // to send the hand-update notification explicitly.
+        self::notifyPlayer($player_id, 'pickArtefact', '', array(
+            'card' => $artefact,
+        ));
     }
 
     function debug_endGame()
