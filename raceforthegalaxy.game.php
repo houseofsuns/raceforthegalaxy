@@ -3023,6 +3023,26 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         return $result;
     }
 
+    // Normally if you have at least one good and selected the `consumesell`
+    // phase, you have to sell a good.  But per
+    // https://github.com/houseofsuns/raceforthegalaxy/pull/3#discussion_r2904637354,
+    // we've decided that selling an alien artefact is not mandatory.
+    // Therefore if you have one or more goods, all of which are AAs, you can
+    // pass during the `consumesell` phase.
+    function consumeSellMayBePassed($sell_targets)
+    {
+        return !empty($sell_targets)
+            && array_all(
+                $sell_targets,
+                fn($sell_target) => str_starts_with((string) $sell_target['id'], 'artefact_')
+            );
+    }
+
+    function playerMayPassConsumeSell($player_id)
+    {
+        return $this->consumeSellMayBePassed($this->getAllGoodsOfPlayer($player_id, true));
+    }
+
     // Put a good on this world if it is a windfall
     function windfallInitialProduction($card_id, $card_type, $defered = false)
     {
@@ -4920,7 +4940,14 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     function nothingToPlay()
     {
         self::checkAction("nothingToPlay");
-        $this->gamestate->setPlayerNonMultiactive(self::getCurrentPlayerId(), "phaseCleared");
+        $transition = "phaseCleared";
+        if ($this->gamestate->getCurrentMainState()->name == 'consumesell') {
+            if (!$this->playerMayPassConsumeSell(self::getCurrentPlayerId())) {
+                throw new UserException(self::_("You must sell a good"));
+            }
+            $transition = "sellcleared";
+        }
+        $this->gamestate->setPlayerNonMultiactive(self::getCurrentPlayerId(), $transition);
     }
 
     // Try to play this development or world if possible without cost and
@@ -6208,54 +6235,68 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     function sell($card_id)
     {
         self::checkAction("sell");
-
         $player_id = self::getCurrentPlayerId();
+        $this->executeGoodSellForPlayer($player_id, $card_id, /*is_auto_sell=*/false);
+    }
 
-        // Check that card_id refers to a good in player's tableau & get its type
-        $sql = "SELECT good.card_id,good.card_status,world.card_id world_id, world.card_type world_type FROM card good ";
-        $sql .= "INNER JOIN card world ON world.card_id=good.card_location_arg ";
-        $sql .= "WHERE good.card_id='$card_id' ";
-        $sql .= "AND good.card_location='good' ";
-        $sql .= "AND world.card_location='tableau' ";   // .. world must be is in current player tableau
-        $sql .= "AND world.card_location_arg=$player_id";
-        $dbres = self::DbQuery($sql);
-        $row = mysql_fetch_assoc($dbres);
-        if (! $row) {
+    function executeGoodSellForPlayer($player_id, $good_id, $is_auto_sell)
+    {
+        $sql = "SELECT good.card_status good_type, world.card_id world_id, world.card_type world_type "
+             . "FROM card good "
+             . "INNER JOIN card world ON world.card_id=good.card_location_arg "
+             . "WHERE good.card_id='$good_id' "
+             . "AND good.card_location='good' "
+             . "AND world.card_location='tableau' "
+             . "AND world.card_location_arg='$player_id'";
+        $sell_target = self::getObjectFromDB($sql);
+        if (!$sell_target) {
             throw new UserException(self::_("You can only sell your own goods"));
         }
-        $good_type = $row['card_status'];
-        $world_id = $row['world_id'];
-
-        $world_type = $row['world_type'];
-        if ($world_type == 220 || $world_type == 246) {
+        if ($sell_target['world_type'] == 220 || $sell_target['world_type'] == 246) {
             throw new UserException(
                 sprintf(self::_("You cannot sell a good from %s"),
-                        $this->card_types[ $world_type ]['name']));
+                        $this->card_types[ $sell_target['world_type'] ]['name']));
         }
+
+        $players = self::loadPlayersBasicInfos();
+        $player_name = $players[$player_id]['player_name'];
+        $good_type = intval($sell_target['good_type']);
+        $world_id = intval($sell_target['world_id']);
 
         $price = $this->getSellPrice($player_id, $good_type, $world_id);
 
+        if ($is_auto_sell) {
+            self::notifyPlayer($player_id, 'showMessage', '', array(
+                'msg' => sprintf(
+                    self::_('Autosold your only good (on %s) for %d card(s).'),
+                    $this->card_types[ $sell_target['world_type'] ]['name'],
+                    $price
+                )
+            ));
+        }
+
         // Consume this resource
-        $this->cards->moveCard($card_id, $this->getDiscard($player_id), 0);
+        $this->cards->moveCard($good_id, $this->getDiscard($player_id), 0);
         self::notifyAllPlayers('consume', '', array(
                         "player_id" => $player_id,
-                        "player_name" => self::getCurrentPlayerName(),
-                        "good_id" => $card_id
+                        "player_name" => $player_name,
+                        "good_id" => $good_id
                    ));
 
         // Give cards to player
         self::notifyAllPlayers('drawCards_log', clienttranslate('${player_name} sells a ${good_name} for ${card_nbr} card(s)'),
                                     array(
                                         "i18n" => array("good_name"),
-                                        "player_name" => self::getCurrentPlayerName(),
+                                        "player_name" => $player_name,
                                         "player_id" => $player_id,
                                         "card_nbr" => $price,
                                         "good_name" => $this->good_types_untr[ $good_type ]
                                    ));
         $this->drawCardForPlayer($player_id, $price);
 
-
-        $this->gamestate->setPlayerNonMultiactive($player_id, "sellcleared");
+        if (!$is_auto_sell) {
+            $this->gamestate->setPlayerNonMultiactive($player_id, "sellcleared");
+        }
     }
 
     // Player is discarding a resource contributing to war effort
@@ -8253,6 +8294,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     function argConsumeSell()
     {
         $res = [];
+        $can_pass = [];
         // Get all goods and the world they are on
         $sql = "SELECT good.card_id,
             good.card_status as good_type,
@@ -8260,13 +8302,25 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             world.card_location_arg as player_id
         FROM card good
         INNER JOIN card world ON world.card_id=good.card_location_arg
-        WHERE good.card_location='good' AND world.card_type NOT IN (220, 246)";
+        WHERE good.card_location='good'
+            AND world.card_location='tableau'
+            AND world.card_type NOT IN (220, 246)";
 
         // Get the sell price of each good
         foreach ($this->getCollectionFromDB($sql) as $good_id  => $row) {
             $res[$good_id] = $this->getSellPrice($row['player_id'], $row['good_type'], $row['world_id']);
         }
-        return $res;
+
+        foreach ($this->gamestate->getActivePlayerList() as $player_id) {
+            if ($this->playerMayPassConsumeSell($player_id)) {
+                $can_pass[] = $player_id;
+            }
+        }
+
+        return array(
+            'prices' => $res,
+            'canPass' => $can_pass,
+        );
     }
     function argConsume()
     {
@@ -9431,13 +9485,34 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         self::incStat(1, 'phase_played');
         self::incStat(1, 'phase_consume');
-        $players_to_active = array();
+        $player_to_sell_targets = array();
         foreach ($player_phases as $player_id => $phase_option) {
-            if ($phase_option == 0 || $phase_option == 2 || $phase_option==10 || $phase_option==12) {    // sell good or "sell good + x2" or sell+bonus or sell+x2+bonus
-            // Check there is at least one good to sell
-                if (count($this->getAllGoodsOfPlayer($player_id, true)) > 0) {
-                    $players_to_active[] = $player_id;
+            // sell good or "sell good + x2" or sell+bonus or sell+x2+bonus
+            if ($phase_option == 0 || $phase_option == 2 || $phase_option == 10 || $phase_option == 12) {
+                // Check there is at least one legal sell target (tableau good or artifact)
+                $sell_targets = $this->getAllGoodsOfPlayer($player_id, true);
+                if (count($sell_targets) > 0) {
+                    $player_to_sell_targets[$player_id] = $sell_targets;
                 }
+            }
+        }
+
+        $players_to_active = array();
+        foreach ($this->getTurnOrder() as $player_id) {
+            if (!isset($player_to_sell_targets[$player_id])) {
+                continue;
+            }
+
+            $sell_targets = $player_to_sell_targets[$player_id];
+
+            // If a player only has one sell target, autosell it.  (Unless the
+            // one good is an alien artifact, in which case selling it is
+            // optional.)
+            if (count($sell_targets) == 1 && !$this->consumeSellMayBePassed($sell_targets)) {
+                $good = reset($sell_targets);
+                $this->executeGoodSellForPlayer($player_id, intval($good['id']), /*is_auto_sell=*/true);
+            } else {
+                $players_to_active[] = $player_id;
             }
         }
 
