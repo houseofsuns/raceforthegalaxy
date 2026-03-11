@@ -5781,9 +5781,16 @@ define([
                 }
             },
             notif_pickArtefact: function(notif) {
-                this.playerHandArt.addToStockWithId(notif.args.card.type, notif.args.card.id, 'artefact_' + notif.args.card.id);
-                dojo.destroy('artefact_' + notif.args.card.id);
-                dojo.removeClass($(`orb_${notif.args.x}_${notif.args.y}`), 'breeding_tube');
+                var artefact_id = 'artefact_' + notif.args.card.id;
+                // Studio debug helpers create artefacts directly in hand, so they do not
+                // include orb coordinates or a board artefact node to animate from.
+                if (typeof notif.args.x != 'undefined' && typeof notif.args.y != 'undefined') {
+                    this.playerHandArt.addToStockWithId(notif.args.card.type, notif.args.card.id, artefact_id);
+                    dojo.destroy(artefact_id);
+                    dojo.removeClass($(`orb_${notif.args.x}_${notif.args.y}`), 'breeding_tube');
+                } else {
+                    this.playerHandArt.addToStockWithId(notif.args.card.type, notif.args.card.id);
+                }
             },
             notif_drawOrb: function(notif) {
                 var field = $('orb_card_' + notif.args.orbcard_type + '_count_' + notif.args.player_id);
