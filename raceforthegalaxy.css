@@ -213,8 +213,8 @@ html.new_design {
 }
 
 .card_name_black .keyword,
-.six_dev .keyword,
-.six_dev_scoring_text .keyword {
+.variable_vp .keyword,
+.variable_vp_scoring_text .keyword {
     text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
 }
 
@@ -297,7 +297,7 @@ html.new_design {
     background-size: 110px;
 }
 
-.card_size_tiny .six_dev {
+.card_size_tiny .variable_vp {
     right: 8px;
     top: 34px;
     font-size: 7px;
@@ -373,7 +373,7 @@ html.new_design {
     background-size: 132px;
 }
 
-.card_size_small .six_dev {
+.card_size_small .variable_vp {
     right: 10px;
     top: 40px;
     font-size: 9px;
@@ -448,7 +448,7 @@ html.new_design {
     background-size: 153px;
 }
 
-.card_size_medium .six_dev {
+.card_size_medium .variable_vp {
     right: 12px;
     top: 47px;
     font-size: 9px;
@@ -522,7 +522,7 @@ html.new_design {
     background-size: 195px;
 }
 
-.card_size_large .six_dev {
+.card_size_large .variable_vp {
     right: 15px;
     top: 60px;
     font-size: 10px;
@@ -587,7 +587,7 @@ html.new_design {
     top: 50px;
 }
 
-.card_size_huge .six_dev {
+.card_size_huge .variable_vp {
     right: 18px;
     top: 71px;
     font-size: 10px;
@@ -945,28 +945,28 @@ html.new_design {
 #gambling_world_stats th {
     font-weight: bold;
 }
-/*** Six dev scoring tooltip table ***/
-.six_dev_scoring td {
+/*** Variable-point card scoring tooltip table ***/
+.variable_vp_scoring td {
     padding: 1px;
     text-align: center;
 }
-td.six_dev_scoring_text,
-td.six_dev_scoring_name {
+td.variable_vp_scoring_text,
+td.variable_vp_scoring_name {
     padding-left: 5px;
     text-align: left;
 }
-td.six_dev_scoring_name {
+td.variable_vp_scoring_name {
     font-weight: bold;
     text-transform: uppercase;
 }
 
-.cardtooltip td.six_dev_scoring_card_only,
-.cardtooltip tr.six_dev_scoring_card_only {
+.cardtooltip td.variable_vp_scoring_card_only,
+.cardtooltip tr.variable_vp_scoring_card_only {
     display: none;
 }
 
-/*** Six dev scoring card table ***/
-.six_dev {
+/*** Variable-point card scoring table ***/
+.variable_vp {
     position: absolute;
     background-color: rgba(255,255,255,0.4);
     border-style:ridge;
@@ -974,15 +974,15 @@ td.six_dev_scoring_name {
     display: none;
     text-align: center;
 }
-.six_dev td.six_dev_scoring_text,
-.six_dev td.six_dev_scoring_name,
-.six_dev tr.six_dev_scoring_tooltip_only {
+.variable_vp td.variable_vp_scoring_text,
+.variable_vp td.variable_vp_scoring_name,
+.variable_vp tr.variable_vp_scoring_tooltip_only {
     display: none;
 }
 
-.sixdev_scoring_hover_tap .stockitem:hover .six_dev,
-.sixdev_scoring_hover_tap .card:hover .six_dev,
-.sixdev_scoring_yes .six_dev {
+.variable_vp_scoring_hover_tap .stockitem:hover .variable_vp,
+.variable_vp_scoring_hover_tap .card:hover .variable_vp,
+.variable_vp_scoring_yes .variable_vp {
     display: block;
 }
 /*** icons ***/

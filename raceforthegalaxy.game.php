@@ -824,7 +824,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             // 6 cost devs and worlds with similar scoring
             if ($card['type'] == 'development' && $card['cost'] == 6 && $card_type_id != 151
                 || in_array($card_type_id, [247, 267, 283, 294])) {
-                $result['card_types'][$card_type_id]['sixdev_scoring'] = $this->sixcostdev_html($card_type_id);
+                $result['card_types'][$card_type_id]['variable_vp_scoring'] = $this->variableVpScoringHtml($card_type_id);
             }
         }
 
@@ -1246,7 +1246,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 if (isset($power['arg']['pr'])) {
                     if (isset($power['rebel'])) {
                         $html .= sprintf(self::_("Gain %s PRG if you place a Rebel development"), $power['arg']['pr']) ;
-                    } elseif (isset($power['onlyif_six_dev'])) {
+                    } elseif (isset($power['onlyif_variable_vp'])) {
                         $html .= sprintf(self::_("Gain %s PRG if you place a 6 cost development"), $power['arg']['pr']) ;
                     } else {
                         $html .= sprintf(self::_("Gain %s PRG if you place a development"), $power['arg']['pr']) ;
@@ -1624,222 +1624,222 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         return $html;
     }
 
-    function sixcostdev_html($card_type_id)
+    function variableVpScoringHtml($card_type_id)
     {
-        $html = "<table class='six_dev_scoring'>";
+        $html = "<table class='variable_vp_scoring'>";
 
         switch ($card_type_id) {
             case 11:
-                $html .= "<tr><td>{two_pts}</td><td>{brown_production}</td><td class='six_dev_scoring_text'>" . self::_("Rare elements production world")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{brown_windfall}</td><td class='six_dev_scoring_text'>" . self::_("Rare elements windfall world")."</td></tr>";
-                $html .= "<tr><td rowspan=2>{two_pts}</td><td>{named_development}</td><td class='six_dev_scoring_name'>" . self::_("Mining Robots")."</td></tr>";
-                $html .= "<tr><td>{named_development}</td><td class='six_dev_scoring_name'>" . self::_("Mining Conglomerate")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{brown_production}</td><td class='variable_vp_scoring_text'>" . self::_("Rare elements production world")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{brown_windfall}</td><td class='variable_vp_scoring_text'>" . self::_("Rare elements windfall world")."</td></tr>";
+                $html .= "<tr><td rowspan=2>{two_pts}</td><td>{named_development}</td><td class='variable_vp_scoring_name'>" . self::_("Mining Robots")."</td></tr>";
+                $html .= "<tr><td>{named_development}</td><td class='variable_vp_scoring_name'>" . self::_("Mining Conglomerate")."</td></tr>";
                 break;
             case 21:
-                $html .= "<tr><td>{three_pts}</td><td>{yellow_production}</td><td class='six_dev_scoring_text'>" . self::_("Alien technology production world")."</td></tr>";
-                $html .= "<tr><td>{two_pts}</td><td>{yellow_windfall}</td><td class='six_dev_scoring_text'>" . self::_("Alien technology windfall world")."</td></tr>";
-                $html .= "<tr><td>{two_pts}</td><td class='six_dev_scoring_card_only'>£ALIEN£</td><td colspan=2 class='six_dev_scoring_text'>" . self::_("other £ALIEN£ card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{three_pts}</td><td>{yellow_production}</td><td class='variable_vp_scoring_text'>" . self::_("Alien technology production world")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{yellow_windfall}</td><td class='variable_vp_scoring_text'>" . self::_("Alien technology windfall world")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td class='variable_vp_scoring_card_only'>£ALIEN£</td><td colspan=2 class='variable_vp_scoring_text'>" . self::_("other £ALIEN£ card (including this one)")."</td></tr>";
                 break;
             case 22:
-                $html .= "<tr><td>{two_pts}</td><td>{blue_production}</td><td class='six_dev_scoring_text'>" . self::_("Novelty production world")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{blue_windfall}</td><td class='six_dev_scoring_text'>" . self::_("Novelty windfall world")."</td></tr>";
-                $html .= "<tr><td rowspan=2>{two_pts}</td><td>{named_development}</td><td class='six_dev_scoring_name'>" . self::_("Consumer Markets")."</td></tr>";
-                $html .= "<tr><td>{grey_world}</td><td class='six_dev_scoring_name'>" . self::_("Expanding Colony")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{blue_production}</td><td class='variable_vp_scoring_text'>" . self::_("Novelty production world")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{blue_windfall}</td><td class='variable_vp_scoring_text'>" . self::_("Novelty windfall world")."</td></tr>";
+                $html .= "<tr><td rowspan=2>{two_pts}</td><td>{named_development}</td><td class='variable_vp_scoring_name'>" . self::_("Consumer Markets")."</td></tr>";
+                $html .= "<tr><td>{grey_world}</td><td class='variable_vp_scoring_name'>" . self::_("Expanding Colony")."</td></tr>";
                 break;
             case 23:
-                $html .= "<tr><td>{two_pts}</td><td>{six_development}</td><td class='six_dev_scoring_text'>" . self::_("6-cost development (including this one)")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{six_development}</td><td class='variable_vp_scoring_text'>" . self::_("6-cost development (including this one)")."</td></tr>";
                 if (self::getGameStateValue('expansion') == 4) {
-                    $html .= "<tr><td>{one_pt}</td><td>{development}</td><td class='six_dev_scoring_text'>" . self::_("other development")."</td></tr>";
+                    $html .= "<tr><td>{one_pt}</td><td>{development}</td><td class='variable_vp_scoring_text'>" . self::_("other development")."</td></tr>";
                 } else {
-                    $html .= "<tr><td>{one_pt}</td><td>{dev_lower_than_six}</td><td class='six_dev_scoring_text'>" . self::_("other development")."</td></tr>";
+                    $html .= "<tr><td>{one_pt}</td><td>{dev_lower_than_six}</td><td class='variable_vp_scoring_text'>" . self::_("other development")."</td></tr>";
                 }
                 break;
             case 24:
-                $html .=  "<tr><td>{two_pts}</td><td>{rebel_military_world}</td><td class='six_dev_scoring_text'>" . self::_("Rebel military world")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{military_world}</td><td class='six_dev_scoring_text'>" . self::_("other military world")."</td></tr>";
+                $html .=  "<tr><td>{two_pts}</td><td>{rebel_military_world}</td><td class='variable_vp_scoring_text'>" . self::_("Rebel military world")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{military_world}</td><td class='variable_vp_scoring_text'>" . self::_("other military world")."</td></tr>";
                 break;
             case 25:
-                $html .= "<tr><td>{one_pt}</td><td>{three_vp_chips}</td><td class='six_dev_scoring_text'>" . self::_("every three VPs in chips, rounded down")."</td></tr>";
-                $html .= "<tr><td rowspan=3>{three_pts}</td><td>{named_development}</td><td class='six_dev_scoring_name'>" . self::_("Research Labs")."</td></tr>";
-                $html .= "<tr><td>{grey_world}</td><td class='six_dev_scoring_name'>" . self::_("Galactic Trendsetters")."</td></tr>";
-                $html .= "<tr><td>{blue_world}</td><td class='six_dev_scoring_name'>" . self::_("Artist Colony")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{three_vp_chips}</td><td class='variable_vp_scoring_text'>" . self::_("every three VPs in chips, rounded down")."</td></tr>";
+                $html .= "<tr><td rowspan=3>{three_pts}</td><td>{named_development}</td><td class='variable_vp_scoring_name'>" . self::_("Research Labs")."</td></tr>";
+                $html .= "<tr><td>{grey_world}</td><td class='variable_vp_scoring_name'>" . self::_("Galactic Trendsetters")."</td></tr>";
+                $html .= "<tr><td>{blue_world}</td><td class='variable_vp_scoring_name'>" . self::_("Artist Colony")."</td></tr>";
                 break;
             case 26:
-                $html .= "<tr><td>{one_pt}</td><td>{dev_explore}</td><td class='six_dev_scoring_text'>" . self::_("development with an Explore power")."</td></tr>";
-                $html .= "<tr><td>{two_pts}</td><td>{world_explore}</td><td class='six_dev_scoring_text'>" . self::_("world with an Explore power")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{world}</td><td class='six_dev_scoring_text'>" . self::_("other world")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{dev_explore}</td><td class='variable_vp_scoring_text'>" . self::_("development with an Explore power")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{world_explore}</td><td class='variable_vp_scoring_text'>" . self::_("world with an Explore power")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{world}</td><td class='variable_vp_scoring_text'>" . self::_("other world")."</td></tr>";
                 break;
             case 27:
-                $html .= "<tr><td>{two_pts}</td><td>{blue_production}{brown_production}<br>{green_production}{yellow_production}</td><td class='six_dev_scoring_text'>" . self::_("production world")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{any_good}</td><td class='six_dev_scoring_text'>" . self::_("good at game end")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{blue_production}{brown_production}<br>{green_production}{yellow_production}</td><td class='variable_vp_scoring_text'>" . self::_("production world")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{any_good}</td><td class='variable_vp_scoring_text'>" . self::_("good at game end")."</td></tr>";
                 break;
             case 28:
-                $html .= "<tr><td>{two_pts}</td><td>{dev_consume}</td><td class='six_dev_scoring_text'>" . self::_("development with a Consume power (including this one)")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{world_consume}</td><td class='six_dev_scoring_text'>" . self::_("world with a Consume power")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{dev_consume}</td><td class='variable_vp_scoring_text'>" . self::_("development with a Consume power (including this one)")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{world_consume}</td><td class='variable_vp_scoring_text'>" . self::_("world with a Consume power")."</td></tr>";
                 break;
 
             case 29:
-                $html .= "<tr><td>{X_pts}</td><td>{X_military}</td><td class='six_dev_scoring_text'>" . self::_("total Military (count negative Military but do not count specialized Military)")."</td></tr>";
+                $html .= "<tr><td>{X_pts}</td><td>{X_military}</td><td class='variable_vp_scoring_text'>" . self::_("total Military (count negative Military but do not count specialized Military)")."</td></tr>";
                 break;
 
             case 30:
-                $html .= "<tr><td>{two_pts}</td><td>{green_production}</td><td>{green_windfall}</td><td class='six_dev_scoring_text'>" . self::_("Genes world")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td colspan=2>{military_world}</td><td class='six_dev_scoring_text'>" . self::_("other military world")."</td></tr>";
-                $html .= "<tr><td>{three_pts}</td><td colspan=2>{named_development}</td><td class='six_dev_scoring_name'>" . self::_("Contact Specialist")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{green_production}</td><td>{green_windfall}</td><td class='variable_vp_scoring_text'>" . self::_("Genes world")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td colspan=2>{military_world}</td><td class='variable_vp_scoring_text'>" . self::_("other military world")."</td></tr>";
+                $html .= "<tr><td>{three_pts}</td><td colspan=2>{named_development}</td><td class='variable_vp_scoring_name'>" . self::_("Contact Specialist")."</td></tr>";
                 break;
             case 31:
-                $html .= "<tr><td>{two_pts}</td><td>{dev_trade}</td><td class='six_dev_scoring_text'>" . self::_("development with a Trade power (including this one)")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{world_trade}</td><td class='six_dev_scoring_text'>" . self::_("world with a Trade power")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{dev_trade}</td><td class='variable_vp_scoring_text'>" . self::_("development with a Trade power (including this one)")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{world_trade}</td><td class='variable_vp_scoring_text'>" . self::_("world with a Trade power")."</td></tr>";
                 break;
 
         // The Gathering storm
             case 100:
-                $html .= "<tr><td>{two_pts}</td><td>{green_production}</td><td>{green_windfall}</td><td class='six_dev_scoring_text'>" . self::_("Genes world")."</td></tr>";
-                $html .= "<tr><td>{three_pts}</td><td colspan=2>{named_development}</td><td class='six_dev_scoring_name'>" . self::_("Genetics Lab")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{green_production}</td><td>{green_windfall}</td><td class='variable_vp_scoring_text'>" . self::_("Genes world")."</td></tr>";
+                $html .= "<tr><td>{three_pts}</td><td colspan=2>{named_development}</td><td class='variable_vp_scoring_name'>" . self::_("Genetics Lab")."</td></tr>";
                 break;
             case 101:
-                $html .= "<tr><td>{two_pts}</td><td>{windfall_world}</td><td class='six_dev_scoring_text'>" . self::_("windfall world")."</td></tr>";
-                $html .= "<tr><td>{two_pts}</td><td class='six_dev_scoring_card_only'>€TERRA€</td><td colspan=2 class='six_dev_scoring_text'>" . self::_("€TERRAFORMING€ card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{windfall_world}</td><td class='variable_vp_scoring_text'>" . self::_("windfall world")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td class='variable_vp_scoring_card_only'>€TERRA€</td><td colspan=2 class='variable_vp_scoring_text'>" . self::_("€TERRAFORMING€ card (including this one)")."</td></tr>";
                 break;
             case 119:
-                $html .= "<tr><td>{two_pts}</td><td class='six_dev_scoring_card_only'>+IMPERIUM+</td><td colspan=2 class='six_dev_scoring_text'>" . self::_("+IMPERIUM+ card (including this one)")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{military_world}</td><td class='six_dev_scoring_text'>" . self::_("other military world")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td class='variable_vp_scoring_card_only'>+IMPERIUM+</td><td colspan=2 class='variable_vp_scoring_text'>" . self::_("+IMPERIUM+ card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{military_world}</td><td class='variable_vp_scoring_text'>" . self::_("other military world")."</td></tr>";
                 break;
 
         // Rebel vs imperium
             case 146:
-                $html .= "<tr><td>{two_pts}</td><td>{brown_production}</td><td>{brown_windfall}</td><td class='six_dev_scoring_text'>" . self::_("Rare elements world")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td colspan=2>{world}</td><td class='six_dev_scoring_text'>" . self::_("other world")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td colspan=2 class='six_dev_scoring_card_only'>€TERRA€</td><td colspan=3 class='six_dev_scoring_text'>" . self::_("€TERRAFORMING€ card")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{brown_production}</td><td>{brown_windfall}</td><td class='variable_vp_scoring_text'>" . self::_("Rare elements world")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td colspan=2>{world}</td><td class='variable_vp_scoring_text'>" . self::_("other world")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td colspan=2 class='variable_vp_scoring_card_only'>€TERRA€</td><td colspan=3 class='variable_vp_scoring_text'>" . self::_("€TERRAFORMING€ card")."</td></tr>";
                 break;
             case 147:
-                $html .= "<tr><td>{two_pts}</td><td class='six_dev_scoring_card_only'>+IMPERIUM+</td><td colspan=2 class='six_dev_scoring_text'>" . self::_("+IMPERIUM+ card (including this one)")."</td></tr>";
-                $html .= "<tr><td>{two_pts}</td><td>{rebel_military_world}</td><td class='six_dev_scoring_text'>" . self::_("Rebel military world")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td class='variable_vp_scoring_card_only'>+IMPERIUM+</td><td colspan=2 class='variable_vp_scoring_text'>" . self::_("+IMPERIUM+ card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{rebel_military_world}</td><td class='variable_vp_scoring_text'>" . self::_("Rebel military world")."</td></tr>";
                 break;
             case 148:
-                $html .= "<tr class='six_dev_scoring_card_only'><td>{X_pts_no_slash}</td><td style='font-weight: bold'>1/3/6/10</td></tr>";
-                $html .= "<tr class='six_dev_scoring_card_only'><td colspan=2>{different_kinds}</td></tr>";
-                $html .= "<tr class='six_dev_scoring_tooltip_only'><td style='font-weight: bold'>1/3/6/10</td><td>{empty_pts}</td><td>" . self::_("1-4 different kinds of worlds")."{different_kinds}</td></tr>";
-                $html .= "<tr><td>{three_pts}</td><td>{named_development}</td><td class='six_dev_scoring_name'>" . self::_("Diversified Economy")."</td></tr>";
+                $html .= "<tr class='variable_vp_scoring_card_only'><td>{X_pts_no_slash}</td><td style='font-weight: bold'>1/3/6/10</td></tr>";
+                $html .= "<tr class='variable_vp_scoring_card_only'><td colspan=2>{different_kinds}</td></tr>";
+                $html .= "<tr class='variable_vp_scoring_tooltip_only'><td style='font-weight: bold'>1/3/6/10</td><td>{empty_pts}</td><td>" . self::_("1-4 different kinds of worlds")."{different_kinds}</td></tr>";
+                $html .= "<tr><td>{three_pts}</td><td>{named_development}</td><td class='variable_vp_scoring_name'>" . self::_("Diversified Economy")."</td></tr>";
                 break;
             case 149:
-                $html .= "<tr><td>{two_pts}</td><td class='six_dev_scoring_card_only'>!REBEL!</td><td colspan=2 class='six_dev_scoring_text'>" . self::_("!REBEL! card (including this one)")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{military_world}</td><td class='six_dev_scoring_text'>" . self::_("other military world")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td class='variable_vp_scoring_card_only'>!REBEL!</td><td colspan=2 class='variable_vp_scoring_text'>" . self::_("!REBEL! card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{military_world}</td><td class='variable_vp_scoring_text'>" . self::_("other military world")."</td></tr>";
                 break;
             case 150:
-                $html .= "<tr><td rowspan=3>{two_pts}</td><td>{named_development}</td><td class='six_dev_scoring_name'>" . self::_("Interstellar Bank")."</td></tr>";
-                $html .= "<tr><td>{named_development}</td><td class='six_dev_scoring_name'>" . self::_("Investment Credits")."</td></tr>";
-                $html .= "<tr><td>{grey_world}</td><td class='six_dev_scoring_name'>" . self::_("Gambling World")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{development}</td><td class='six_dev_scoring_text'>" . self::_("other development (including this one)")."</td></tr>";
+                $html .= "<tr><td rowspan=3>{two_pts}</td><td>{named_development}</td><td class='variable_vp_scoring_name'>" . self::_("Interstellar Bank")."</td></tr>";
+                $html .= "<tr><td>{named_development}</td><td class='variable_vp_scoring_name'>" . self::_("Investment Credits")."</td></tr>";
+                $html .= "<tr><td>{grey_world}</td><td class='variable_vp_scoring_name'>" . self::_("Gambling World")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{development}</td><td class='variable_vp_scoring_text'>" . self::_("other development (including this one)")."</td></tr>";
                 break;
             case 152:
-                $html .= "<tr><td>{three_pts}</td><td class='six_dev_scoring_card_only'>{chromosome}</td><td colspan=2 class='six_dev_scoring_text'>" . self::_("*UPLIFT* world with XX")."</td></tr>";
-                $html .= "<tr><td>{two_pts}</td><td class='six_dev_scoring_card_only'>*UPLIFT*</td><td colspan=2 class='six_dev_scoring_text'>" . self::_("other *UPLIFT* card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{three_pts}</td><td class='variable_vp_scoring_card_only'>{chromosome}</td><td colspan=2 class='variable_vp_scoring_text'>" . self::_("*UPLIFT* world with XX")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td class='variable_vp_scoring_card_only'>*UPLIFT*</td><td colspan=2 class='variable_vp_scoring_text'>" . self::_("other *UPLIFT* card (including this one)")."</td></tr>";
                 break;
 
         // Brink of war
             case 192:
-                $html .= "<tr><td>{X_pts}</td><td>{X_minus_military}</td><td class='six_dev_scoring_text'>" . self::_("total negative Military (count negative Military as positive victory points)")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{military_world}</td><td class='six_dev_scoring_text'>" . self::_("military world")."</td></tr>";
-                $html .= "<tr><td>{two_pts}</td><td>{named_development}</td><td class='six_dev_scoring_name'>" . self::_("Pan-Galactic Mediator")."</td></tr>";
+                $html .= "<tr><td>{X_pts}</td><td>{X_minus_military}</td><td class='variable_vp_scoring_text'>" . self::_("total negative Military (count negative Military as positive victory points)")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{military_world}</td><td class='variable_vp_scoring_text'>" . self::_("military world")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{named_development}</td><td class='variable_vp_scoring_name'>" . self::_("Pan-Galactic Mediator")."</td></tr>";
                 break;
             case 193:
-                $html .= "<tr><td>{two_pts}</td><td class='six_dev_scoring_card_only'>€TERRA€</td><td colspan=2 class='six_dev_scoring_text'>" . self::_("€TERRAFORMING€ card (including this one)")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{six_development}</td><td class='six_dev_scoring_text'>" . self::_("other 6-cost development")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{blue_production}{brown_production}<br>{green_production}{yellow_production}</td><td class='six_dev_scoring_text'>" . self::_("production world")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td class='variable_vp_scoring_card_only'>€TERRA€</td><td colspan=2 class='variable_vp_scoring_text'>" . self::_("€TERRAFORMING€ card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{six_development}</td><td class='variable_vp_scoring_text'>" . self::_("other 6-cost development")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{blue_production}{brown_production}<br>{green_production}{yellow_production}</td><td class='variable_vp_scoring_text'>" . self::_("production world")."</td></tr>";
                 break;
             case 197:
-                $html .= "<tr><td>{two_pts}</td><td>{blue_production}</td><td>{blue_windfall}</td><td class='six_dev_scoring_text'>" . self::_("Novelty world")."</td></tr>";
-                $html .= "<tr><td>{two_pts}</td><td colspan=2>{grey_world}</td><td class='six_dev_scoring_name'>" . self::_("Expanding Colony")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td colspan=2>{world}</td><td class='six_dev_scoring_text'>" . self::_("other world")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{blue_production}</td><td>{blue_windfall}</td><td class='variable_vp_scoring_text'>" . self::_("Novelty world")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td colspan=2>{grey_world}</td><td class='variable_vp_scoring_name'>" . self::_("Expanding Colony")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td colspan=2>{world}</td><td class='variable_vp_scoring_text'>" . self::_("other world")."</td></tr>";
                 break;
             case 199:
-                $html .= "<tr><td>{one_pt}</td><td>PRG</td><td class='six_dev_scoring_text'>" . self::_("(additional)")."</td></tr>";
-                $html .= "<tr><td rowspan=3>{two_pts}</td><td>{named_development}</td><td class='six_dev_scoring_name'>" . self::_("Export Duties")."</td></tr>";
-                $html .= "<tr><td>{named_development}</td><td class='six_dev_scoring_name'>" . self::_("Galactic Renaissance")."</td></tr>";
-                $html .= "<tr><td>{grey_world}</td><td class='six_dev_scoring_name'>" . self::_("Terraformed World")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>PRG</td><td class='variable_vp_scoring_text'>" . self::_("(additional)")."</td></tr>";
+                $html .= "<tr><td rowspan=3>{two_pts}</td><td>{named_development}</td><td class='variable_vp_scoring_name'>" . self::_("Export Duties")."</td></tr>";
+                $html .= "<tr><td>{named_development}</td><td class='variable_vp_scoring_name'>" . self::_("Galactic Renaissance")."</td></tr>";
+                $html .= "<tr><td>{grey_world}</td><td class='variable_vp_scoring_name'>" . self::_("Terraformed World")."</td></tr>";
                 break;
             case 201:
-                $html .= "<tr><td>{two_pts}</td><td class='six_dev_scoring_card_only'>£ALIEN£</td><td colspan=2 class='six_dev_scoring_text'>" . self::_("£ALIEN£ card (including this one)")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{blue_production}{brown_production}<br>{green_production}</td><td class='six_dev_scoring_text'>" . self::_("other (non-£ALIEN£) production world")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td class='variable_vp_scoring_card_only'>£ALIEN£</td><td colspan=2 class='variable_vp_scoring_text'>" . self::_("£ALIEN£ card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{blue_production}{brown_production}<br>{green_production}</td><td class='variable_vp_scoring_text'>" . self::_("other (non-£ALIEN£) production world")."</td></tr>";
                 break;
 
         // Alien artifacts
 
             case 260:
-                $html .= "<tr><td>{three_pts}</td><td>{grey_world}</td><td class='six_dev_scoring_name'>" . self::_("Alien Rosetta Stone World")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td class='six_dev_scoring_card_only'>£ALIEN£</td><td colspan=2 class='six_dev_scoring_text'>" . self::_("other £ALIEN£ card (including this one)")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{alien_technology_token}</td><td class='six_dev_scoring_text'>" . self::_("Alien Technology token (additional)")."</td></tr>";
+                $html .= "<tr><td>{three_pts}</td><td>{grey_world}</td><td class='variable_vp_scoring_name'>" . self::_("Alien Rosetta Stone World")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td class='variable_vp_scoring_card_only'>£ALIEN£</td><td colspan=2 class='variable_vp_scoring_text'>" . self::_("other £ALIEN£ card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{alien_technology_token}</td><td class='variable_vp_scoring_text'>" . self::_("Alien Technology token (additional)")."</td></tr>";
                 break;
             case 261:
-                $html .= "<tr><td>{two_pts}</td><td class='six_dev_scoring_card_only'>€TERRA€</td><td colspan=2 class='six_dev_scoring_text'>" . self::_("€TERRAFORMING€ card (including this one)")."</td></tr>";
-                $html .= "<tr><td>{three_pts}</td><td>{grey_world}</td><td class='six_dev_scoring_name'>" . self::_("Terraformed World")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{civil_world}</td><td class='six_dev_scoring_text'>" . self::_("other non-military world")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{alien_science_token}</td><td class='six_dev_scoring_text'>" . self::_("Alien Science token (additional)")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td class='variable_vp_scoring_card_only'>€TERRA€</td><td colspan=2 class='variable_vp_scoring_text'>" . self::_("€TERRAFORMING€ card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{three_pts}</td><td>{grey_world}</td><td class='variable_vp_scoring_name'>" . self::_("Terraformed World")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{civil_world}</td><td class='variable_vp_scoring_text'>" . self::_("other non-military world")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{alien_science_token}</td><td class='variable_vp_scoring_text'>" . self::_("Alien Science token (additional)")."</td></tr>";
                 break;
             case 262:
-                $html .= "<tr><td>{two_pts}</td><td colspan=2 class='six_dev_scoring_card_only'>*UPLIFT*</td><td colspan=3 class='six_dev_scoring_text'>" . self::_("*UPLIFT* card (including this one)")."</td></tr>";
-                $html .= "<tr><td>{two_pts}</td><td>{green_production}</td><td>{green_windfall}</td><td class='six_dev_scoring_text'>" . self::_("other Genes world")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td colspan=2>{alien_uplift_token}</td><td class='six_dev_scoring_text'>" . self::_("Alien Uplift token (additional)")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td colspan=2 class='variable_vp_scoring_card_only'>*UPLIFT*</td><td colspan=3 class='variable_vp_scoring_text'>" . self::_("*UPLIFT* card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{green_production}</td><td>{green_windfall}</td><td class='variable_vp_scoring_text'>" . self::_("other Genes world")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td colspan=2>{alien_uplift_token}</td><td class='variable_vp_scoring_text'>" . self::_("Alien Uplift token (additional)")."</td></tr>";
                 break;
             case 263:
-                $html .= "<tr><td>{two_pts}</td><td class='six_dev_scoring_card_only'>+IMPERIUM+</td><td colspan=2 class='six_dev_scoring_text'>" . self::_("+IMPERIUM+ card (including this one)")."</td></tr>";
-                $html .= "<tr><td>{three_pts}</td><td>{brown_civil_windfall}</td><td class='six_dev_scoring_name'>" . self::_("Blaster Gem Mines")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{military_world}</td><td class='six_dev_scoring_text'>" . self::_("other military world")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td class='variable_vp_scoring_card_only'>+IMPERIUM+</td><td colspan=2 class='variable_vp_scoring_text'>" . self::_("+IMPERIUM+ card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{three_pts}</td><td>{brown_civil_windfall}</td><td class='variable_vp_scoring_name'>" . self::_("Blaster Gem Mines")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{military_world}</td><td class='variable_vp_scoring_text'>" . self::_("other military world")."</td></tr>";
                 break;
             case 264:
-                $html .= "<tr><td>{one_pt}</td><td>{development}</td><td class='six_dev_scoring_text'>" . self::_("development (including this one)")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{blue_production}{brown_production}<br>{green_production}{yellow_production}</td><td class='six_dev_scoring_text'>" . self::_("production world")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{development}</td><td class='variable_vp_scoring_text'>" . self::_("development (including this one)")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{blue_production}{brown_production}<br>{green_production}{yellow_production}</td><td class='variable_vp_scoring_text'>" . self::_("production world")."</td></tr>";
                 break;
             case 265:
-                $html .= "<tr><td>{two_pts}</td><td colspan=2>{civil_world_trade}</td><td class='six_dev_scoring_text'>" . self::_("non-military world with a Trade power")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td colspan=2>{civil_world}</td><td class='six_dev_scoring_text'>" . self::_("other non-military world")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{dev_trade}</td><td>{military_world_trade}</td><td class='six_dev_scoring_text'>" . self::_("other card with a Trade power (including this one)")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td colspan=2>{civil_world_trade}</td><td class='variable_vp_scoring_text'>" . self::_("non-military world with a Trade power")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td colspan=2>{civil_world}</td><td class='variable_vp_scoring_text'>" . self::_("other non-military world")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{dev_trade}</td><td>{military_world_trade}</td><td class='variable_vp_scoring_text'>" . self::_("other card with a Trade power (including this one)")."</td></tr>";
                 break;
 
         // Xeno invasion
             case 308:
-                $html .= "<tr><td>{two_pts}</td><td class='six_dev_scoring_card_only'>^AXENO^</td><td>{world}</td><td class='six_dev_scoring_text'>" . self::_("^ANTi-XENO^ world")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{world}</td><td class='six_dev_scoring_text'>" . self::_("other world")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td class='six_dev_scoring_card_only'>^AXENO^</td><td>{development}</td><td class='six_dev_scoring_text'>" . self::_("^ANTi-XENO^ development (including this one)")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td class='variable_vp_scoring_card_only'>^AXENO^</td><td>{world}</td><td class='variable_vp_scoring_text'>" . self::_("^ANTi-XENO^ world")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{world}</td><td class='variable_vp_scoring_text'>" . self::_("other world")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td class='variable_vp_scoring_card_only'>^AXENO^</td><td>{development}</td><td class='variable_vp_scoring_text'>" . self::_("^ANTi-XENO^ development (including this one)")."</td></tr>";
                 break;
             case 309:
-                $html .= "<tr><td>{one_pt}</td><td class='six_dev_scoring_card_only'>^AXENO^</td><td  colspan=2 class='six_dev_scoring_text'>" . self::_("^ANTi-XENO^ card (including this one)")."</td></tr>";
-                $html .= "<tr><td>{two_pts}</td><td>{rebel_military_world}</td><td class='six_dev_scoring_text'>" . self::_("Rebel military world")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{xeno_military_world}</td><td class='six_dev_scoring_text'>" . self::_("other Xeno military world")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td class='variable_vp_scoring_card_only'>^AXENO^</td><td  colspan=2 class='variable_vp_scoring_text'>" . self::_("^ANTi-XENO^ card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{rebel_military_world}</td><td class='variable_vp_scoring_text'>" . self::_("Rebel military world")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{xeno_military_world}</td><td class='variable_vp_scoring_text'>" . self::_("other Xeno military world")."</td></tr>";
                 break;
             case 310:
-                $html .= "<tr><td>{three_pts}</td><td colspan=2>{brown_civil_windfall}</td><td class='six_dev_scoring_name'>" . self::_("Blaster Gem Mines")."</td></tr>";
-                $html .= "<tr><td>{three_pts}</td><td colspan=2>{brown_civil_production}</td><td class='six_dev_scoring_name'>" . self::_("Imperium Armaments World")."</td></tr>";
-                $html .= "<tr><td>{two_pts}</td><td colspan=2 class='six_dev_scoring_card_only'>+IMPERIUM+</td><td colspan=3 class='six_dev_scoring_text'>" . self::_("other +IMPERIUM+ card (including this one)")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{brown_production}</td><td>{brown_windfall}</td><td class='six_dev_scoring_text'>" . self::_("other Rare elements world")."</td></tr>";
+                $html .= "<tr><td>{three_pts}</td><td colspan=2>{brown_civil_windfall}</td><td class='variable_vp_scoring_name'>" . self::_("Blaster Gem Mines")."</td></tr>";
+                $html .= "<tr><td>{three_pts}</td><td colspan=2>{brown_civil_production}</td><td class='variable_vp_scoring_name'>" . self::_("Imperium Armaments World")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td colspan=2 class='variable_vp_scoring_card_only'>+IMPERIUM+</td><td colspan=3 class='variable_vp_scoring_text'>" . self::_("other +IMPERIUM+ card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{brown_production}</td><td>{brown_windfall}</td><td class='variable_vp_scoring_text'>" . self::_("other Rare elements world")."</td></tr>";
                 break;
             case 311:
-                $html .= "<tr><td>{two_pts}</td><td>{xeno_military_world}</td><td class='six_dev_scoring_text'>" . self::_("Xeno military world")."</td></tr>";
-                $html .= "<tr><td>{three_pts}</td><td>{yellow_civil_production}</td><td class='six_dev_scoring_name'>" . self::_("Alien Archives")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td class='six_dev_scoring_card_only'>£ALIEN£</td><td colspan=2 class='six_dev_scoring_text'>" . self::_("other £ALIEN£ card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td>{xeno_military_world}</td><td class='variable_vp_scoring_text'>" . self::_("Xeno military world")."</td></tr>";
+                $html .= "<tr><td>{three_pts}</td><td>{yellow_civil_production}</td><td class='variable_vp_scoring_name'>" . self::_("Alien Archives")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td class='variable_vp_scoring_card_only'>£ALIEN£</td><td colspan=2 class='variable_vp_scoring_text'>" . self::_("other £ALIEN£ card (including this one)")."</td></tr>";
                 break;
             case 312:
-                $html .= "<tr><td>{two_pts}</td><td colspan=2 class='six_dev_scoring_card_only'>*UPLIFT*</td><td colspan=3 class='six_dev_scoring_text'>" . self::_("*UPLIFT* card (including this one)")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{green_production}</td><td>{green_windfall}</td><td class='six_dev_scoring_text'>" . self::_("other Genes world")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td colspan=2 class='variable_vp_scoring_card_only'>*UPLIFT*</td><td colspan=3 class='variable_vp_scoring_text'>" . self::_("*UPLIFT* card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{green_production}</td><td>{green_windfall}</td><td class='variable_vp_scoring_text'>" . self::_("other Genes world")."</td></tr>";
                 break;
             case 313:
-                $html .= "<tr><td>{two_pts}</td><td class='six_dev_scoring_card_only'>€TERRA€</td><td colspan=2 class='six_dev_scoring_text'>" . self::_("€TERRAFORMING€ card (including this one)")."</td></tr>";
-                $html .= "<tr><td>{three_pts}</td><td>{grey_world}</td><td class='six_dev_scoring_name'>" . self::_("Terraformed World")."</td></tr>";
-                $html .= "<tr><td>{one_pt}</td><td>{blue_production}{brown_production}<br>{green_production}{yellow_production}</td><td class='six_dev_scoring_text'>" . self::_("production world")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td class='variable_vp_scoring_card_only'>€TERRA€</td><td colspan=2 class='variable_vp_scoring_text'>" . self::_("€TERRAFORMING€ card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{three_pts}</td><td>{grey_world}</td><td class='variable_vp_scoring_name'>" . self::_("Terraformed World")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td>{blue_production}{brown_production}<br>{green_production}{yellow_production}</td><td class='variable_vp_scoring_text'>" . self::_("production world")."</td></tr>";
                 break;
 
             // Worlds with 6cost dev-like scoring
 
             case 247: // Alien Uplift Chamber
-                $html .= "<tr><td>{two_pts}</td><td class='six_dev_scoring_card_only'>*UPLIFT*</td><td class='six_dev_scoring_text'>" . self::_("*UPLIFT* card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td class='variable_vp_scoring_card_only'>*UPLIFT*</td><td class='variable_vp_scoring_text'>" . self::_("*UPLIFT* card (including this one)")."</td></tr>";
                 break;
             case 267: // Rebel Resistance from Alien Artefact
-                $html .= "<tr><td>{two_pts}</td><td class='six_dev_scoring_card_only'>!REBEL!</td><td colspan=2 class='six_dev_scoring_text'>" . self::_("!REBEL! card (including this one)")."</td></tr>";
+                $html .= "<tr><td>{two_pts}</td><td class='variable_vp_scoring_card_only'>!REBEL!</td><td colspan=2 class='variable_vp_scoring_text'>" . self::_("!REBEL! card (including this one)")."</td></tr>";
                 break;
             case 283: // Corrosive Uplift World
             case 294: // Uplift Coalition
-                $html .= "<tr><td>{one_pt}</td><td class='six_dev_scoring_card_only'>{chromosome}</td><td class='six_dev_scoring_text'>" . self::_("*UPLIFT* world with XX (including this one)")."</td></tr>";
+                $html .= "<tr><td>{one_pt}</td><td class='variable_vp_scoring_card_only'>{chromosome}</td><td class='variable_vp_scoring_text'>" . self::_("*UPLIFT* world with XX (including this one)")."</td></tr>";
                 break;
             }
 
@@ -2220,7 +2220,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 continue;
             }
 
-            if (isset($power['onlyif_six_dev']) && $card_type['cost'] != 6) {
+            if (isset($power['onlyif_variable_vp']) && $card_type['cost'] != 6) {
                 continue;
             }
 

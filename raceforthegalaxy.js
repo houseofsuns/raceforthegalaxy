@@ -1056,7 +1056,7 @@ define([
                 var card_type = this.gamedatas.card_types[card_type_id];
                 var card_name = card_type.nametr; // Card name (translated)
                 var tooltip = this.replaceImages(card_type.tooltip);
-                var sixdev_scoring = card_type.sixdev_scoring;
+                var variable_vp_scoring = card_type.variable_vp_scoring;
 
                 // Add card content
                 var card_id = '';
@@ -1069,11 +1069,11 @@ define([
                 if (card_type_id == 181) {
                     dojo.place(`<div id="scavengericon_${card_id}" class="scavengericon"/>`, id);
                 }
-                if (sixdev_scoring != undefined) {
-                    sixdev_scoring = this.replaceImages(sixdev_scoring);
-                    sixdev_scoring = this.colorToName(sixdev_scoring);
-                    tooltip += '<hr/>' + sixdev_scoring;
-                    dojo.place(`<div id="six_dev_${card_id}" class="six_dev">${sixdev_scoring}</div>`, id);
+                if (variable_vp_scoring != undefined) {
+                    variable_vp_scoring = this.replaceImages(variable_vp_scoring);
+                    variable_vp_scoring = this.colorToName(variable_vp_scoring);
+                    tooltip += '<hr/>' + variable_vp_scoring;
+                    dojo.place(`<div id="variable_vp_${card_id}" class="variable_vp">${variable_vp_scoring}</div>`, id);
                 }
 
                 dojo.style(id, "background-size", "auto " + this.card_size['h'] * 10 + "px");

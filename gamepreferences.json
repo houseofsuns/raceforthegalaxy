@@ -112,20 +112,20 @@
         }
     },
     "6": {
-        "name": "6 cost development scoring display",
+        "name": "Variable-point card scoring display",
         "needReload": true,
         "values": {
             "1": {
                 "name": "Never",
-                "cssPref": "sixdev_scoring_no"
+                "cssPref": "variable_vp_scoring_no"
             },
             "2": {
                 "name": "Hover \/ Tap",
-                "cssPref": "sixdev_scoring_hover_tap"
+                "cssPref": "variable_vp_scoring_hover_tap"
             },
             "3": {
                 "name": "Always",
-                "cssPref": "sixdev_scoring_yes"
+                "cssPref": "variable_vp_scoring_yes"
             }
         },
         "default": 2
