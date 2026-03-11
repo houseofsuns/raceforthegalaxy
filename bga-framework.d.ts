@@ -831,7 +831,7 @@ declare class Stock {
     setSelectionAppearance(appearance: string): void;
     addToStock(cardUniqueId: number): void;
     addToStockWithId(cardUniqueId: number, cardId: string, from?: string): void;
-    addItemType(cardUniqueId: number, cardWeight: number, cardsurl: string, imagePosition: number): void;	
+    addItemType(cardUniqueId: number, cardWeight: number, cardsurl: string, imagePosition: number): void;   
     getSelectedItems(): any[];
     unselectAll(): void;
     removeAll(): void;

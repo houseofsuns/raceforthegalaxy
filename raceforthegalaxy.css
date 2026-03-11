@@ -132,7 +132,7 @@ html.new_design {
 }
 
 .militarytooltip {
-	display: inline-block;
+    display: inline-block;
 }
 
 @media (max-width: 800px) {
@@ -866,16 +866,16 @@ html.new_design {
 .rftg_xeno_invasion #phasechoicebtn_9 { display: inline;    }
 
 #xeno_repulse_track {
-	display: block;
-	width: 600px;
-	height: 417px;
-	position: relative;
-	background-image: url('img/xeno_repulse_track.jpg');
+    display: block;
+    width: 600px;
+    height: 417px;
+    position: relative;
+    background-image: url('img/xeno_repulse_track.jpg');
 }
 
 .admiral_disk {
     position: absolute;
-	width: 50px;
+    width: 50px;
     height: 44px;
     background-image: url('img/admiral_disk.svg');
     display: inline-block;
@@ -888,18 +888,18 @@ html.new_design {
 .admiral_ffffff { background-position: 0px -220px; }
 
 #military_vs_xeno_arrow {
-	position: absolute;
-	width: 46px;
+    position: absolute;
+    width: 46px;
     height: 106px;
-	background-image: url('img/military_vs_xeno_arrow.png');
-	display: inline-block;
+    background-image: url('img/military_vs_xeno_arrow.png');
+    display: inline-block;
 }
 #repulse_value_arrow {
-	position: absolute;
-	width: 45px;
+    position: absolute;
+    width: 45px;
     height: 53px;
-	background-image: url('img/repulse_value_arrow.png');
-	display: inline-block;
+    background-image: url('img/repulse_value_arrow.png');
+    display: inline-block;
 }
 
 .invasionforce {
@@ -1321,8 +1321,8 @@ td.six_dev_scoring_name {
 
 
 #player_hand, #player_hand_orb, #player_hand_art {
-	display: inline-block;
-	margin-left: 0px;
+    display: inline-block;
+    margin-left: 0px;
 }
 
 #alien_orb {

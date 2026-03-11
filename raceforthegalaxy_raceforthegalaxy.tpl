@@ -203,14 +203,14 @@ https://stackoverflow.com/questions/24077725/mobile-safari-sometimes-does-not-tr
         <h3>{XENO_INVASION}</h3>
         <br/>
         <div>
-	        <div>
-	            {CURRENT_WAVE} : <b><span id="current_wave">0</span></b> (<b><span id="wave_remaining_cards">2</span></b> {REMAINING_CARDS})
+            <div>
+                {CURRENT_WAVE} : <b><span id="current_wave">0</span></b> (<b><span id="wave_remaining_cards">2</span></b> {REMAINING_CARDS})
 
-	            <span style="float:right">{NUMBER_OF_EMPIRE_DEFEATS} : <b><span id="empire_defeat">0</span></b> / 2</span>
-	        </div>
-	        <br/>
-			<div id="xeno_repulse_track"></div>
-    	</div>
+                <span style="float:right">{NUMBER_OF_EMPIRE_DEFEATS} : <b><span id="empire_defeat">0</span></b> / 2</span>
+            </div>
+            <br/>
+            <div id="xeno_repulse_track"></div>
+        </div>
 </div>
 
 <div id="play_with_expansions" class="whiteblock" >
