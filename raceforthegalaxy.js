@@ -5817,7 +5817,7 @@ define([
             notif_showMessage: function(notif) {
                 this.showMessage(_(notif.args.msg), 'info');
             },
-      		/**
+            /**
              * This method will attach mobile to a new_parent without destroying, unlike original attachToNewParent which destroys mobile and
              * all its connectors (onClick, etc)
              */
