@@ -87,12 +87,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     {
         if ($from_location == 'deck') {
             // Deck is reshuffled
-            self::notifyAllPlayers('reshuffle', clienttranslate('No more cards in deck ! The discard pile is shuffled back into the draw pile'), array());
+            $this->notifyAllPlayers('reshuffle', clienttranslate('No more cards in deck ! The discard pile is shuffled back into the draw pile'), array());
         } else {
             // pdXXXXXX
             $player_id = substr($from_location, 2);
             $players = self::loadPlayersBasicInfos();
-            self::notifyAllPlayers('reshuffle', clienttranslate('No more cards in ${player_name}`s deck ! The discard pile is shuffled back into the draw pile'), array(
+            $this->notifyAllPlayers('reshuffle', clienttranslate('No more cards in ${player_name}`s deck ! The discard pile is shuffled back into the draw pile'), array(
                 'player_name' => $players[ $player_id ]['player_name']
            ));
         }
@@ -100,7 +100,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
     function invasiondeckAutoReshuffle()
     {
-        self::notifyAllPlayers('reshuffle', clienttranslate('No more cards in invasion deck ! Wave 3 cards are shuffled back into the draw pile'), array());
+        $this->notifyAllPlayers('reshuffle', clienttranslate('No more cards in invasion deck ! Wave 3 cards are shuffled back into the draw pile'), array());
     }
 
 
@@ -144,9 +144,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         if (($expansion == 3  || $expansion == 4) && self::getGameStateValue('takeover') == 0) {
             $to = bga_rand(1,2);
             if ($to == 1) {
-                self::notifyAllPlayers('', clienttranslate('Takeovers are allowed'), array());
+                $this->notifyAllPlayers('', clienttranslate('Takeovers are allowed'), array());
             } else {
-                self::notifyAllPlayers('', clienttranslate('Takeovers are disabled'), array());
+                $this->notifyAllPlayers('', clienttranslate('Takeovers are disabled'), array());
             }
             self::setGameStateValue('takeover', $to);
         }
@@ -1094,9 +1094,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $notifications = $this->getDeferedNotification($notif_ref);
         foreach ($notifications as $notification) {
             if (isset($notification['player'])) {
-                self::notifyPlayer($notification['player'], $notification['type'], $notification['log'], $notification['args']);
+                $this->notifyPlayer($notification['player'], $notification['type'], $notification['log'], $notification['args']);
             } else {
-                self::notifyAllPlayers($notification['type'], $notification['log'], $notification['args']);
+                $this->notifyAllPlayers($notification['type'], $notification['log'], $notification['args']);
 
                 if ($notification['type'] == 'updatePrestige'
                     && $notification['args']['nbr'] < 0
@@ -2606,7 +2606,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             self::DbQuery($sql);
 
             if ($bXenoForce) {
-                self::notifyAllPlayers('updateMilforce', '',
+                $this->notifyAllPlayers('updateMilforce', '',
                                     array(
                                         "player_id" => $player_id,
                                         "xeno" => $new_milforce
@@ -2620,7 +2620,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                                             "force" => $new_milforce
                                        ));
                 } else {
-                    self::notifyAllPlayers('updateMilforce', '',
+                    $this->notifyAllPlayers('updateMilforce', '',
                                         array(
                                             "player_id" => $player_id,
                                             "force_delta" => $new_milforce-$current_milforce,
@@ -3076,7 +3076,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                         "good_id" => $good_card['id']
                    ));
             } else {
-                self::notifyAllPlayers('goodproduction', '', array(
+                $this->notifyAllPlayers('goodproduction', '', array(
                         "world_id" => $card_id,
                         "good_type" => $good_type,
                         "good_id" => $good_card['id']
@@ -3951,7 +3951,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
             $pscore = $this->updatePlayerScore($player_id, $points, false);
 
-            self::notifyAllPlayers('updateScore', clienttranslate('${player_name} gains ${points_nbr} with ${dev_name}'),
+            $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} gains ${points_nbr} with ${dev_name}'),
                                             array(
                                                 "i18n" => array("dev_name"),
                                                 "player_id" => $player_id,
@@ -3982,7 +3982,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         if ($player_capital !== null) {
             $pscore = $this->updatePlayerScore($player_capital['player_id'], $player_capital['player_prestige'], false);
 
-            self::notifyAllPlayers('updateScore', clienttranslate('${player_name} gains ${points_nbr} with ${dev_name}'),
+            $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} gains ${points_nbr} with ${dev_name}'),
                                             array(
                                                 "i18n" => array("dev_name"),
                                                 "player_id" => $player_capital['player_id'],
@@ -4099,9 +4099,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                                                 "vp" => $pscore['vp']
                                            ) );
         } else {
-            self::notifyAllPlayers('updatePrestige', $log, $args);
+            $this->notifyAllPlayers('updatePrestige', $log, $args);
 
-            self::notifyAllPlayers('updateScore', '',
+            $this->notifyAllPlayers('updateScore', '',
                                             array(
                                                 "player_id" => $player_id,
                                                 "vp_delta" => 0,
@@ -4123,7 +4123,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     {
         if ($card_drawn_nbr > 0) {
             $cardDrawn = $this->cards->pickCards($card_drawn_nbr, $this->getDeck($player_id), $player_id);
-            self::notifyPlayer($player_id, 'drawCards', '', $cardDrawn);
+            $this->notifyPlayer($player_id, 'drawCards', '', $cardDrawn);
             $this->notifyUpdateCardCount();
 
             self::incStat($card_drawn_nbr, 'cards_drawn', $player_id);
@@ -4149,7 +4149,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             if ($bDefered) {
                 $this->defered_notifyAllPlayers($this->notif_defered_id, 'drawCards_def', $log, $args);
             } else {
-                self::notifyAllPlayers('drawCards_def', $log, $args);
+                $this->notifyAllPlayers('drawCards_def', $log, $args);
             }
 
             return $cardDrawn;
@@ -4250,7 +4250,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
                     self::incGameStateValue('remainingVp', -$vp_wins);
 
-                    self::notifyAllPlayers('updateScore', clienttranslate('${card_name} : ${player_name} scores ${score_delta} points'),
+                    $this->notifyAllPlayers('updateScore', clienttranslate('${card_name} : ${player_name} scores ${score_delta} points'),
                                             array(
                                                 "i18n" => ['card_name'],
                                                 "card_name" => $this->card_types[ $power['card_type'] ]['name'],
@@ -4622,7 +4622,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $usablePowers = $this->usableProducePowers($player_id, $possibilities);
         $res = count($usablePowers) > 0 || $damagedCount > 0;
         if ($res) {
-            self::notifyPlayer($player_id, 'updateProduceTitle', '', $this->getProduceTitle($player_id, $usablePowers));
+            $this->notifyPlayer($player_id, 'updateProduceTitle', '', $this->getProduceTitle($player_id, $usablePowers));
         }
         return $res;
     }
@@ -4673,7 +4673,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         // Discard start world
         $this->cards->moveCard($start_world_id, $this->getDiscard($player_id), 0);
-        self::notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $start_world_id));
+        $this->notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $start_world_id));
 
         $this->initialdiscard($cards_ids);
     }
@@ -4730,7 +4730,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         if ($bScavenger) {
             $this->cards->moveCards($cards_ids, 'scavenger');
-            self::notifyAllPlayers("scavengerUpdate", clienttranslate('${player_name} is placing a card under Galactic Scavengers'), array(
+            $this->notifyAllPlayers("scavengerUpdate", clienttranslate('${player_name} is placing a card under Galactic Scavengers'), array(
                 'player_name' => self::getCurrentPlayerName(),
                 'count' => $this->cards->countCardInLocation('scavenger'),
                 'card' => $this->cards->getCard($cards_ids[0])
@@ -4822,7 +4822,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             self::incStat(1, 'produce_count', $player_id);
         }
 
-        self::notifyPlayer($player_id, 'phase_choices', '', $this->getPhaseChoices($player_id));
+        $this->notifyPlayer($player_id, 'phase_choices', '', $this->getPhaseChoices($player_id));
 
         // Go to next phase when this is done
         if (! $this->is_twoplayers()) {
@@ -4851,12 +4851,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             foreach ($phase_choices as $phase_choice) {
                 if (isset($phase_choice[ $player_id ]) && $phase_choice[ $player_id ] >= 10) {
                     self::DbQuery("UPDATE player SET player_tmp_milforce=0, player_tmp_gene_force=0 WHERE player_id=$player_id");
-                    self::notifyAllPlayers('prestige_search', '', array($player_id => 1));
+                    $this->notifyAllPlayers('prestige_search', '', array($player_id => 1));
                 }
             }
         }
         self::DbQuery("DELETE FROM phase WHERE phase_player=$player_id");
-        self::notifyPlayer($player_id, 'phase_choices', '', $this->getPhaseChoices($player_id));
+        $this->notifyPlayer($player_id, 'phase_choices', '', $this->getPhaseChoices($player_id));
         $this->gamestate->setPlayersMultiactive(array($player_id), "phaseCleared");
     }
 
@@ -4893,10 +4893,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $this->cards->moveAllCardsInLocation('explored', $this->getDiscard($player_id), $player_id);
 
         if ($bRviGambling) {
-            self::notifyPlayer($player_id, 'keepcards', '', $cards);
+            $this->notifyPlayer($player_id, 'keepcards', '', $cards);
             $card = array_shift($cards);
             $card_type = $this->card_types[ $card["type"] ];
-            self::notifyAllPlayers('rviGamblingDone', clienttranslate('${player_name} wins his bet and keeps ${card_name}'), array(
+            $this->notifyAllPlayers('rviGamblingDone', clienttranslate('${player_name} wins his bet and keeps ${card_name}'), array(
                     "i18n" => array("card_name"),
                     'player_name' => self::getCurrentPlayerName(),
                     'player_id' => $player_id,
@@ -4913,19 +4913,19 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
         } elseif ($bScavenging) {
             $card = array_shift($cards);
-            self::notifyPlayer($player_id, 'scavengeFromExplore', '', array(
+            $this->notifyPlayer($player_id, 'scavengeFromExplore', '', array(
                 'count' => $this->cards->countCardInLocation('scavenger'),
                 'card' => $card
            ));
-            self::notifyPlayer($player_id, 'clearExplore', '', array());
+            $this->notifyPlayer($player_id, 'clearExplore', '', array());
             $this->defered_notifyAllPlayers($this->notif_defered_id, "scavengerUpdate", clienttranslate('${player_name} is placing a card under Galactic Scavengers'), array(
                 'player_name' => self::getCurrentPlayerName(),
                 'count' => $this->cards->countCardInLocation('scavenger')
            ));
             $this->gamestate->setPlayerNonMultiactive($player_id, "phaseCleared");
         } else {
-            self::notifyPlayer($player_id, 'keepcards', '', $cards);
-            self::notifyAllPlayers('keepcards_log', clienttranslate('${player_name} keeps ${nbr} cards'), array(
+            $this->notifyPlayer($player_id, 'keepcards', '', $cards);
+            $this->notifyAllPlayers('keepcards_log', clienttranslate('${player_name} keeps ${nbr} cards'), array(
                     'player_name' => self::getCurrentPlayerName(),
                     'player_id' => $player_id,
                     'nbr' => $to_keep));
@@ -4967,7 +4967,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $this->playCardAndPay($card_id, [], ['immediate' => true]);
         } else {
             // Card must either be paid for or has a choice attached to it
-            self::notifyPlayer(self::getCurrentPlayerId(), 'cardcost', '', $cardCost);
+            $this->notifyPlayer(self::getCurrentPlayerId(), 'cardcost', '', $cardCost);
         }
     }
 
@@ -5076,7 +5076,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             // Remove colony ship
             $this->discardFromTableau($colonyship);
 
-            self::notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $options['colonyship']));
+            $this->notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $options['colonyship']));
             $this->defered_notifyAllPlayers($this->notif_defered_id, 'discardfromtableau', clienttranslate('${player_name} uses a ${card_name} to pay'),
                                             array(
                                                 "i18n" => array('card_name'),
@@ -5152,8 +5152,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             // Remove world to replace
             $this->discardFromTableau($options['settlereplace']);
 
-            self::notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $options['settlereplace']));
-            self::notifyAllPlayers('discardfromtableau', clienttranslate('${player_name} uses a ${card_name} to replace ${world}'),
+            $this->notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $options['settlereplace']));
+            $this->notifyAllPlayers('discardfromtableau', clienttranslate('${player_name} uses a ${card_name} to replace ${world}'),
                                             array(
                                                 "i18n" => array('card_name', 'world'),
                                                 "player_name" => self::getCurrentPlayerName(),
@@ -5191,7 +5191,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             // Remove cloaking card
             $this->discardFromTableau($cloakingcard);
 
-            self::notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $options['cloaking']));
+            $this->notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $options['cloaking']));
             $this->defered_notifyAllPlayers($this->notif_defered_id, 'discardfromtableau', clienttranslate('${player_name} uses a ${card_name} to conquer a world'),
                                             array(
                                                 "i18n" => array('card_name'),
@@ -5295,7 +5295,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $cost -= 3;
             $cost = max(0, $cost);
 
-            self::notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $options['rdcrashprogram']));
+            $this->notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $options['rdcrashprogram']));
             $this->defered_notifyAllPlayers($this->notif_defered_id, 'discardfromtableau', clienttranslate('${player_name} uses ${card_name} to reduce the cost'),
                                             array(
                                                     "i18n" => array('card_name'),
@@ -5431,7 +5431,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         self::DbQuery("UPDATE card SET card_status=-1, card_played_round=$cround, card_played_phase=$cphase, card_played_subphase=$csubphase WHERE card_id=$card_id");
 
         // Keep these move information for the next game state
-        self::notifyPlayer($player_id, 'playcard', '',
+        $this->notifyPlayer($player_id, 'playcard', '',
                            array("card" => $card,
                                  "money" => $money,
                                  "player" => $player_id,
@@ -5465,7 +5465,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
             $this->discardFromTableau($sneak);
 
-            self::notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $sneak));
+            $this->notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $sneak));
             $this->defered_notifyAllPlayers($this->notif_defered_id, 'discardfromtableau', clienttranslate('${player_name} uses a ${card_name} to pay'),
                                             array(
                                                 "i18n" => array('card_name'),
@@ -5490,7 +5490,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
             $this->discardFromTableau($tproj);
 
-            self::notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $tproj));
+            $this->notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $tproj));
             $this->defered_notifyAllPlayers($this->notif_defered_id, 'discardfromtableau', clienttranslate('${player_name} uses a ${card_name} to pay'),
                                             array(
                                                 "i18n" => array('card_name'),
@@ -5519,7 +5519,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         if (!is_null($card_to_save) && in_array($card_to_save, $money)) {
             // Save this card on scavenger
             $this->cards->moveCard($card_to_save, 'scavenger');
-            self::notifyPlayer($player_id, 'scavengerUpdate', '', array(
+            $this->notifyPlayer($player_id, 'scavengerUpdate', '', array(
                 'count' => $this->cards->countCardInLocation('scavenger'),
                 'card' => $this->cards->getCard($card_to_save)
            ));
@@ -5716,7 +5716,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 $attack .= sprintf(self::_(", max: %s"), $attack + $tmp_attack);
             }
 
-            self::notifyPlayer($player_id, 'confirmTakeover', '',
+            $this->notifyPlayer($player_id, 'confirmTakeover', '',
                     array( "target_id" =>  $target_id,
                             "target_name" =>  $card_type['name'],
                             "takeovercard_id" => $takeovercard['id'],
@@ -5740,7 +5740,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $this->discardFromTableau($takeovercard);
 
             // Notify
-            self::notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $takeovercard['id']));
+            $this->notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $takeovercard['id']));
             $this->defered_notifyAllPlayers($this->notif_defered_id, 'discardfromtableau', self::_('${player_name} discards ${card_name} to attempt a takeover'),
                     array(
                             "i18n" => ['card_name'],
@@ -5756,7 +5756,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $this->discardFromTableau($imperiumInvasionFleet['id']);
 
             // Notify
-            self::notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $imperiumInvasionFleet['id']));
+            $this->notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $imperiumInvasionFleet['id']));
             $this->defered_notifyAllPlayers($this->notif_defered_id, 'discardfromtableau', self::_('${player_name} discards ${card_name} to takeover a non-military world'),
                     array(
                             "i18n" => ['card_name'],
@@ -5803,7 +5803,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
             $this->givePrestige(self::getCurrentPlayerId(), -1);
 
-            self::notifyAllPlayers('simpleNote', clienttranslate('${player_name} chooses to use Pan-Galactic Security Council to defeat takeover'), array('player_name' => self::getCurrentPlayerName()));
+            $this->notifyAllPlayers('simpleNote', clienttranslate('${player_name} chooses to use Pan-Galactic Security Council to defeat takeover'), array('player_name' => self::getCurrentPlayerName()));
 
             $this->gamestate->setPlayerNonMultiactive(self::getCurrentPlayerId(), 'cancel');
         } else {
@@ -5914,7 +5914,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                             "world_id" => $card_id,
                             "force" => $force
                        ));
-            self::notifyPlayer($player_id, $bArtifactResource ? 'simpleNote' : 'consume', '', array(
+            $this->notifyPlayer($player_id, $bArtifactResource ? 'simpleNote' : 'consume', '', array(
                             "good_id" => $good_id,
                             "world_id" => $card_id
                        ));
@@ -5924,13 +5924,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                             'tmp' => $tmpMilForce,
                             'player' => $player_id
                    ));
-            self::notifyPlayer($player_id, 'updateTmpMilforce', '',
+            $this->notifyPlayer($player_id, 'updateTmpMilforce', '',
                                 array(
                                     'tmp' => $tmpMilForce,
                                     'player' => $player_id
                                ));
         } else {
-            self::notifyAllPlayers($bArtifactResource ? 'simpleNote' : 'consume', $log, array(
+            $this->notifyAllPlayers($bArtifactResource ? 'simpleNote' : 'consume', $log, array(
                     "i18n" => array("world_name"),
                     "player_id" => $player_id,
                     "player_name" => self::getCurrentPlayerName(),
@@ -5940,7 +5940,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                     "force" => $force
            ));
 
-            self::notifyAllPlayers('updateTmpMilforce', '',
+            $this->notifyAllPlayers('updateTmpMilforce', '',
                     array(
                             'tmp' => $tmpMilForce,
                             'player' => $player_id
@@ -5953,7 +5953,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         if ($bInvasionDefense) {
-            self::notifyAllPlayers('forceAgainstXeno', '', array('force' => self::getCollectionFromDB("SELECT player_id, (player_xeno_milforce + CAST(player_tmp_milforce AS SIGNED) + CAST(player_tmp_xenoforce AS SIGNED)) f FROM player", true)));
+            $this->notifyAllPlayers('forceAgainstXeno', '', array('force' => self::getCollectionFromDB("SELECT player_id, (player_xeno_milforce + CAST(player_tmp_milforce AS SIGNED) + CAST(player_tmp_xenoforce AS SIGNED)) f FROM player", true)));
             $this->checkXenoForce(array($player_id));
         }
     }
@@ -5991,7 +5991,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $sql = "UPDATE card SET card_status=-1 WHERE card_id=$card_id";
             self::DbQuery($sql);
 
-            self::notifyPlayer($player_id, 'updateTmpMilforce', '',
+            $this->notifyPlayer($player_id, 'updateTmpMilforce', '',
                                 array(
                                     'tmp' => self::getUniqueValueFromDB("SELECT player_tmp_milforce FROM player WHERE player_id=$player_id"),
                                     'player' => $player_id
@@ -6041,7 +6041,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $this->discardFromTableau($tactics);
 
             if ($bDefered) {
-                self::notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $card_id));
+                $this->notifyPlayer($player_id, 'discardfromtableau', '', array("card" => $card_id));
                 $this->defered_notifyAllPlayers($this->notif_defered_id, 'discardfromtableau', clienttranslate('${player_name} uses ${card_name}'),
                                                 array(
                                                     "i18n" => array("card_name"),
@@ -6051,7 +6051,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                                                     "card" => $card_id
                                                ));
             } else {
-                self::notifyAllPlayers('discardfromtableau', clienttranslate('${player_name} uses ${card_name}'),
+                $this->notifyAllPlayers('discardfromtableau', clienttranslate('${player_name} uses ${card_name}'),
                         array(
                                 "i18n" => array("card_name"),
                                 "player_name" => self::getCurrentPlayerName(),
@@ -6071,7 +6071,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
             $tmpMilforce = self::getUniqueValueFromDB("SELECT player_tmp_milforce + player_tmp_xenoforce FROM player WHERE player_id=$player_id");
             if ($bDefered) {
-                self::notifyPlayer($player_id, 'updateTmpMilforce', '',
+                $this->notifyPlayer($player_id, 'updateTmpMilforce', '',
                                 array(
                                     'tmp' => $tmpMilforce,
                                     'player' => $player_id
@@ -6082,7 +6082,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                                 "player" => $player_id
                        ));
             } else {
-                self::notifyAllPlayers('updateTmpMilforce', '',
+                $this->notifyAllPlayers('updateTmpMilforce', '',
                         array(
                                 'tmp' => $tmpMilforce,
                                 "player" => $player_id
@@ -6121,7 +6121,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $tmpMilforce = self::getUniqueValueFromDB("SELECT player_tmp_milforce FROM player WHERE player_id=$player_id");
 
             if ($bDefered) {
-                self::notifyPlayer($player_id, 'updateTmpMilforce', '',
+                $this->notifyPlayer($player_id, 'updateTmpMilforce', '',
                                     array(
                                         'tmp' => $tmpMilforce,
                                         'player' => $player_id
@@ -6139,13 +6139,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                                 'player' => $player_id
                        ));
             } else {
-                self::notifyAllPlayers('simpleNote', clienttranslate('${player_name} uses ${card_name} to temporary boost Military force'),
+                $this->notifyAllPlayers('simpleNote', clienttranslate('${player_name} uses ${card_name} to temporary boost Military force'),
                         array(
                                 "i18n" => array("card_name"),
                                 "card_name" => $this->card_types[ $tactics['type'] ]['name'],
                                 "player_name" => self::getCurrentPlayerName()
                        ));
-                self::notifyAllPlayers('updateTmpMilforce', '',
+                $this->notifyAllPlayers('updateTmpMilforce', '',
                         array(
                                 'tmp' => $tmpMilforce,
                                 'player' => $player_id
@@ -6153,9 +6153,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
 
             $this->cards->moveCards($discard_id, $this->getDiscard($player_id), 0);
-            self::notifyPlayer($player_id, 'discard', '', array('cards' => $discard_id));
+            $this->notifyPlayer($player_id, 'discard', '', array('cards' => $discard_id));
 
-            self::notifyPlayer($player_id, 'mercenary_used', '', array('card' => $card_id));
+            $this->notifyPlayer($player_id, 'mercenary_used', '', array('card' => $card_id));
         }
 
         $state = $this->gamestate->getCurrentMainState()->toArray();
@@ -6164,7 +6164,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         if ($state['name'] == 'invasionGameResolution') {
-            self::notifyAllPlayers('forceAgainstXeno', '', array('force' => self::getCollectionFromDB("SELECT player_id, (player_xeno_milforce + CAST(player_tmp_milforce AS SIGNED) + CAST(player_tmp_xenoforce AS SIGNED)) f FROM player", true)));
+            $this->notifyAllPlayers('forceAgainstXeno', '', array('force' => self::getCollectionFromDB("SELECT player_id, (player_xeno_milforce + CAST(player_tmp_milforce AS SIGNED) + CAST(player_tmp_xenoforce AS SIGNED)) f FROM player", true)));
             $this->checkXenoForce(array($player_id));
         }
     }
@@ -6191,28 +6191,28 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         self::DbQuery($sql);
         $tmpMilforce = self::getUniqueValueFromDB("SELECT player_tmp_milforce + player_tmp_xenoforce FROM player WHERE player_id=$player_id");
 
-        self::notifyPlayer($player_id, 'updateTmpMilforce', '',
+        $this->notifyPlayer($player_id, 'updateTmpMilforce', '',
                             array(
                                 'tmp' => $tmpMilforce,
                                 'player' => $player_id
                            ));
 
-        self::notifyAllPlayers('simpleNote', clienttranslate('${player_name} uses Bunker and discard a card to temporary boost Military force (+2)'),
+        $this->notifyAllPlayers('simpleNote', clienttranslate('${player_name} uses Bunker and discard a card to temporary boost Military force (+2)'),
                                         array(
                                             "i18n" => array("card_name"),
                                             "player_name" => self::getCurrentPlayerName()
                                        ));
-        self::notifyAllPlayers('updateTmpMilforce', '',
+        $this->notifyAllPlayers('updateTmpMilforce', '',
                 array(
                         'tmp' => $tmpMilforce,
                         'player' => $player_id
                ));
 
         $this->cards->moveCard($card_id, $this->getDiscard($player_id), 0);
-        self::notifyPlayer($player_id, 'discard', '', array('cards' => array($card_id)));
+        $this->notifyPlayer($player_id, 'discard', '', array('cards' => array($card_id)));
         $this->notifyUpdateCardCount();
 
-        self::notifyAllPlayers('forceAgainstXeno', '', array('force' => self::getCollectionFromDB("SELECT player_id, (player_xeno_milforce + CAST(player_tmp_milforce AS SIGNED) + CAST(player_tmp_xenoforce AS SIGNED)) f FROM player", true)));
+        $this->notifyAllPlayers('forceAgainstXeno', '', array('force' => self::getCollectionFromDB("SELECT player_id, (player_xeno_milforce + CAST(player_tmp_milforce AS SIGNED) + CAST(player_tmp_xenoforce AS SIGNED)) f FROM player", true)));
         $this->checkXenoForce(array($player_id));
     }
 
@@ -6268,7 +6268,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $price = $this->getSellPrice($player_id, $good_type, $world_id);
 
         if ($is_auto_sell) {
-            self::notifyPlayer($player_id, 'showMessage', '', array(
+            $this->notifyPlayer($player_id, 'showMessage', '', array(
                 'msg' => sprintf(
                     self::_('Autosold your only good (on %s) for %d card(s).'),
                     $this->card_types[ $world_type ]['name'],
@@ -6279,14 +6279,14 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         // Consume this resource
         $this->cards->moveCard($good_id, $this->getDiscard($player_id), 0);
-        self::notifyAllPlayers('consume', '', array(
+        $this->notifyAllPlayers('consume', '', array(
                         "player_id" => $player_id,
                         "player_name" => $player_name,
                         "good_id" => $good_id
                    ));
 
         // Give cards to player
-        self::notifyAllPlayers('drawCards_log', clienttranslate('${player_name} sells a ${good_name} for ${card_nbr} card(s)'),
+        $this->notifyAllPlayers('drawCards_log', clienttranslate('${player_name} sells a ${good_name} for ${card_nbr} card(s)'),
                                     array(
                                         "i18n" => array("good_name"),
                                         "player_name" => $player_name,
@@ -6327,7 +6327,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         // Consume this resource
         $this->cards->moveCard($card_id, $this->getDiscard($player_id), 0);
-        self::notifyAllPlayers('consume', '', array(
+        $this->notifyAllPlayers('consume', '', array(
                         "player_id" => $player_id,
                         "player_name" => self::getCurrentPlayerName(),
                         "good_id" => $card_id
@@ -6344,7 +6344,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         self::incGameStateValue('remainingVp', -$vp_wins);
         self::incGameStateValue('xeno_repulse_goal', -1);
 
-        self::notifyAllPlayers('updateScore', clienttranslate('${player_name} contributes to war effort with a good on ${world} and score ${score_delta} point'),
+        $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} contributes to war effort with a good on ${world} and score ${score_delta} point'),
                                 array(
                                     "i18n" => array('world'),
                                     "score" => $pscore['score'],
@@ -6541,7 +6541,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 self::DbQuery($sql);
 
                 if (! $bArtifactResource) {
-                    self::notifyAllPlayers('consume', '', array(
+                    $this->notifyAllPlayers('consume', '', array(
                                     "good_id" => $good_id,
                                     "world_id" => $world_id
                                ));
@@ -6556,7 +6556,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         if ($bActivatePower) {
             $log = clienttranslate('${player_name} uses ${world_name} consumption power');
 
-            self::notifyAllPlayers($bArtifactResource ? 'simpleNote' : 'consume', $log, array(
+            $this->notifyAllPlayers($bArtifactResource ? 'simpleNote' : 'consume', $log, array(
                             "i18n" => array("world_name"),
                             "player_id" => $player_id,
                             "player_name" => self::getCurrentPlayerName(),
@@ -6592,7 +6592,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
                     self::incGameStateValue('remainingVp', -$vp_wins);
 
-                    self::notifyAllPlayers('updateScore', clienttranslate('${player_name} scores ${score_delta} points'),
+                    $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} scores ${score_delta} points'),
                                             array(
                                                 "score" => $pscore['score'],
                                                 "vp" => $pscore['vp'],
@@ -6762,7 +6762,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                                  array("cards" => $card_ids) );
 
         if ($bPrestigeTrade) {
-            self::notifyAllPlayers('consumecard', clienttranslate('${player_name} uses Prestige Trade bonus to consume cards'), array(
+            $this->notifyAllPlayers('consumecard', clienttranslate('${player_name} uses Prestige Trade bonus to consume cards'), array(
                     "player_id" => $player_id,
                     "player_name" => self::getCurrentPlayerName()
            ));
@@ -6770,7 +6770,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             // Store in player_tmp_milforce that the power has been used
             self::DbQuery("UPDATE player SET player_tmp_milforce=1 WHERE player_id=$player_id");
         } else {
-            self::notifyAllPlayers('consumecard', clienttranslate('${player_name} uses ${world_name} consumption power'), array(
+            $this->notifyAllPlayers('consumecard', clienttranslate('${player_name} uses ${world_name} consumption power'), array(
                             "i18n" => array("world_name"),
                             "player_id" => $player_id,
                             "player_name" => self::getCurrentPlayerName(),
@@ -6795,7 +6795,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
             self::incGameStateValue('remainingVp', -$vp_wins);
 
-            self::notifyAllPlayers('updateScore', clienttranslate('${player_name} scores ${score_delta} points'),
+            $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} scores ${score_delta} points'),
                                     array(
                                         "player_name" => self::getCurrentPlayerName(),
                                         "player_id" => $player_id,
@@ -6858,7 +6858,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $this->givePrestige($player_id, -1, false, $consumecard_type_id);
 
 
-        self::notifyAllPlayers('consumeprestige', clienttranslate('${player_name} uses ${world_name} consumption power'), array(
+        $this->notifyAllPlayers('consumeprestige', clienttranslate('${player_name} uses ${world_name} consumption power'), array(
                         "i18n" => array("world_name"),
                         "player_id" => $player_id,
                         "player_name" => self::getCurrentPlayerName(),
@@ -6889,7 +6889,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
             self::incGameStateValue('remainingVp', -$vp_wins);
 
-            self::notifyAllPlayers('updateScore', clienttranslate('${player_name} scores ${score_delta} points'),
+            $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} scores ${score_delta} points'),
                                     array(
                                         "player_name" => self::getCurrentPlayerName(),
                                         "player_id" => $player_id,
@@ -6960,7 +6960,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                         "card_name" => $card_type['name']
                    ));
 
-            self::notifyPlayer($player_id, 'drawCards', '', $cards);
+            $this->notifyPlayer($player_id, 'drawCards', '', $cards);
             $this->notifyUpdateCardCount();
             $this->gamestate->setPlayerNonMultiactive($player_id, "phaseCleared");
         }
@@ -7013,7 +7013,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         if ($card_type['cost'] == $number) {
             // Win, he can keep the card
-            self::notifyAllPlayers('gambling', clienttranslate('${player_name} uses gambling power with ${number} and gets a ${card_name} (${card_cost})'), array(
+            $this->notifyAllPlayers('gambling', clienttranslate('${player_name} uses gambling power with ${number} and gets a ${card_name} (${card_cost})'), array(
                         "i18n" => array("card_name"),
                         "player_id" => $player_id,
                         "player_name" => self::getCurrentPlayerName(),
@@ -7025,7 +7025,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $this->notifyUpdateCardCount();
         } else {
             // Loose, drop the card
-            self::notifyAllPlayers('gambling', clienttranslate('${player_name} uses gambling power with ${number} and did not get a ${card_name} (${card_cost})'), array(
+            $this->notifyAllPlayers('gambling', clienttranslate('${player_name} uses gambling power with ${number} and did not get a ${card_name} (${card_cost})'), array(
                         "i18n" => array("card_name"),
                         "player_id" => $player_id,
                         "player_name" => self::getCurrentPlayerName(),
@@ -7088,7 +7088,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             throw new SystemException("This card is not in your hand");
         }
 
-        self::notifyAllPlayers('simpleNote', clienttranslate('${player_name} uses Gambling World to ante ${card_name}'), array(
+        $this->notifyAllPlayers('simpleNote', clienttranslate('${player_name} uses Gambling World to ante ${card_name}'), array(
                 "i18n" => array("card_name"),
                 "player_id" => $player_id,
                 "player_name" => self::getCurrentPlayerName(),
@@ -7106,7 +7106,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $cards = $this->cards->pickCardsForLocation($cost, $this->getDeck($player_id), 'explored', $player_id);
         foreach ($cards as $card) {
             $card_type = $this->card_types[ $card['type'] ];
-            self::notifyAllPlayers('revealCard', clienttranslate('${player_name} flips ${card_name}'), array(
+            $this->notifyAllPlayers('revealCard', clienttranslate('${player_name} flips ${card_name}'), array(
                     'i18n' => array('card_name'),
                     'player_name' => self::getCurrentPlayerName(),
                     'card_name' => $card_type['name']
@@ -7120,7 +7120,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         if ($win) {
             self::NotifyPlayer($player_id, "rviGambling", '', $cards);
         } else {
-            self::notifyAllPlayers('simpleNote', clienttranslate('None of the revealed cards have a cost or defense higher the ${cost}. ${player_name} loses his ante'), array(
+            $this->notifyAllPlayers('simpleNote', clienttranslate('None of the revealed cards have a cost or defense higher the ${cost}. ${player_name} loses his ante'), array(
                     "player_id" => $player_id,
                     "player_name" => self::getCurrentPlayerName(),
                     "cost" => $cost
@@ -7307,7 +7307,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $sql .= "WHERE card_id='".$good_card['id']."' ";
         self::DbQuery($sql);
 
-        self::notifyAllPlayers('goodproduction', '', array(
+        $this->notifyAllPlayers('goodproduction', '', array(
                     "world_id" => $card_id,
                     "good_type" => $windfall_type,
                     "good_id" => $good_card['id'],
@@ -7354,7 +7354,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $card = $this->cards->getCard($oort_id);
 
         // Update tooltip and class
-        self::notifyAllPlayers('oortKindChanged', clienttranslate('${player_name} changes ${card_name} to ${kind}'), array(
+        $this->notifyAllPlayers('oortKindChanged', clienttranslate('${player_name} changes ${card_name} to ${kind}'), array(
             "i18n" => ['card_name', 'kind'],
             "player_name" => $player_name,
             "card" => $card,
@@ -7372,7 +7372,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         if ($good_id != null) {
             self::DbQuery("UPDATE card SET card_status=$kind_id WHERE card_id=".$good_id);
-            self::notifyAllPlayers('goodproduction', '', array(
+            $this->notifyAllPlayers('goodproduction', '', array(
                     "world_id" => $oort_id,
                     "good_type" => $kind_id,
                     "good_id" => $good_id
@@ -7400,7 +7400,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         // Reduce the score
         $score_delta = $this->card_types[ $card['type'] ]['vp'] * -1;
         $pscore = $this->updatePlayerScore($player_id, $score_delta, false);
-        self::notifyAllPlayers('updateScore', '',
+        $this->notifyAllPlayers('updateScore', '',
                                 array(
                                     "player_id" => $player_id,
                                     "score" => $pscore['score'],
@@ -7409,12 +7409,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         // Refresh the military
         $this->updateMilforceIfNeeded($player_id);
-        self::notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary());
+        $this->notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary());
 
         $world_name = $this->card_types[ $card['type'] ]['name'];
         $card['damaged'] = $card['type'];
         $card['type'] = 1000;
-        self::notifyAllPlayers('damageWorld', clienttranslate('${player_name} damages ${world}'),
+        $this->notifyAllPlayers('damageWorld', clienttranslate('${player_name} damages ${world}'),
                                         array(
                                             "i18n" => array('world'),
                                             "player_name" => self::getCurrentPlayerName(),
@@ -7484,7 +7484,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         self::DbQuery($sql);
 
 
-        self::notifyAllPlayers('goodproduction', '', array(
+        $this->notifyAllPlayers('goodproduction', '', array(
                     "world_id" => $card_id,
                     "good_type" => $windfall_type,
                     "good_id" => $good_card['id'],
@@ -7649,7 +7649,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $sql .= "WHERE card_id='".$good_card['id']."' ";
         self::DbQuery($sql);
 
-        self::notifyAllPlayers('goodproduction', '', array(
+        $this->notifyAllPlayers('goodproduction', '', array(
                     "world_id" => $card_id,
                     "good_type" => $good_type,
                     "good_id" => $good_card['id']
@@ -7744,7 +7744,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                  && $this->cards->countCardInLocation($this->getDiscard($player_id)) == 0) {
                 // We already reshuffled the discard, search has failed
                 self::DbQuery("UPDATE player SET player_search='1' WHERE player_id='$player_id'");
-                self::notifyAllPlayers('searchFailed', clienttranslate('We could not find any cards of the specified category in the deck : ${player_name} keeps his search card.'), array('player_name' => self::getActivePlayerName()));
+                $this->notifyAllPlayers('searchFailed', clienttranslate('We could not find any cards of the specified category in the deck : ${player_name} keeps his search card.'), array('player_name' => self::getActivePlayerName()));
                 self::DbQuery("DELETE FROM phase WHERE phase_player='$player_id' AND phase_id='7'");
                 $this->cards->moveAllCardsInLocation('aside', $this->getDiscard($player_id));
                 $this->gamestate->nextState('done');
@@ -7839,7 +7839,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
             if ($bDoesThisCardMatch) {
                 // We found our card !
-                self::notifyAllPlayers('revealCard', clienttranslate('${player_name} draws ${reveal}'), array(
+                $this->notifyAllPlayers('revealCard', clienttranslate('${player_name} draws ${reveal}'), array(
                     'i18n' => array('reveal'),
                     'player_name' => self::getActivePlayerName(),
                     'reveal' => $this->card_types[ $card['type'] ]['name']
@@ -7848,7 +7848,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
                 $this->cards->moveCard($card['id'], 'hand', $player_id);
 
-                self::notifyPlayer($player_id, 'drawCards', '', array($card));
+                $this->notifyPlayer($player_id, 'drawCards', '', array($card));
                 $this->notifyUpdateCardCount();
 
                 $oort_id = self::getUniqueValueFromDB("SELECT card_id FROM card WHERE card_type=220");
@@ -7874,7 +7874,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 }
             } else {
                 // Just notify
-                self::notifyAllPlayers('revealCard', clienttranslate('${player_name} reveals ${reveal}'), array(
+                $this->notifyAllPlayers('revealCard', clienttranslate('${player_name} reveals ${reveal}'), array(
                     'i18n' => array('reveal'),
                     'player_name' => self::getActivePlayerName(),
                     'reveal' => $this->card_types[ $card['type'] ]['name']
@@ -7986,7 +7986,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                     // Discard the good
                     $this->cards->moveCard($good_id, $this->getDiscard($player_id), 0);
 
-                    self::notifyAllPlayers('consume', '', array(
+                    $this->notifyAllPlayers('consume', '', array(
                                     "i18n" => array("world_name"),
                                     "player_id" => $player_id,
                                     "player_name" => self::getCurrentPlayerName(),
@@ -8031,12 +8031,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $card = $this->cards->getCard($card_id);
         $notifargs['card'] = $card;
 
-        self::notifyAllPlayers('repairWorld', $log, $notifargs);
+        $this->notifyAllPlayers('repairWorld', $log, $notifargs);
 
         // Restore the score
         $score_delta = $this->card_types[ $card['type'] ]['vp'];
         $pscore = $this->updatePlayerScore($player_id, $score_delta, false);
-        self::notifyAllPlayers('updateScore', '',
+        $this->notifyAllPlayers('updateScore', '',
                                 array(
                                     "player_id" => $player_id,
                                     "score" => $pscore['score'],
@@ -8047,7 +8047,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         // Refresh the military
         $this->updateMilforceIfNeeded($player_id);
-        self::notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary());
+        $this->notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary());
 
         $card_type = $this->card_types[ $card['type'] ];
         $powers = isset($card_type['powers'][5]) ? $card_type['powers'][5] : array();
@@ -8078,7 +8078,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $sql .= "($player_id, ".$power['arg']['resource'].",$card_id) ";
             self::DbQuery($sql);
 
-            self::notifyAllPlayers('goodproduction', '', array(
+            $this->notifyAllPlayers('goodproduction', '', array(
                         "world_id" => $card_id,
                         "good_type" => $power['arg']['resource'],
                         "good_id" => $good_card['id'],
@@ -8095,7 +8095,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $windfallPossibilities = $this->windfallPossibilities($powers);
             $windfallPossibilities['title'] = $this->getProduceTitle($player_id);
             $windfallPossibilities['single_power'] = true;
-            self::notifyPlayer($player_id, 'updateWindfallPowers', '', $windfallPossibilities);
+            $this->notifyPlayer($player_id, 'updateWindfallPowers', '', $windfallPossibilities);
         }
 
         if (!$this->hasProduceActions($player_id)) {
@@ -8463,7 +8463,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             // Initial score
             $pscore = $this->updatePlayerScore($player_id, $card_type['vp'], false);
 
-            self::notifyAllPlayers( 'updateScore', '',
+            $this->notifyAllPlayers( 'updateScore', '',
                                     array(
                                         "player_id" => $player_id,
                                         "score" => $pscore['score'],
@@ -8474,11 +8474,11 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
             // Initial military
             $this->updateMilforceIfNeeded($player_id, false);
-            self::notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary(true));
+            $this->notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary(true));
         }
 
         $tableau = $this->cards->getCardsInLocation('tableau');
-        self::notifyAllPlayers('showTableau', '', array('cards' => $tableau));
+        $this->notifyAllPlayers('showTableau', '', array('cards' => $tableau));
 
         $this->send_defered_notif($this->notif_defered_id);
     }
@@ -8507,10 +8507,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             foreach ($players as $player_id => $player) {
                 $cards = $this->orbcards->pickCards(3, 'deck', $player_id);
 
-                self::notifyPlayer($player_id, 'pickOrbCards', '', array('cards' => $cards));
+                $this->notifyPlayer($player_id, 'pickOrbCards', '', array('cards' => $cards));
             }
             $deck = self::getCollectionFromDB("SELECT card_type_arg, COUNT(*) FROM orbcard WHERE card_location='deck' GROUP BY card_type_arg", true);
-            self::notifyAllPlayers('updateOrbCardCount', '', ['deck' => $deck]);
+            $this->notifyAllPlayers('updateOrbCardCount', '', ['deck' => $deck]);
 
             // Priority
 
@@ -8525,7 +8525,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 $last_player = $player_id;
             }
 
-            self::notifyAllPlayers('changeOrbPriority', '', array('priority' => $player_to_priority));
+            $this->notifyAllPlayers('changeOrbPriority', '', array('priority' => $player_to_priority));
 
             $this->gamestate->changeActivePlayer($last_player);
             $this->gamestate->nextState("initialOrb");
@@ -8596,7 +8596,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $this->send_defered_notif($this->notif_defered_id);
 
         // Notify phase choices to all players
-        self::notifyAllPlayers('phase_choices', '', $this->getPhaseChoices());
+        $this->notifyAllPlayers('phase_choices', '', $this->getPhaseChoices());
 
         $crystal_player = $this->getPsyCrystalPlayer();
         if ($crystal_player !== null && !self::isCurrentPlayerZombie()) {
@@ -8626,7 +8626,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         self::setGameStateValue('improvedLogisticsPhase', 0); // Used to store the first picked card
 
         $player_prestige_search = self::getCollectionFromDB("SELECT player_id, player_search FROM player", true);
-        self::notifyAllPlayers('prestige_search', '', $player_prestige_search);
+        $this->notifyAllPlayers('prestige_search', '', $player_prestige_search);
 
         $player_phases = $this->getPhaseChoice(7);
         if (count($player_phases) == 0) {
@@ -8639,7 +8639,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $sql .= ")";
         self::DbQuery($sql);
         $player_prestige_search = self::getCollectionFromDB("SELECT player_id, player_search FROM player", true);
-        self::notifyAllPlayers('prestige_search', '', $player_prestige_search);
+        $this->notifyAllPlayers('prestige_search', '', $player_prestige_search);
 
         // Search is done by turn order
         foreach ($this->getTurnOrder() as $player) {
@@ -8671,14 +8671,14 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             if (isset($card_numbers['mix']) || $card_numbers['keep'] >= $card_numbers['draw']) {
                 // Explore mix : the player pick cards directly into his hand
                 $cards = $this->cards->pickCardsForLocation($card_numbers['draw'], $this->getDeck($player_id), 'hand', $player_id);
-                self::notifyPlayer($player_id, 'drawCards', '', $cards);
+                $this->notifyPlayer($player_id, 'drawCards', '', $cards);
                 $this->notifyUpdateCardCount();
             } else {
                 // Standard case
                 $cards = $this->cards->pickCardsForLocation($card_numbers['draw'], $this->getDeck($player_id), 'explored', $player_id);
                 self::NotifyPlayer($player_id, "explored_choice", '', $cards);
             }
-            self::notifyAllPlayers('explored_choice_log', clienttranslate('${player_name} draws ${nbr} cards'), array(
+            $this->notifyAllPlayers('explored_choice_log', clienttranslate('${player_name} draws ${nbr} cards'), array(
                     'player_name' => $players[ $player_id ]['player_name'],
                     'player_id' => $player_id,
                     'nbr' => $card_numbers['draw']));
@@ -8834,7 +8834,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         // Notify all players about cards played by the others
         $this->send_defered_notif($this->notif_defered_id);
         $this->notifyUpdateCardCount();
-        self::notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary());
+        $this->notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary());
 
         $this->checkGoals(2);
 
@@ -9035,11 +9035,11 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $this->updateMilforceIfNeeded($player_id);
         }
         self::DbQuery("UPDATE player SET player_tmp_milforce=0, player_tmp_gene_force=0");
-        self::notifyAllPlayers('clearTmpMilforce', '', null);
+        $this->notifyAllPlayers('clearTmpMilforce', '', null);
         $this->checkGoals(3);
         self::DbQuery("UPDATE player SET player_just_played=NULL, player_previously_played=NULL");
         $this->moveJustDiscardedToDiscard();
-        self::notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary());
+        $this->notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary());
 
         if ($this->is_twoplayers()) {
             // See if there is a need to repeat this phase again
@@ -9180,7 +9180,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
                 // Give him a Sas card
                 $card = $this->orbcards->pickCardForLocation('sas2', 'hand', $player_id);
-                self::notifyPlayer($player_id, 'pickOrbCards', '', array(
+                $this->notifyPlayer($player_id, 'pickOrbCards', '', array(
                     'cards' => array($card)
                    ));
 
@@ -9294,7 +9294,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $good = self::getObjectFromDB($sql);
 
             // Succeeded takeover
-            self::notifyAllPlayers("takeover", clienttranslate('${player_name} uses ${takeovercard_name} to takeover ${world} with a force of ${force} (defense : ${cost})'), array(
+            $this->notifyAllPlayers("takeover", clienttranslate('${player_name} uses ${takeovercard_name} to takeover ${world} with a force of ${force} (defense : ${cost})'), array(
                 'i18n' => ['takeovercard_name', 'world'],
                 'player_name' => $players[ $takeover['player_id'] ]['player_name'],
                 'takeovercard_name' => $takeover['takeovercard_name'],
@@ -9312,7 +9312,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             // If the world taken over is Galactic Scavengers, the scavenged cards move with the world
             if ($takeover['target_world'] == 'Galactic Scavengers' && $takeover['takeovercard']['name'] != "Imperium Planet Buster") {
                 $this->cards->moveAllCardsInLocation('scavenger', 'scavenger', null, $takeover['player_id']);
-                self::notifyAllPlayers("scavengerUpdate", '', [
+                $this->notifyAllPlayers("scavengerUpdate", '', [
                     'count' => $this->cards->countCardInLocation('scavenger'),
                     'player_id' => $takeover['player_id'],
                     'cards' => $this->cards->getCardsInLocation('scavenger')
@@ -9332,7 +9332,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             // + remove all other takeovers with the same targets
             $same_target = self::getObjectListFromDB("SELECT player_id FROM player WHERE player_takeover_target='".$takeover['player_takeover_target']."'  ", true);
             foreach ($same_target as $same_target_player) {
-                self::notifyAllPlayers("simpleNote", clienttranslate('${player_name} takeover immediately fails cause its target has been taken over by another player'), array('player_name' => $players[ $same_target_player ]['player_name']));
+                $this->notifyAllPlayers("simpleNote", clienttranslate('${player_name} takeover immediately fails cause its target has been taken over by another player'), array('player_name' => $players[ $same_target_player ]['player_name']));
             }
             self::DbQuery("UPDATE player SET player_just_played=NULL,player_takeover_target=NULL WHERE player_takeover_target='".$takeover['player_takeover_target']."'");
 
@@ -9392,7 +9392,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
         } else {
             // Takeover failed
-            self::notifyAllPlayers("takeOverFailed", clienttranslate('${player_name} failed to takeover ${world} with a force of ${force} (needed force : ${cost})'), array(
+            $this->notifyAllPlayers("takeOverFailed", clienttranslate('${player_name} failed to takeover ${world} with a force of ${force} (needed force : ${cost})'), array(
                 'i18n' => ['world'],
                 'player_name' => $players[ $takeover['player_id'] ]['player_name'],
                 'world' => $takeover['target_world'],
@@ -9693,7 +9693,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 $sql = "UPDATE card SET card_location_arg='".$tranship['card_id']."' WHERE card_id IN ('".implode("','", $goods ) ."') ";
                 self::DbQuery($sql);
 
-                self::notifyAllPlayers('tranship', clienttranslate('${player_name} transfers ${nbr} Rare elements to ${card_name}'), array(
+                $this->notifyAllPlayers('tranship', clienttranslate('${player_name} transfers ${nbr} Rare elements to ${card_name}'), array(
                     'card_name' => $this->card_types[ 242 ]['name'],
                     'i18n' => array('card_name'),
                     'goods'=> $goods,
@@ -9727,7 +9727,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                         $sql .= "($player_id,".$power['arg']['resource'].",$card_id) ";
                         self::DbQuery($sql);
 
-                        self::notifyAllPlayers('goodproduction', '', array(
+                        $this->notifyAllPlayers('goodproduction', '', array(
                                     "world_id" => $card_id,
                                     "good_type" => $power['arg']['resource'],
                                     "good_id" => $good_card['id'],
@@ -9749,7 +9749,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                     $cards_to_draw = $this->cards->getCardsInLocation('scavenger');
                     if (count($cards_to_draw) > 0) {
                         $cardDrawn = $this->cards->pickCards(count($cards_to_draw), 'scavenger', $player_id);
-                        self::notifyPlayer($player_id, 'drawCards', '', $cardDrawn);
+                        $this->notifyPlayer($player_id, 'drawCards', '', $cardDrawn);
                         $this->notifyUpdateCardCount();
 
                         $players = self::loadPlayersBasicInfos();
@@ -9761,8 +9761,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                                                         "card_nbr" => count($cards_to_draw)
                                                    );
 
-                        self::notifyAllPlayers('drawCards_def', $log, $args);
-                        self::notifyAllPlayers('scavengerUpdate', '', array('count' => 0));
+                        $this->notifyAllPlayers('drawCards_def', $log, $args);
+                        $this->notifyAllPlayers('scavengerUpdate', '', array('count' => 0));
                     }
                 } elseif ($power['power'] == 'bonusifmost') {
                     // If player has the most chromosome worlds
@@ -10002,7 +10002,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         foreach ($active_players as $player_id) {
             $windfallState[$player_id]['title'] = $this->getProduceTitle($player_id, $usable_powers[$player_id]);
-            self::notifyPlayer($player_id, 'updateWindfallPowers', '', $windfallState[$player_id]);
+            $this->notifyPlayer($player_id, 'updateWindfallPowers', '', $windfallState[$player_id]);
         }
     }
 
@@ -10050,7 +10050,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         // Maybe some worlds have been repaired
         if (self::getGameStateValue('expansion') == 7) {
-            self::notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary());
+            $this->notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary());
         }
 
         $this->checkGoals(5);
@@ -10084,7 +10084,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 GROUP BY player_xeno_milforce
                 HAVING COUNT(*)>1
            )", true);
-        self::notifyAllPlayers('updateXenoTieBreaker', '', $players);
+        $this->notifyAllPlayers('updateXenoTieBreaker', '', $players);
     }
 
     function stInvasionGame()
@@ -10097,12 +10097,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         if ($current_wave == -2) {   // First turn
             self::setGameStateValue('xeno_current_wave', -1);
-            self::notifyAllPlayers('updateWave', clienttranslate('No invasion this turn ...'), array('wave' => -1, 'remaining' => 0));
+            $this->notifyAllPlayers('updateWave', clienttranslate('No invasion this turn ...'), array('wave' => -1, 'remaining' => 0));
 
             $this->gamestate->nextState('nextRound');
         } elseif ($current_wave == -1) {   // Second turn
             self::setGameStateValue('xeno_current_wave', 0);
-            self::notifyAllPlayers('updateWave', clienttranslate('No invasion this turn ...'), array('wave' => 1, 'remaining' => $this->getWaveRemaining()));
+            $this->notifyAllPlayers('updateWave', clienttranslate('No invasion this turn ...'), array('wave' => 1, 'remaining' => $this->getWaveRemaining()));
 
             $this->gamestate->nextState('nextRound');
         } else {
@@ -10139,7 +10139,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
             if ($current_wave == 0) {
                 self::setGameStateValue('xeno_current_wave', 1);
-                self::notifyAllPlayers('placeAdmiralDisks', '', self::getCollectionFromDB("SELECT player_id, player_xeno_milforce xeno_milforce, player_xeno_milforce_tiebreak xeno_milforce_tiebreak FROM player"));
+                $this->notifyAllPlayers('placeAdmiralDisks', '', self::getCollectionFromDB("SELECT player_id, player_xeno_milforce xeno_milforce, player_xeno_milforce_tiebreak xeno_milforce_tiebreak FROM player"));
             } else {
                 // Normalize stacks so that all tiebreaks are consecutive and start from 1
                 $stacks = self::getObjectListFromDB("
@@ -10165,7 +10165,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 // during the track animation, we update it before the disk animation
                 // if it's increasing and after if it's decreasing
                 if ($total_force > self::getGameStateValue('xeno_repulse')) {
-                    self::notifyAllPlayers('moveMilitaryVsXenoArrow', '', array('military_vs_xeno' => $total_force));
+                    $this->notifyAllPlayers('moveMilitaryVsXenoArrow', '', array('military_vs_xeno' => $total_force));
                 }
 
                 // Animate the admiral disk updates on the Xeno track
@@ -10197,12 +10197,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                             }
                         }
                         $track[ $from ] = $new_stack;
-                        self::notifyAllPlayers('moveAdmiralDisks', '', array('moves' => $stackMoves, 'scroll' => true));
+                        $this->notifyAllPlayers('moveAdmiralDisks', '', array('moves' => $stackMoves, 'scroll' => true));
                     }
                 }
 
                 if ($total_force < self::getGameStateValue('xeno_repulse')) {
-                    self::notifyAllPlayers('moveMilitaryVsXenoArrow', '', array('military_vs_xeno' => $total_force));
+                    $this->notifyAllPlayers('moveMilitaryVsXenoArrow', '', array('military_vs_xeno' => $total_force));
                 }
             }
 
@@ -10210,10 +10210,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
             self::setGameStateValue('xeno_repulse', $total_force);
 
-            self::notifyAllPlayers('updateXenoRepulsion', clienttranslate('The total of Empire force against Xeno is now : ${force}'), array('force' => $total_force));
+            $this->notifyAllPlayers('updateXenoRepulsion', clienttranslate('The total of Empire force against Xeno is now : ${force}'), array('force' => $total_force));
 
             if (self::getGameStateValue('xeno_repulse_goal') <= $total_force) {
-                self::notifyAllPlayers('simpleNote', clienttranslate("The Empire successfully manages to repulse the Xenos!! Game ends immediately"), array());
+                $this->notifyAllPlayers('simpleNote', clienttranslate("The Empire successfully manages to repulse the Xenos!! Game ends immediately"), array());
 
                 $this->gamestate->nextState('nextRound');
                 return ;
@@ -10238,7 +10238,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
             $invasionCards = $this->getInvasionCards();
 
-            self::notifyAllPlayers('dealInvasionCards', clienttranslate('Xeno Invasion (wave ${wave}) : an invasion card is given to each player'), array(
+            $this->notifyAllPlayers('dealInvasionCards', clienttranslate('Xeno Invasion (wave ${wave}) : an invasion card is given to each player'), array(
                 'wave' => $current_wave,
                 'remaining' => $this->getWaveRemaining(),
                 'cards' => $invasionCards
@@ -10249,13 +10249,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 $invasion_value = $invasionCards[ $player ];
 
                 if ($invasion_value < 100) {
-                    self::notifyAllPlayers('simpleNote', clienttranslate('${player_name} (position #${pos}) must face a invasion force ${value}.'), array(
+                    $this->notifyAllPlayers('simpleNote', clienttranslate('${player_name} (position #${pos}) must face a invasion force ${value}.'), array(
                         'pos' => $pos,
                         'player_name' => $playersinfos[ $player ]['player_name'],
                         'value' => $invasion_value
                    ));
                 } else {
-                    self::notifyAllPlayers('simpleNote', clienttranslate('${player_name} (position #${pos}) must face a invasion force Base military force + ${value}.'), array(
+                    $this->notifyAllPlayers('simpleNote', clienttranslate('${player_name} (position #${pos}) must face a invasion force Base military force + ${value}.'), array(
                         'pos' => $pos,
                         'player_name' => $playersinfos[ $player ]['player_name'],
                         'value' => ($invasion_value-100)
@@ -10298,7 +10298,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                     $pscore = $this->updatePlayerScore($player_id, $score, false, true);
                     self::incStat($score, 'defense_award_points', $player_id);
 
-                    self::notifyAllPlayers('updateScore', clienttranslate('${player_name}, force ${force} repulse the Xenos (${xeno}) and scores ${score_delta} points'),
+                    $this->notifyAllPlayers('updateScore', clienttranslate('${player_name}, force ${force} repulse the Xenos (${xeno}) and scores ${score_delta} points'),
                                             array(
                                                 "score" => $pscore['score'],
                                                 "vp" => $pscore['vp'],
@@ -10336,9 +10336,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $this->updateMilforceIfNeeded($player_id);
         }
         self::DbQuery("UPDATE player SET player_tmp_milforce=0");
-        self::notifyAllPlayers('clearTmpMilforce', '', null);
+        $this->notifyAllPlayers('clearTmpMilforce', '', null);
         $this->moveJustDiscardedToDiscard();
-        self::notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary());
+        $this->notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary());
 
         // Active player that must damage a world
         $players = self::loadPlayersBasicInfos();
@@ -10350,9 +10350,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $defeat = self::incGameStateValue('xeno_empire_defeat', 1);
 
             if ($defeat == 1) {
-                self::notifyAllPlayers('empireDefeat', clienttranslate('No players manage to repulse the Xeno : Empire defeat marker set to 1! Be careful!'), array('defeat' => $defeat));
+                $this->notifyAllPlayers('empireDefeat', clienttranslate('No players manage to repulse the Xeno : Empire defeat marker set to 1! Be careful!'), array('defeat' => $defeat));
             } elseif ($defeat >= 2) {
-                self::notifyAllPlayers('empireDefeat', clienttranslate('Game End : No players manage to repulse the Xeno for the second time : Empire is defeated and end of game bonuses are not attributed.'), array('defeat' => $defeat));
+                $this->notifyAllPlayers('empireDefeat', clienttranslate('Game End : No players manage to repulse the Xeno for the second time : Empire is defeated and end of game bonuses are not attributed.'), array('defeat' => $defeat));
             }
         }
 
@@ -10387,7 +10387,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                     'height' => intval($height));
             }
         }
-        self::notifyAllPlayers('moveAdmiralDisks', '', array('moves' => $moves, 'scroll' => false));
+        $this->notifyAllPlayers('moveAdmiralDisks', '', array('moves' => $moves, 'scroll' => false));
 
         $this->updateXenoTieBreaker();
 
@@ -10408,7 +10408,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         foreach ($player_to_damage as $player_id) {
             if (! in_array($player_id, $players_with_a_intact_world)) {
-                self::notifyAllPlayers('simpleNote', clienttranslate('${player_name} has no world to damage'), array(
+                $this->notifyAllPlayers('simpleNote', clienttranslate('${player_name} has no world to damage'), array(
                     'player_name' => $players[ $player_id ]['player_name']
                ));
             } else {
@@ -10487,13 +10487,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 $this->cards->moveAllCardsInLocation('retrofit', 'hand', null, $player_with_retrofit);
             }
 
-            self::notifyPlayer($player_with_retrofit, 'drawCards', '', $cardDrawn);
+            $this->notifyPlayer($player_with_retrofit, 'drawCards', '', $cardDrawn);
             $this->notifyUpdateCardCount();
 
             self::incStat(count($cardDrawn), 'cards_drawn', $player_with_retrofit);
 
             $players = self::loadPlayersBasicInfos();
-            self::notifyAllPlayers('simpleNote', clienttranslate('Retrofit & Salvage, inc. : ${player_name} gets ${nbr} card(s) from other players discards'), array(
+            $this->notifyAllPlayers('simpleNote', clienttranslate('Retrofit & Salvage, inc. : ${player_name} gets ${nbr} card(s) from other players discards'), array(
                 'player_name' => $players[ $player_with_retrofit ]['player_name'],
                 'nbr' => count($cardDrawn)
            ));
@@ -10502,10 +10502,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $expansion = self::getGameStateValue('expansion');
         if ($expansion == 7) {
             self::DbQuery("UPDATE player SET player_tmp_xenoforce=0");
-            self::notifyAllPlayers('clearTmpMilforce', '', null);
+            $this->notifyAllPlayers('clearTmpMilforce', '', null);
 
             // Maybe some worlds have been damaged
-            self::notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary());
+            $this->notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary());
 
 
             if (self::getGameStateValue('xeno_current_wave') < 3) {
@@ -10536,7 +10536,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         if (! $bEndOfGame) {
             if (self::getGameStateValue('remainingVp') <= 0) {
                 $bEndOfGame = true;
-                self::notifyAllPlayers('nomoreVp', clienttranslate("No more victory point chip: end of game"), array());
+                $this->notifyAllPlayers('nomoreVp', clienttranslate("No more victory point chip: end of game"), array());
             }
         }
 
@@ -10552,7 +10552,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
                 if ($nbr >= $to_trigger_gameend) {
                     $bEndOfGame = true;
-                    self::notifyAllPlayers('nomoreVp', clienttranslate("There is a tableau with 12 cards or more: end of game"), array());
+                    $this->notifyAllPlayers('nomoreVp', clienttranslate("There is a tableau with 12 cards or more: end of game"), array());
                     break;
                 }
             }
@@ -10565,13 +10565,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         if ($max_prestige >= 15) {
             $bEndOfGame = true;
-            self::notifyAllPlayers('nomoreVp', clienttranslate("A player has more than 15 prestige points : end of game"), array());
+            $this->notifyAllPlayers('nomoreVp', clienttranslate("A player has more than 15 prestige points : end of game"), array());
         }
 
         if (self::getGameStateValue('expansion') == 5) {
             if ($this->orbcards->countCardsInLocation('deck') == 0) {
                 $bEndOfGame = true;
-                self::notifyAllPlayers('nomoreVp', clienttranslate("The Orb card deck is empty : end of the game"), array());
+                $this->notifyAllPlayers('nomoreVp', clienttranslate("The Orb card deck is empty : end of the game"), array());
             }
         }
 
@@ -10619,7 +10619,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 self::incGameStateValue('remainingVp', -1);
                 self::setGameStateValue('prestigeOnLeaderTile', 0);
 
-                self::notifyAllPlayers('updateScore', clienttranslate('Prestige leader : ${player_name} scores ${score_delta} points'),
+                $this->notifyAllPlayers('updateScore', clienttranslate('Prestige leader : ${player_name} scores ${score_delta} points'),
                                         array(
                                             "score" => $pscore['score'],
                                             "vp" => $pscore['vp'],
@@ -10638,7 +10638,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
                         self::incGameStateValue('remainingVp', -1);
 
-                        self::notifyAllPlayers('updateScore', clienttranslate('Prestige leader : ${player_name} scores ${score_delta} points'),
+                        $this->notifyAllPlayers('updateScore', clienttranslate('Prestige leader : ${player_name} scores ${score_delta} points'),
                                                 array(
                                                     "score" => $pscore['score'],
                                                     "vp" => $pscore['vp'],
@@ -11007,7 +11007,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             if ($goal['location_arg'] != 0) {
                 $args['player'] = $goal['location_arg'];
             }
-            self::notifyAllPlayers('goalProgress', "", $args);
+            $this->notifyAllPlayers('goalProgress', "", $args);
         }
         return $winners;
     }
@@ -11056,7 +11056,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             self::incStat($points, 'goal_first_points', $winner['player']);
 
 
-            self::notifyAllPlayers('updateScore', clienttranslate('${player_name} fulfills goal ${goal} (${description}) and scores ${points_nbr} points'),
+            $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} fulfills goal ${goal} (${description}) and scores ${points_nbr} points'),
                                             array(
                                                 "i18n" => array("goal", "description"),
                                                 "player_id" => $winner['player'],
@@ -11074,10 +11074,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         foreach ($goal_given as $goal_id => $winners) {
             $goal = $this->cards->getCard($goal_id);
             $goal_type = $this->goal_types[ $goal['type'] ];
-            self::notifyAllPlayers('fullfillGoal', '', array('goal' => $goal['id'], 'type' => $goal['type'], 'to' => $winners));
+            $this->notifyAllPlayers('fullfillGoal', '', array('goal' => $goal['id'], 'type' => $goal['type'], 'to' => $winners));
             $progress_tooltip = $this->getGoalProgressTooltip($goal_type, $this->getGoalProgress($goal_type));
             foreach ($winners as $winner) {
-                self::notifyAllPlayers('goalProgress', "", array('goal' => $goal['id'], 'player' => $winner, 'progress' => $progress_tooltip));
+                $this->notifyAllPlayers('goalProgress', "", array('goal' => $goal['id'], 'player' => $winner, 'progress' => $progress_tooltip));
             }
         }
 
@@ -11127,7 +11127,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
                         $log = clienttranslate('${player_name} is tie for goal ${goal} (${description}) and scores ${points_nbr} points');
 
-                        self::notifyAllPlayers('updateScore', $log,
+                        $this->notifyAllPlayers('updateScore', $log,
                                                         array(
                                                             "i18n" => array("goal", "description"),
                                                             "player_id" => $who_gets_it,
@@ -11185,7 +11185,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                         self::setGameStateValue('prestigeOnLeaderTile', 0);
                         self::setGameStateValue('prestigeLeader', 0);
                     }
-                    self::notifyAllPlayers('updateScore', $log,
+                    $this->notifyAllPlayers('updateScore', $log,
                                                     array(
                                                         "i18n" => array("goal"),
 
@@ -11199,9 +11199,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                                                         "goal" => $goal_type['name']
                                                    ) );
 
-                    self::notifyAllPlayers('fullfillGoal', '', array('goal' => $most['id'], 'type'=> $most['type'], 'from' => $current_owner, 'to' => 'discard'));
+                    $this->notifyAllPlayers('fullfillGoal', '', array('goal' => $most['id'], 'type'=> $most['type'], 'from' => $current_owner, 'to' => 'discard'));
                     $progress_tooltip = $this->getGoalProgressTooltip($goal_type, $this->getGoalProgress($goal_type));
-                    self::notifyAllPlayers('goalProgress', "", array('goal' => $most['id'], 'progress' => $progress_tooltip));
+                    $this->notifyAllPlayers('goalProgress', "", array('goal' => $most['id'], 'progress' => $progress_tooltip));
                 }
                 if ($who_gets_it !== null) {
                     // Give it to this player
@@ -11220,7 +11220,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                         $log = clienttranslate('${player_name} gets ${goal}');
                     }
 
-                    self::notifyAllPlayers('updateScore', $log,
+                    $this->notifyAllPlayers('updateScore', $log,
                                                     array(
                                                         "i18n" => array("goal", "description"),
                                                         "player_id" => $who_gets_it,
@@ -11234,9 +11234,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                                                         "description" => $goal_type['description']
                                                    ) );
 
-                    self::notifyAllPlayers('fullfillGoal', '', array('goal' => $most['id'], 'type' => $most['type'], 'to' => array($who_gets_it)));
+                    $this->notifyAllPlayers('fullfillGoal', '', array('goal' => $most['id'], 'type' => $most['type'], 'to' => array($who_gets_it)));
                     $progress_tooltip = $this->getGoalProgressTooltip($goal_type, $this->getGoalProgress($goal_type));
-                    self::notifyAllPlayers('goalProgress', "", array('goal' => $most['id'], 'player' => $who_gets_it, 'progress' => $progress_tooltip));
+                    $this->notifyAllPlayers('goalProgress', "", array('goal' => $most['id'], 'player' => $who_gets_it, 'progress' => $progress_tooltip));
                 }
             }
         }
@@ -11265,7 +11265,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         // Place this card in player's draft
         $this->cards->moveCard($card_id, 'drafted', $player_id);
 
-        self::notifyPlayer($player_id, "drafted", '', array("card" => $card));
+        $this->notifyPlayer($player_id, "drafted", '', array("card" => $card));
 
         // All remaining choices => to next player choice
         $draftRound = self::getGameStateValue('draftRound');
@@ -11349,7 +11349,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
                 $cards = $this->cards->pickCards(6, $this->getDeck($player_id), $player_id);
                 self::giveExtraTime($player_id);
-                self::notifyPlayer($player_id, 'newCardChoice', '', array('cards' => $cards));
+                $this->notifyPlayer($player_id, 'newCardChoice', '', array('cards' => $cards));
             }
 
             // ... and starts the game
@@ -11360,22 +11360,22 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $draftRound = self::incGameStateValue('draftRound', 1);
 
             if ($draftRound % 2 == 1) {
-                self::notifyAllPlayers('simpleNote', clienttranslate('New draft round : you pass remaining cards to the player on your left.'), array());
+                $this->notifyAllPlayers('simpleNote', clienttranslate('New draft round : you pass remaining cards to the player on your left.'), array());
             } else {
-                self::notifyAllPlayers('simpleNote', clienttranslate("New draft round : you pass remaining cards to the player on your right"), array());
+                $this->notifyAllPlayers('simpleNote', clienttranslate("New draft round : you pass remaining cards to the player on your right"), array());
             }
 
             if ($remaining_draft_round > 1) {
-                self::notifyAllPlayers('simpleNote', clienttranslate('(Note : ${round} remaining drafting round)'), array('round'=>$remaining_draft_round));
+                $this->notifyAllPlayers('simpleNote', clienttranslate('(Note : ${round} remaining drafting round)'), array('round'=>$remaining_draft_round));
             } else {
-                self::notifyAllPlayers('simpleNote', clienttranslate('This is the LAST drafting round.'), array());
+                $this->notifyAllPlayers('simpleNote', clienttranslate('This is the LAST drafting round.'), array());
             }
 
             // cards for each players hands
             foreach ($players as $player_id => $player) {
                 $cards = $this->cards->pickCards($nb_card_per_round, 'deck', $player_id);
                 self::giveExtraTime($player_id);
-                self::notifyPlayer($player_id, 'newCardChoice', '', array('cards' => $cards));
+                $this->notifyPlayer($player_id, 'newCardChoice', '', array('cards' => $cards));
             }
             $this->gamestate->nextState("newround");
             $this->gamestate->setAllPlayersMultiactive();
@@ -11400,7 +11400,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         //We show the players the new card choices
         foreach ($player_to_cards as $player_id => $cards) {
-            self::notifyPlayer($player_id, 'newCardChoice', '', array('cards' => $cards));
+            $this->notifyPlayer($player_id, 'newCardChoice', '', array('cards' => $cards));
         }
 
         // If this is the last card, we draft it automatically
@@ -11438,7 +11438,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $draft_data['draft'] = self::getCollectionFromDb( $sql );
         $json = json_encode($draft_data);
         $this->storeLegacyTeamData($json);
-        self::notifyAllPlayers('message', clienttranslate('Draft has been successfully saved'), []);
+        $this->notifyAllPlayers('message', clienttranslate('Draft has been successfully saved'), []);
     }
 
     function loadDraft()
@@ -11447,7 +11447,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         // Check if there is a valid save for this team of players
         if(!is_string($json)) {
-            self::notifyAllPlayers('message', clienttranslate('No saved draft found for this table'), []);
+            $this->notifyAllPlayers('message', clienttranslate('No saved draft found for this table'), []);
             return;
         }
 
@@ -11457,7 +11457,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $same_deck = $draft_data['expansion'] == self::getGameStateValue('expansion')
                         && $draft_data['newWorlds'] == self::getGameStateValue('newWorlds');
         if (!$same_deck) {
-            self::notifyAllPlayers('message', clienttranslate('Saved draft was made with a different deck'), []);
+            $this->notifyAllPlayers('message', clienttranslate('Saved draft was made with a different deck'), []);
             return;
         }
 
@@ -11469,7 +11469,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $sql = "INSERT INTO card (card_id, card_type, card_location, card_location_arg) VALUES (".$card['id'].", ".$card['type'].", '".$card['location']."', ".$card['location_arg'].")";
             self::DbQuery( $sql );
         }
-        self::notifyAllPlayers('message', clienttranslate('Draft has been successfully loaded'), []);
+        $this->notifyAllPlayers('message', clienttranslate('Draft has been successfully loaded'), []);
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -12069,13 +12069,13 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         $card = $this->orbcards->pickCard('deck', $player_id);
 
         if ($card !== null) {
-            self::notifyPlayer($player_id, 'pickOrbCards', '', array(
+            $this->notifyPlayer($player_id, 'pickOrbCards', '', array(
                 'cards' => array($card)
                ));
 
             $deck = self::getCollectionFromDB("SELECT card_type_arg, COUNT(*) FROM orbcard WHERE card_location='deck' GROUP BY card_type_arg", true);
 
-            self::notifyAllPlayers('drawOrb', clienttranslate('${player_name} draws an Orb card'), array(
+            $this->notifyAllPlayers('drawOrb', clienttranslate('${player_name} draws an Orb card'), array(
                 'player_name' => self::getActivePlayerName(),
                 'player_id' => $player_id,
                 'orbcard_type' =>  $this->orb_to_categ($card['type']),
@@ -12108,7 +12108,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         // Notify
         $player_to_priority = self::getCollectionFromDB("SELECT player_id, player_orb_priority FROM player", true);
 
-        self::notifyAllPlayers('changeOrbPriority', '', array('priority' => $player_to_priority));
+        $this->notifyAllPlayers('changeOrbPriority', '', array('priority' => $player_to_priority));
 
         if ($bPass) {
             $this->gamestate->nextState('orbPass');
@@ -12126,9 +12126,9 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             }
             $player_id = self::getActivePlayerId();
             if (!$this->orbcards->countCardInLocation('hand', $player_id)) {
-                self::notifyAllPlayers('simpleNote', clienttranslate('${player_name} has no orb card, skipping the May Play Orb Card action'), [
+                $this->notifyAllPlayers('simpleNote', clienttranslate('${player_name} has no orb card, skipping the May Play Orb Card action'), [
                     'player_name' => self::getActivePlayerName()]);
-                self::notifyPlayer($player_id, 'showMessage', '', [
+                $this->notifyPlayer($player_id, 'showMessage', '', [
                     'msg' => clienttranslate('You have no orb card, skipping the May Play Orb Card action')
                 ]);
                 $this->gamestate->nextState('orbDraw');
@@ -12150,9 +12150,9 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         if ($this->orbcards->countCardInLocation('hand', $player_id)) {
             $this->gamestate->nextState('orbPlay');
         } else {
-            self::notifyAllPlayers('simpleNote', clienttranslate('${player_name} has no orb card, skipping the May Play Orb Card action'), [
+            $this->notifyAllPlayers('simpleNote', clienttranslate('${player_name} has no orb card, skipping the May Play Orb Card action'), [
                 'player_name' => self::getActivePlayerName()]);
-            self::notifyPlayer($player_id, 'showMessage', '', [
+            $this->notifyPlayer($player_id, 'showMessage', '', [
                 'msg' => clienttranslate('You have no orb card, skipping the May Play Orb Card action')
             ]);
             $this->gamestate->nextState('orbDraw');
@@ -12313,12 +12313,12 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             self::setGameStateValue('orbteamhasmoved', 1);
             $path = $move['path'];
 
-            self::notifyAllPlayers('simpleNote', clienttranslate('${player_name} moves a team'), array(
+            $this->notifyAllPlayers('simpleNote', clienttranslate('${player_name} moves a team'), array(
                 'player_name' => self::getActivePlayerName()
            ));
 
             foreach ($path as $step) {
-                self::notifyAllPlayers('moveTeam', '', array(
+                $this->notifyAllPlayers('moveTeam', '', array(
                     'player_id' => $player_id,
                     'team_id' => $team_id,
                     'x' => $step[0],
@@ -12334,13 +12334,13 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
                 $artefact = $this->artefacts->getCard($artefact_id);
                 $this->artefacts->moveCard($artefact_id, 'hand', $player_id);
 
-                self::notifyPlayer($player_id, 'pickArtefact', '', array(
+                $this->notifyPlayer($player_id, 'pickArtefact', '', array(
                     'card' => $artefact,
                     'x' => $x,
                     'y' => $y
                ));
 
-                self::notifyAllPlayers('destroyArtefact', clienttranslate('${player_name} picks and artefact'), array(
+                $this->notifyAllPlayers('destroyArtefact', clienttranslate('${player_name} picks and artefact'), array(
                     'player_name' => self::getActivePlayerName(),
                     'artefact_id' => $artefact_id,
                     'artefact_type' => $this->artefact_types[$artefact['type']]['level'],
@@ -12355,13 +12355,13 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
                     $card = $this->orbcards->pickCard('deck', $player_id);
 
                     if ($card !== null) {
-                        self::notifyPlayer($player_id, 'pickOrbCards', '', array(
+                        $this->notifyPlayer($player_id, 'pickOrbCards', '', array(
                             'cards' => array($card)
                            ));
 
                         $deck = self::getCollectionFromDB("SELECT card_type_arg, COUNT(*) FROM orbcard WHERE card_location='deck' GROUP BY card_type_arg", true);
 
-                        self::notifyAllPlayers('drawOrb', clienttranslate('Breeding tube: ${player_name} draws an Orb card and must place it immediately.'), array(
+                        $this->notifyAllPlayers('drawOrb', clienttranslate('Breeding tube: ${player_name} draws an Orb card and must place it immediately.'), array(
                             'player_name' => self::getActivePlayerName(),
                             'player_id' => $player_id,
                             'orbcard_type' =>  $this->orb_to_categ($card['type']),
@@ -12374,7 +12374,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
 
                         return ;
                     } else {
-                        self::notifyAllPlayers('simpleNote', clienttranslate("Breeding tube cannot apply because Orb card deck is empty"), array());
+                        $this->notifyAllPlayers('simpleNote', clienttranslate("Breeding tube cannot apply because Orb card deck is empty"), array());
                     }
                 }
             }
@@ -12420,7 +12420,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         $sql = "UPDATE orbteam SET team_x='$x', team_y='$y' WHERE team_id='$team_id'";
         self::DbQuery($sql);
 
-        self::notifyAllPlayers('moveTeam', '', array(
+        $this->notifyAllPlayers('moveTeam', '', array(
             'player_id' => $player_id,
             'team_id' => $team_id,
             'x' => $x,
@@ -12642,7 +12642,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         if ($bConfirmed) {
             throw new UserException(self::_($msg));
         } else {
-            self::notifyPlayer(self::getCurrentPlayerId(), 'putCardOnOrb', '', $args);
+            $this->notifyPlayer(self::getCurrentPlayerId(), 'putCardOnOrb', '', $args);
         }
     }
 
@@ -13017,7 +13017,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
 
 
             if ($bCheck) {
-                self::notifyAllPlayers("updateOrb", clienttranslate('${player_name} plays an Orb card'), array(
+                $this->notifyAllPlayers("updateOrb", clienttranslate('${player_name} plays an Orb card'), array(
                     'player_name' => self::getActivePlayerName(),
                     'newsquares' => $new_squares_to_add,
                     'orbcard' => $card,
@@ -13030,7 +13030,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             ));
             }
         } else {
-            self::notifyPlayer($player_id, 'putCardOnOrb', '',
+            $this->notifyPlayer($player_id, 'putCardOnOrb', '',
                  [
                      'card_id' => $id,
                      'x' => $x,
@@ -13046,7 +13046,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             self::DbQuery($sql);
             $team_id = self::DbGetLastId();
 
-            self::notifyAllPlayers("orbteam", clienttranslate('${player_name} has a new Survey team'), array(
+            $this->notifyAllPlayers("orbteam", clienttranslate('${player_name} has a new Survey team'), array(
                 'player_name' => self::getActivePlayerName(),
                 'team_id' => $team_id,
                 'x' => $airlock_location['x'],
@@ -13118,7 +13118,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         self::DbQuery($sql);
         $team_id = self::DbGetLastId();
 
-        self::notifyAllPlayers("orbteam", clienttranslate('${player_name} chooses a starting place for his/her team'), array(
+        $this->notifyAllPlayers("orbteam", clienttranslate('${player_name} chooses a starting place for his/her team'), array(
             'player_name' => self::getActivePlayerName(),
             'team_id' => $team_id,
             'x' => $x,
@@ -13347,7 +13347,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             self::DbQuery($sql);
 
             if ($art['type'] == 4) {
-                self::notifyPlayer($player_id, 'updateTmpMilforce', '',
+                $this->notifyPlayer($player_id, 'updateTmpMilforce', '',
                                     array(
                                         'tmp' => self::getUniqueValueFromDB("SELECT player_tmp_milforce FROM player WHERE player_id='$player_id'"),
                                         'player' => $player_id
@@ -13370,7 +13370,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
 
             // Give cards to player
             $this->drawCardForPlayer($player_id, $price);
-            self::notifyAllPlayers('drawCards_log', clienttranslate('${player_name} sells a ${good_name} for ${card_nbr} card(s)'),
+            $this->notifyAllPlayers('drawCards_log', clienttranslate('${player_name} sells a ${good_name} for ${card_nbr} card(s)'),
                                         array(
                                             "i18n" => array("good_name"),
                                             "player_name" => $player_name,
@@ -13413,7 +13413,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             if ($bDefered) {
                 $this->defered_notifyAllPlayers($this->notif_defered_id, 'consumeArtifact', $log, $logarg);
             } else {
-                self::notifyAllPlayers('consumeArtifact', $log, $logarg);
+                $this->notifyAllPlayers('consumeArtifact', $log, $logarg);
             }
 
             $artpoints = $this->artefact_types[ $art['type'] ]['vp'];
@@ -13422,7 +13422,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
                 $pscore = $this->updatePlayerScore($player_id, $artpoints, false);
                 self::incStat($artpoints, 'artefact_points', $player_id);
 
-                self::notifyAllPlayers('updateScore', clienttranslate('${player_name} scores ${score_delta} with artifact(s).'),
+                $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} scores ${score_delta} with artifact(s).'),
                                                 array(
                                                     "player_name" => $player_name,
                                                     "player_id" => $player_id,
@@ -13453,7 +13453,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             self::incStat(5, 'greatest_contributor_points', $player_id);
 
 
-            self::notifyAllPlayers('updateScore', clienttranslate('Greatest Contributor to War effort : ${player_name} scores 5 points.'),
+            $this->notifyAllPlayers('updateScore', clienttranslate('Greatest Contributor to War effort : ${player_name} scores 5 points.'),
                                             array(
                                                 "player_name" => $player_name,
                                                 "player_id" => $player_id,
@@ -13480,7 +13480,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             $pscore = $this->updatePlayerScore($player_id, 5, false);
             self::incStat(5, 'greatest_admiral_points', $player_id);
 
-            self::notifyAllPlayers('updateScore', clienttranslate('Greatest Admiral : ${player_name} scores 5 points.'),
+            $this->notifyAllPlayers('updateScore', clienttranslate('Greatest Admiral : ${player_name} scores 5 points.'),
                                             array(
                                                 "player_name" => $player_name,
                                                 "player_id" => $player_id,
@@ -13527,7 +13527,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             $pscore = $this->updatePlayerScore($player_id, $points, false);
             self::incStat($points, 'artefact_points', $player_id);
 
-            self::notifyAllPlayers('updateScore', clienttranslate('Visible feeding station : ${player_name} scores ${points_nbr} VP with ${nbr} artefacts x ${stations} visible stations.'),
+            $this->notifyAllPlayers('updateScore', clienttranslate('Visible feeding station : ${player_name} scores ${points_nbr} VP with ${nbr} artefacts x ${stations} visible stations.'),
                                             array(
                                                 "player_id" => $player_id,
                                                 "score_delta" => $points,
@@ -13563,7 +13563,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         $card_id = self::DbGetLastId();
         $card = $this->cards->getCard($card_id);
 
-        self::notifyPlayer($player_id, 'drawCards', '', array($card));
+        $this->notifyPlayer($player_id, 'drawCards', '', array($card));
         $this->notifyUpdateCardCount();
     }
 
@@ -13600,7 +13600,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         $card = $this->cards->getCard($card_id);
         $card_type = $this->card_types[ $card_type_id ];
 
-        self::notifyAllPlayers('playcard', '${card_name}: id=${card_id} ; type=${card_type}',
+        $this->notifyAllPlayers('playcard', '${card_name}: id=${card_id} ; type=${card_type}',
                                             array(
                                                 "player" => $player_id,
                                                 "card" => $card,
@@ -13672,7 +13672,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         }
         $card = $this->searchCard($card_name);
         $this->cards->moveCard($card['id'], 'hand', $player_id);
-        self::notifyPlayer($player_id, 'drawCards', '', array($card));
+        $this->notifyPlayer($player_id, 'drawCards', '', array($card));
         $this->notifyUpdateCardCount();
     }
 
@@ -13703,7 +13703,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
 
         $card_id = self::DbGetLastId();
         $card = $this->orbcards->getCard($card_id);
-        self::notifyPlayer($player_id, 'pickOrbCards', '', array(
+        $this->notifyPlayer($player_id, 'pickOrbCards', '', array(
             'cards' => array($card)
             ));
     }
@@ -13717,7 +13717,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         $artefact = $this->artefacts->getCard($card_id);
         // Studio debug helpers bypass the normal orb pickup flow, so we need
         // to send the hand-update notification explicitly.
-        self::notifyPlayer($player_id, 'pickArtefact', '', array(
+        $this->notifyPlayer($player_id, 'pickArtefact', '', array(
             'card' => $artefact,
         ));
     }
