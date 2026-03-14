@@ -64,7 +64,7 @@
         },
         "sixcostdev_points": {
             "id": 14,
-            "name": "Points wins with 6 cost development",
+            "name": "Points wins with six-point development",
             "type": "int"
         },
         "tableau_points": {
