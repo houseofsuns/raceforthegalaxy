@@ -4513,7 +4513,7 @@ $this->card_types = array(
       "powers" => array(
             2 => array( array(
                 "power" => "drawifdev",
-                'onlyif_six_dev' => true,
+                'onlyif_six_point_development' => true,
                 "icon" => '',
                 "text" => "",
                 "arg" => array(
@@ -9065,7 +9065,7 @@ $this->goal_types = array(
         'phases' => array( 2),
         'points' => 3,
         'name' => clienttranslate("Galactic Status"),
-        'description' => clienttranslate("First to place a 6-cost &lt;?&gt; development.")
+        'description' => clienttranslate("First to place a six-point &lt;?&gt; development.")
    ),
     123 => array(
         'type' => 'first',

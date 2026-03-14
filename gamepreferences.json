@@ -112,20 +112,20 @@
         }
     },
     "6": {
-        "name": "6 cost development scoring display",
+        "name": "Six-point development scoring display",
         "needReload": true,
         "values": {
             "1": {
                 "name": "Never",
-                "cssPref": "sixdev_scoring_no"
+                "cssPref": "six_point_development_scoring_no"
             },
             "2": {
                 "name": "Hover \/ Tap",
-                "cssPref": "sixdev_scoring_hover_tap"
+                "cssPref": "six_point_development_scoring_hover_tap"
             },
             "3": {
                 "name": "Always",
-                "cssPref": "sixdev_scoring_yes"
+                "cssPref": "six_point_development_scoring_yes"
             }
         },
         "default": 2
@@ -180,5 +180,18 @@
                 "name": "Never"
             }
         }
+    },
+    "11": {
+        "name": "Live six-point development VP display",
+        "needReload": true,
+        "values": {
+            "1": {
+                "name": "Off"
+            },
+            "2": {
+                "name": "On"
+            }
+        },
+        "default": 2
     }
 }
