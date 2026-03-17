@@ -20,7 +20,6 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     private $notif_defered_id = 1;
     private $bUpdateCardCount = false;
     private $bUpdateCardCountDefered = false;
-    private $finalScoringStarted = false;
 
     function __construct()
     {
@@ -3995,18 +3994,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             false
         );
         $player_totals = $this->getZeroSixPointDevelopmentPlayerTotals();
-        // Once final scoring has started, the real player score already includes six-point-development
-        // VP, or is about to during the pre-state-98 notification window. In either case, exposing the
-        // live total here would double-count those points on the client, so keep only per-card badges.
-        $hide_live_totals = $this->finalScoringStarted || $this->gamestate->getCurrentMainStateId() >= 98;
 
         $public_card_scores = array();
         foreach ($context['cards'] as $card) {
             if ($this->isSixPointDev($card['type'])) {
                 $public_card_scores[$card['id']] = $tableau_points[$card['type']];
-                if (!$hide_live_totals) {
-                    $player_totals[$card['location_arg']] += $tableau_points[$card['type']];
-                }
+                $player_totals[$card['location_arg']] += $tableau_points[$card['type']];
             }
         }
 
@@ -4098,7 +4091,6 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     {
         $players = self::loadPlayersBasicInfos();
         $sixdevpoints = $this->getSixDevelopmentsPoints();
-        $this->finalScoringStarted = true;
         $player_to_total_points = array();
         foreach ($sixdevpoints['devplayers'] as $dev_id => $player_id) {
             $points = $sixdevpoints['devpoints'][$dev_id];
@@ -4130,6 +4122,42 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                                            ) );
         }
 
+    }
+
+    function stFinalScoring()
+    {
+        $this->scoreRemainingArtefacts();
+        $this->scoreSixDevelopments();
+
+        if (self::getGameStateValue('expansion') == 7 && self::getGameStateValue('xeno_empire_defeat') < 2) {
+            $this->scoreGreatestAdmiralEffort();
+        }
+
+        $this->checkGoals('endgame');
+
+        // Final statistics /////////
+
+        // Gets final military force & chips
+        $sql = "SELECT player_id, player_milforce, player_vp FROM player" ;
+        $dbres = self::DbQuery($sql);
+        while ($row = mysql_fetch_assoc($dbres)) {
+            self::setStat($row['player_milforce'], 'milforce', $row['player_id']);
+            self::setStat($row['player_vp'], 'chips_count', $row['player_id']);
+        }
+
+        // Get final number of card in tableau
+        $tableau_count = $this->cards->countCardsByLocationArgs("tableau");
+        foreach ($tableau_count as $player_id => $count) {
+            self::setStat($count, 'tableau_count', $player_id);
+        }
+
+        // Sum card on tableau VP
+        $cards = $this->cards->getCardsInLocation('tableau');
+        foreach ($cards as $card) {
+            self::incStat($this->card_types[ $card['type'] ]['vp'], 'tableau_points', $card['location_arg']);
+        }
+
+        $this->gamestate->nextState('');
     }
 
     function updatePlayerScore($player_id, $score_delta, $bIsVpChip, $bIsDefenseAward = False)
@@ -10650,13 +10678,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         // End of game test
         $bEndOfGame = false;
-        $bAttributeXenoGoals = false;
         if ($expansion == 7) {
-            $bAttributeXenoGoals = true;
-
             if (self::getGameStateValue('xeno_empire_defeat') >= 2) {
                 $bEndOfGame = true;
-                $bAttributeXenoGoals = false;
             }
 
             if (! $bEndOfGame) {
@@ -10709,37 +10733,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         if ($bEndOfGame) {
-            $this->scoreRemainingArtefacts();
-            $this->scoreSixDevelopments();
-            if ($bAttributeXenoGoals) {
-                $this->scoreGreatestAdmiralEffort();
-            }
-
-            $this->checkGoals('endgame');
-
-            // Final statistics /////////
-
-            // Gets final military force & chips
-            $sql = "SELECT player_id, player_milforce, player_vp FROM player" ;
-            $dbres = self::DbQuery($sql);
-            while ($row = mysql_fetch_assoc($dbres)) {
-                self::setStat($row['player_milforce'], 'milforce', $row['player_id']);
-                self::setStat($row['player_vp'], 'chips_count', $row['player_id']);
-            }
-
-            // Get final number of card in tableau
-            $tableau_count = $this->cards->countCardsByLocationArgs("tableau");
-            foreach ($tableau_count as $player_id => $count) {
-                self::setStat($count, 'tableau_count', $player_id);
-            }
-
-            // Sum card on tableau VP
-            $cards = $this->cards->getCardsInLocation('tableau');
-            foreach ($cards as $card) {
-                self::incStat($this->card_types[ $card['type'] ]['vp'], 'tableau_points', $card['location_arg']);
-            }
-
-            $this->gamestate->nextState('endGame');
+            $this->gamestate->nextState('finalScoring');
         } else {
             // Prestige leader management
             $players = self::loadPlayersBasicInfos();

@@ -838,6 +838,7 @@ define([
                 dojo.query('.prestigeleadercount').forEach(dojo.hitch(this, function(node) {
                     node.innerHTML = this.gamedatas.prestigeleadercount;
                 }));
+                this.hideLiveSixPointDevPlayerTotals = this.isEndgameForLiveSixPointDevTotals();
                 if (this.liveSixPointDevScoringEnabled() && this.gamedatas.live_six_point_development_state) {
                     this.applyLiveSixPointDevState(this.gamedatas.live_six_point_development_state);
                     this.refreshLiveSixPointDevScoresWhenPanelsReady();
@@ -931,6 +932,22 @@ define([
             liveSixPointDevScoringEnabled: function() {
                 return this.bga.userPreferences.get(11).toString() == '1';
             },
+            isEndgameForLiveSixPointDevTotals: function() {
+                var gamestate = this.gamedatas.gamestate || {};
+                if (typeof gamestate.id != 'undefined') {
+                    return [97, 98, 99].indexOf(toint(gamestate.id)) !== -1;
+                }
+                return gamestate.name == 'finalScoring' || gamestate.name == 'gameEndScore' || gamestate.name == 'gameEnd';
+            },
+            setHideLiveSixPointDevPlayerTotals: function(hidden) {
+                if (this.hideLiveSixPointDevPlayerTotals == hidden) {
+                    return;
+                }
+                this.hideLiveSixPointDevPlayerTotals = hidden;
+                for (var player_id in this.gamedatas.players) {
+                    this.updateDisplayedPlayerScore(player_id);
+                }
+            },
 
             extractCardId: function(node_id) {
                 var match = node_id.match(/(\d+)$/);
@@ -1019,7 +1036,7 @@ define([
                 // `player.score` stays as the real server score; the live preference only overlays
                 // the not-yet-scored six-point-development value in the player panel.
                 var displayed_score = toint(player.score);
-                if (this.liveSixPointDevScoringEnabled()) {
+                if (this.liveSixPointDevScoringEnabled() && !this.hideLiveSixPointDevPlayerTotals) {
                     displayed_score += toint(player.six_point_development_vp || 0);
                 }
                 this.bga.playerPanels.getScoreCounter(player_id).toValue(displayed_score);
@@ -1944,6 +1961,9 @@ define([
                 console.log(args);
 
                 switch (stateName) {
+                    case 'finalScoring':
+                        this.setHideLiveSixPointDevPlayerTotals(true);
+                        break;
                     case 'initialDiscardHomeWorld':
                         dojo.style('my_deck_wrap', 'display', 'none');
                         break;
@@ -4896,6 +4916,7 @@ define([
                 dojo.subscribe('updateCardCount', this, "notif_updateCardCount");
                 dojo.subscribe('updateScore', this, "notif_updateScore");
                 dojo.subscribe('updateSixPointDevelopmentVp', this, "notif_updateSixPointDevelopmentVp");
+                dojo.subscribe('nomoreVp', this, "notif_nomoreVp");
                 dojo.subscribe('consume', this, "notif_consume");
                 dojo.subscribe('tranship', this, "notif_tranship");
 
@@ -5529,6 +5550,9 @@ define([
                     }
                 }
                 this.applyLiveSixPointDevState(state);
+            },
+            notif_nomoreVp: function(notif) {
+                this.setHideLiveSixPointDevPlayerTotals(true);
             },
             notif_updatePrestige: function(notif) {
                 $('prestige_nbr_' + notif.args.player_id).innerHTML = notif.args.prestige;
