@@ -20,7 +20,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     private $notif_defered_id = 1;
     private $bUpdateCardCount = false;
     private $bUpdateCardCountDefered = false;
-    private $appliedSixPointDevelopmentCardTypes = array();
+    private $finalScoringStarted = false;
 
     function __construct()
     {
@@ -3995,13 +3995,16 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             false
         );
         $player_totals = $this->getZeroSixPointDevelopmentPlayerTotals();
-        $applied_card_types = array_flip($this->getAppliedSixPointDevelopmentCardTypesForLiveTotals($context));
+        // Once final scoring has started, the real player score already includes six-point-development
+        // VP, or is about to during the pre-state-98 notification window. In either case, exposing the
+        // live total here would double-count those points on the client, so keep only per-card badges.
+        $hide_live_totals = $this->finalScoringStarted || $this->gamestate->getCurrentMainStateId() >= 98;
 
         $public_card_scores = array();
         foreach ($context['cards'] as $card) {
             if ($this->isSixPointDev($card['type'])) {
                 $public_card_scores[$card['id']] = $tableau_points[$card['type']];
-                if (!isset($applied_card_types[$card['type']])) {
+                if (!$hide_live_totals) {
                     $player_totals[$card['location_arg']] += $tableau_points[$card['type']];
                 }
             }
@@ -4062,15 +4065,6 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         );
     }
 
-    private function getAppliedSixPointDevelopmentCardTypesForLiveTotals($context)
-    {
-        if ($this->gamestate->getCurrentMainStateId() >= 98) {
-            return array_keys($context['dev_to_players']);
-        }
-
-        return array_keys($this->appliedSixPointDevelopmentCardTypes);
-    }
-
     // Includes worlds that are scored like 6-point developments.
     private function isSixPointDev($card_type_id)
     {
@@ -4104,17 +4098,14 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     {
         $players = self::loadPlayersBasicInfos();
         $sixdevpoints = $this->getSixDevelopmentsPoints();
-        $this->appliedSixPointDevelopmentCardTypes = array();
+        $this->finalScoringStarted = true;
         $player_to_total_points = array();
-        $player_to_dev_ids = array();
         foreach ($sixdevpoints['devplayers'] as $dev_id => $player_id) {
             $points = $sixdevpoints['devpoints'][$dev_id];
             if (!isset($player_to_total_points[$player_id])) {
                 $player_to_total_points[$player_id] = 0;
-                $player_to_dev_ids[$player_id] = array();
             }
             $player_to_total_points[$player_id] += $points;
-            $player_to_dev_ids[$player_id][] = $dev_id;
 
 
             $card_type = $this->card_types[ $dev_id ];
@@ -4125,16 +4116,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
         }
 
-        foreach ($players as $player_id => $player) {
-            if (!isset($player_to_total_points[$player_id])) {
-                continue;
-            }
-
-            foreach ($player_to_dev_ids[$player_id] as $dev_id) {
-                $this->appliedSixPointDevelopmentCardTypes[$dev_id] = true;
-            }
-
-            $points = $player_to_total_points[$player_id];
+        foreach ($player_to_total_points as $player_id => $points) {
             $pscore = $this->updatePlayerScore($player_id, $points, false);
             $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} gains ${points_nbr} from end-game development scoring'),
                                             array(
@@ -4143,7 +4125,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                                                 "vp_delta" => 0,
                                                 "score" => $pscore['score'],
                                                 "vp" => $pscore['vp'],
-                                                "player_name" => $player['player_name'],
+                                                "player_name" => $players[$player_id]['player_name'],
                                                 "points_nbr" => $points,
                                            ) );
         }
