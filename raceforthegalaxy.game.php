@@ -6270,7 +6270,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         if ($is_auto_sell) {
             $this->notifyPlayer($player_id, 'showMessage', '', array(
                 'msg' => sprintf(
-                    self::_('Autosold your only good (on %s) for %d card(s).'),
+                    self::_('Automatically sold your only good (on %s) for %d cards.'),
                     $this->card_types[ $world_type ]['name'],
                     $price
                 )
