@@ -20,7 +20,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     private $notif_defered_id = 1;
     private $bUpdateCardCount = false;
     private $bUpdateCardCountDefered = false;
-    private $sixPointDevelopmentDisplayDisabled = false;
+    private $appliedSixPointDevelopmentCardTypes = array();
 
     function __construct()
     {
@@ -1122,14 +1122,6 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     {
         parent::notifyPlayer($player_id, $notif_type, $notif_log, $notif_args);
         $this->emitLiveSixPointDevelopmentState($this->buildLiveSixPointDevelopmentDisplayState());
-    }
-
-    private function sixPointDevDisplayDisabled()
-    {
-        // Endgame scoring happens in stEndRound before the framework transitions to state 98.
-        // Suppress live overlay updates during that window so the client does not temporarily
-        // double-count six-point-development VP while the real score notifications are arriving.
-        return $this->sixPointDevelopmentDisplayDisabled || $this->gamestate->getCurrentMainStateId() >= 98;
     }
 
     private function getDeferedNotification($notif_ref)
@@ -3993,14 +3985,6 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
     private function buildLiveSixPointDevelopmentDisplayState()
     {
-        if ($this->sixPointDevDisplayDisabled()) {
-            return array(
-                'player_totals' => $this->getZeroSixPointDevelopmentPlayerTotals(),
-                'public_card_scores' => array(),
-                'private_card_scores' => array(),
-            );
-        }
-
         $context = $this->getSixPointDevelopmentScoringContext(true);
         $tableau_points = $this->cardsToSixDevelopmentsScore(
             $context['cards'],
@@ -4011,12 +3995,15 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             false
         );
         $player_totals = $this->getZeroSixPointDevelopmentPlayerTotals();
+        $applied_card_types = array_flip($this->getAppliedSixPointDevelopmentCardTypesForLiveTotals($context));
 
         $public_card_scores = array();
         foreach ($context['cards'] as $card) {
             if ($this->isSixPointDev($card['type'])) {
                 $public_card_scores[$card['id']] = $tableau_points[$card['type']];
-                $player_totals[$card['location_arg']] += $tableau_points[$card['type']];
+                if (!isset($applied_card_types[$card['type']])) {
+                    $player_totals[$card['location_arg']] += $tableau_points[$card['type']];
+                }
             }
         }
 
@@ -4075,6 +4062,15 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         );
     }
 
+    private function getAppliedSixPointDevelopmentCardTypesForLiveTotals($context)
+    {
+        if ($this->gamestate->getCurrentMainStateId() >= 98) {
+            return array_keys($context['dev_to_players']);
+        }
+
+        return array_keys($this->appliedSixPointDevelopmentCardTypes);
+    }
+
     // Includes worlds that are scored like 6-point developments.
     private function isSixPointDev($card_type_id)
     {
@@ -4085,9 +4081,6 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
     private function emitLiveSixPointDevelopmentState($state)
     {
-        if ($this->sixPointDevDisplayDisabled()) {
-            return;
-        }
         $notif_args = array(
             'player_totals' => $state['player_totals'],
             'card_scores' => $state['public_card_scores'],
@@ -4106,39 +4099,22 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         parent::notifyAllPlayers('updateSixPointDevelopmentVp', '', $notif_args);
     }
 
-    private function clearLiveSixPointDevelopmentState()
-    {
-        $this->emitLiveSixPointDevelopmentState(array(
-            'player_totals' => $this->getZeroSixPointDevelopmentPlayerTotals(),
-            'public_card_scores' => array(),
-            'private_card_scores' => array(),
-        ));
-    }
-
     // Compute scores from 6 cost devs and give them to players
     function scoreSixDevelopments()
     {
         $players = self::loadPlayersBasicInfos();
         $sixdevpoints = $this->getSixDevelopmentsPoints();
-        $this->clearLiveSixPointDevelopmentState();
-        $this->sixPointDevelopmentDisplayDisabled = true;
+        $this->appliedSixPointDevelopmentCardTypes = array();
+        $player_to_total_points = array();
+        $player_to_dev_ids = array();
         foreach ($sixdevpoints['devplayers'] as $dev_id => $player_id) {
             $points = $sixdevpoints['devpoints'][$dev_id];
-
-            $pscore = $this->updatePlayerScore($player_id, $points, false);
-
-            $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} gains ${points_nbr} with ${dev_name}'),
-                                            array(
-                                                "i18n" => array("dev_name"),
-                                                "player_id" => $player_id,
-                                                "score_delta" => $points,
-                                                "vp_delta" => 0,
-                                                "score" => $pscore['score'],
-                                                "vp" => $pscore['vp'],
-                                                "player_name" => $players[$player_id]['player_name'] ,
-                                                "points_nbr" => $points,
-                                                "dev_name" => $this->card_types[ $dev_id ]['name']
-                                           ) );
+            if (!isset($player_to_total_points[$player_id])) {
+                $player_to_total_points[$player_id] = 0;
+                $player_to_dev_ids[$player_id] = array();
+            }
+            $player_to_total_points[$player_id] += $points;
+            $player_to_dev_ids[$player_id][] = $dev_id;
 
 
             $card_type = $this->card_types[ $dev_id ];
@@ -4147,6 +4123,29 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             } else {
                 self::incStat($points, 'sixcostdev_points', $player_id);
             }
+        }
+
+        foreach ($players as $player_id => $player) {
+            if (!isset($player_to_total_points[$player_id])) {
+                continue;
+            }
+
+            foreach ($player_to_dev_ids[$player_id] as $dev_id) {
+                $this->appliedSixPointDevelopmentCardTypes[$dev_id] = true;
+            }
+
+            $points = $player_to_total_points[$player_id];
+            $pscore = $this->updatePlayerScore($player_id, $points, false);
+            $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} gains ${points_nbr} from end-game development scoring'),
+                                            array(
+                                                "player_id" => $player_id,
+                                                "score_delta" => $points,
+                                                "vp_delta" => 0,
+                                                "score" => $pscore['score'],
+                                                "vp" => $pscore['vp'],
+                                                "player_name" => $player['player_name'],
+                                                "points_nbr" => $points,
+                                           ) );
         }
 
     }
