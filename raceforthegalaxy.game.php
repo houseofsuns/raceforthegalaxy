@@ -1126,6 +1126,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
     private function sixPointDevDisplayDisabled()
     {
+        // Endgame scoring happens in stEndRound before the framework transitions to state 98.
+        // Suppress live overlay updates during that window so the client does not temporarily
+        // double-count six-point-development VP while the real score notifications are arriving.
         return $this->sixPointDevelopmentDisplayDisabled || $this->gamestate->getCurrentMainStateId() >= 98;
     }
 
@@ -4146,30 +4149,6 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
         }
 
-        // Score also Federation Capital
-        $player_capital = self::getObjectFromDB("SELECT player_id,player_prestige
-                    FROM player
-                    INNER JOIN card ON card_location_arg=player_id
-                    WHERE card_type='187' and card_location='tableau'
-                    ", true);
-        if ($player_capital !== null) {
-            $pscore = $this->updatePlayerScore($player_capital['player_id'], $player_capital['player_prestige'], false);
-
-            $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} gains ${points_nbr} with ${dev_name}'),
-                                            array(
-                                                "i18n" => array("dev_name"),
-                                                "player_id" => $player_capital['player_id'],
-                                                "score_delta" => $player_capital['player_prestige'],
-                                                "vp_delta" => 0,
-                                                "score" => $pscore['score'],
-                                                "vp" => $pscore['vp'],
-                                                "player_name" => $players[ $player_capital['player_id'] ]['player_name'] ,
-                                                "points_nbr" => $player_capital['player_prestige'],
-                                                "dev_name" => $this->card_types[ 187 ]['name']
-                                           ) );
-                                           
-            self::incStat($player_capital['player_prestige'], 'tableau_points', $player_capital['player_id']);
-        }
     }
 
     function updatePlayerScore($player_id, $score_delta, $bIsVpChip, $bIsDefenseAward = False)
