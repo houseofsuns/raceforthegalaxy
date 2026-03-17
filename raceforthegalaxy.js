@@ -838,6 +838,15 @@ define([
                 dojo.query('.prestigeleadercount').forEach(dojo.hitch(this, function(node) {
                     node.innerHTML = this.gamedatas.prestigeleadercount;
                 }));
+                if (this.liveSixPointDevScoringEnabled() && this.gamedatas.live_six_point_development_state) {
+                    this.applyLiveSixPointDevState(this.gamedatas.live_six_point_development_state);
+                    this.refreshLiveSixPointDevScoresWhenPanelsReady();
+                } else {
+                    this.clearLiveSixPointDevBadges();
+                    for (var player_id in this.gamedatas.players) {
+                        this.updateDisplayedPlayerScore(player_id);
+                    }
+                }
             },
             initPreferences: function() {
                 console.log("user preferences");
@@ -916,6 +925,142 @@ define([
                     case "6":
                         this.tooltip_delay = 1000;
                         break;
+                }
+            },
+
+            liveSixPointDevScoringEnabled: function() {
+                return this.bga.userPreferences.get(11).toString() == '1';
+            },
+
+            extractCardId: function(node_id) {
+                var match = node_id.match(/(\d+)$/);
+                return match ? toint(match[1]) : null;
+            },
+
+            hasLiveSixPointDevDisplay: function(card_type_id) {
+                var card_type = this.gamedatas.card_types[card_type_id];
+                return card_type && typeof card_type.sixdev_scoring != 'undefined';
+            },
+            isTableauCardNode: function(node) {
+                return /^card_\d+$/.test(node.id);
+            },
+            buildLiveSixPointDevelopmentTooltipLine: function(node, points) {
+                var label = this.isTableauCardNode(node) ? _("Current value:") : _("Value if played:");
+                return `<div class="six_point_development_live_tooltip">${label} <strong>${points}</strong> VP</div>`;
+            },
+            buildLiveSixPointDevelopmentBadgeHtml: function(points) {
+                var live_value_class = 'six_point_development_live_value';
+                if (String(points).length > 1) {
+                    live_value_class += ' six_point_development_live_value_two_digits';
+                }
+                return `<div class="${live_value_class}">${points}</div>`;
+            },
+            buildCardTooltipCardHtml: function(node) {
+                var card_type_id = node.getAttribute('tooltip_card_type');
+                if (!card_type_id || !this.tooltip_card_size) {
+                    return '';
+                }
+
+                var card = this.cardBackgroundPos(card_type_id, this.tooltip_card_size);
+                card.card_name = this.gamedatas.card_types[card_type_id].nametr;
+                var points = node.getAttribute('live_six_point_development_points');
+                card.live_value = points ? this.buildLiveSixPointDevelopmentBadgeHtml(points) : '';
+                return this.format_block('jstpl_tooltip_card', card);
+            },
+            buildCardTooltipHtml: function(node) {
+                var tooltip = node.getAttribute('tooltip');
+
+                if (node.hasAttribute('oort')) {
+                    tooltip = tooltip.replace(/OORT_KIND/, _('Current kind:') + node.getAttribute('oort') + '<hr/>');
+                }
+
+                if (node.hasAttribute('live_six_point_development_points')) {
+                    tooltip += '<hr/>' + this.buildLiveSixPointDevelopmentTooltipLine(node, node.getAttribute('live_six_point_development_points'));
+                }
+
+                if (node.hasAttribute('tooltip_card_type')) {
+                    tooltip += '<hr/>' + this.buildCardTooltipCardHtml(node);
+                }
+
+                tooltip += '</div>';
+                return tooltip;
+            },
+            setLiveSixPointDevelopmentBadge: function(card_id, points) {
+                var badge = $('live_six_point_development_' + card_id);
+                if (!badge) {
+                    return;
+                }
+                var tooltip_target = badge.parentNode;
+                if (points === null || typeof points == 'undefined') {
+                    if (tooltip_target) {
+                        tooltip_target.removeAttribute('live_six_point_development_points');
+                    }
+                    dojo.style(badge, 'display', 'none');
+                    return;
+                }
+                if (tooltip_target) {
+                    tooltip_target.setAttribute('live_six_point_development_points', points);
+                }
+                badge.innerHTML = points;
+                dojo.toggleClass(badge, 'six_point_development_live_value_two_digits', String(points).length > 1);
+                dojo.style(badge, 'display', 'flex');
+            },
+            clearLiveSixPointDevBadges: function() {
+                dojo.query('.six_point_development_live_value').forEach(function(node) {
+                    if (node.parentNode) {
+                        node.parentNode.removeAttribute('live_six_point_development_points');
+                    }
+                    dojo.removeClass(node, 'six_point_development_live_value_two_digits');
+                    dojo.style(node, 'display', 'none');
+                });
+            },
+            updateDisplayedPlayerScore: function(player_id) {
+                var player = this.gamedatas.players[player_id];
+                // `player.score` stays as the real server score; the live preference only overlays
+                // the not-yet-scored six-point-development value in the player panel.
+                var displayed_score = toint(player.score);
+                if (this.liveSixPointDevScoringEnabled()) {
+                    displayed_score += toint(player.six_point_development_vp || 0);
+                }
+                this.bga.playerPanels.getScoreCounter(player_id).toValue(displayed_score);
+            },
+            refreshLiveSixPointDevScoresWhenPanelsReady: function() {
+                var refresh = dojo.hitch(this, function() {
+                    for (var player_id in this.gamedatas.players) {
+                        this.updateDisplayedPlayerScore(player_id);
+                    }
+                });
+                if (document.readyState === 'complete') {
+                    refresh();
+                    return;
+                }
+                window.addEventListener('load', refresh, {once: true});
+            },
+
+            applyLiveSixPointDevState: function(state) {
+                this.gamedatas.live_six_point_development_state = state;
+                this.clearLiveSixPointDevBadges();
+
+                for (var player_id in this.gamedatas.players) {
+                    this.gamedatas.players[player_id].six_point_development_vp = (state.player_totals && state.player_totals[player_id]) || 0;
+                    this.updateDisplayedPlayerScore(player_id);
+                }
+
+                // Public tableau values and private hand/explore projections arrive separately from
+                // the server; merge them so badge rendering does not care where a score came from.
+                var private_card_scores = state.private_card_scores || {};
+                var merged_card_scores = {};
+                if (state.card_scores) {
+                    for (var card_id in state.card_scores) {
+                        merged_card_scores[card_id] = state.card_scores[card_id];
+                    }
+                }
+                for (var private_card_id in private_card_scores) {
+                    merged_card_scores[private_card_id] = private_card_scores[private_card_id];
+                }
+
+                for (var merged_card_id in merged_card_scores) {
+                    this.setLiveSixPointDevelopmentBadge(merged_card_id, merged_card_scores[merged_card_id]);
                 }
             },
 
@@ -1059,11 +1204,7 @@ define([
                 var sixdev_scoring = card_type.sixdev_scoring;
 
                 // Add card content
-                var card_id = '';
-                if (typeof div_id != 'undefined') {
-                    // player_hand_item_XX
-                    var card_id = div_id.substr(17);
-                }
+                var card_id = this.extractCardId(typeof div_id != 'undefined' ? div_id : id);
                 dojo.place(`<div class="cardname"><span>${card_name}</span></div><div class="cardcross"/><div id="scavengericon_${card_id}" class="scavengericon"/>`, id);
 
                 if (card_type_id == 181) {
@@ -1075,16 +1216,16 @@ define([
                     tooltip += '<hr/>' + sixdev_scoring;
                     dojo.place(`<div id="six_dev_${card_id}" class="six_dev">${sixdev_scoring}</div>`, id);
                 }
+                if (this.liveSixPointDevScoringEnabled() && this.hasLiveSixPointDevDisplay(card_type_id)) {
+                    dojo.place(`<div id="live_six_point_development_${card_id}" class="six_point_development_live_value"></div>`, id);
+                }
 
                 dojo.style(id, "background-size", "auto " + this.card_size['h'] * 10 + "px");
                 dojo.style(id, "border-radius", this.card_size['r'] + "px");
                 $(id).setAttribute('tooltip', tooltip);
 
                 if (this.tooltip_card_size) {
-                    var card = this.cardBackgroundPos(card_type_id, this.tooltip_card_size);
-                    card['card_name'] = card_name;
-                    var tooltip_card = this.format_block('jstpl_tooltip_card', card);
-                    $(id).setAttribute('tooltip_card', tooltip_card);
+                    $(id).setAttribute('tooltip_card_type', card_type_id);
                 }
 
                 // Oort
@@ -1106,22 +1247,7 @@ define([
                         {
                             return;
                         }
-
-                        var tooltip = node.getAttribute('tooltip');
-
-                        // Add oort current kind
-                        if (node.hasAttribute('oort')) {
-                            tooltip = tooltip.replace(/OORT_KIND/, _('Current kind:') + node.getAttribute('oort') +'<hr/>');
-                        }
-
-                        // Add card image
-                        if (node.hasAttribute('tooltip_card')) {
-                            tooltip += '<hr/>' + node.getAttribute('tooltip_card');
-                        }
-
-                        tooltip += '</div>';
-                        return tooltip;
-
+                        return this.buildCardTooltipHtml(node);
                     }), this.tooltip_delay);
                 this.attachDesktopTooltipHoverClose(id, this.tooltips[id]);
 
@@ -4769,6 +4895,7 @@ define([
 
                 dojo.subscribe('updateCardCount', this, "notif_updateCardCount");
                 dojo.subscribe('updateScore', this, "notif_updateScore");
+                dojo.subscribe('updateSixPointDevelopmentVp', this, "notif_updateSixPointDevelopmentVp");
                 dojo.subscribe('consume', this, "notif_consume");
                 dojo.subscribe('tranship', this, "notif_tranship");
 
@@ -5353,8 +5480,9 @@ define([
             notif_updateScore: function(notif) {
                 console.log('notif_updateScore');
                 console.log(notif);
-                this.bga.playerPanels.getScoreCounter(notif.args.player_id).toValue(toint(notif.args.score));
-                if (notif.args.vp) {
+                this.gamedatas.players[notif.args.player_id].score = toint(notif.args.score);
+                this.updateDisplayedPlayerScore(notif.args.player_id);
+                if (typeof notif.args.vp != 'undefined') {
                     $('vp_nbr_' + notif.args.player_id).innerHTML = notif.args.vp;
                 }
                 if (notif.args.vp_delta) {
@@ -5383,6 +5511,24 @@ define([
                     this.slideToObjectPos('repulse_value_arrow', 'xeno_repulse_track', coord['x'], coord['y']).play();
 
                 }
+            },
+            notif_updateSixPointDevelopmentVp: function(notif) {
+                if (!this.liveSixPointDevScoringEnabled()) {
+                    this.clearLiveSixPointDevBadges();
+                    return;
+                }
+                var state = {
+                    player_totals: notif.args.player_totals || {},
+                    card_scores: notif.args.card_scores || {}
+                };
+                if (notif.args._private) {
+                    if (notif.args._private.card_scores) {
+                        state.private_card_scores = notif.args._private.card_scores;
+                    } else if (notif.args._private[this.player_id] && notif.args._private[this.player_id].card_scores) {
+                        state.private_card_scores = notif.args._private[this.player_id].card_scores;
+                    }
+                }
+                this.applyLiveSixPointDevState(state);
             },
             notif_updatePrestige: function(notif) {
                 $('prestige_nbr_' + notif.args.player_id).innerHTML = notif.args.prestige;

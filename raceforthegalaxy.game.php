@@ -20,6 +20,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     private $notif_defered_id = 1;
     private $bUpdateCardCount = false;
     private $bUpdateCardCountDefered = false;
+    private $appliedSixPointDevelopmentCardTypes = array();
 
     function __construct()
     {
@@ -748,7 +749,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $tooltip_html .= ' &bull; '.self::_('Cost').' '.$card['cost'];
             $tooltip_html .= ' &bull; '.self::_('Points').' ';
 
-            if ($card['vp'] == 0 && $card['type'] == 'development' && $card['cost'] == 6) {
+            if ($this->isSixPointDev($card_type_id)) {
                 $tooltip_html .= '?';
             } else {
                 $tooltip_html .= $card['vp'];
@@ -821,9 +822,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $result['card_types'][$card_type_id]['tooltip'] = $tooltip_html;
             $result['card_types'][$card_type_id]['kind'] = $this->getCardColorFromType($card);
 
-            // 6 cost devs and worlds with similar scoring
-            if ($card['type'] == 'development' && $card['cost'] == 6 && $card_type_id != 151
-                || in_array($card_type_id, [247, 267, 283, 294])) {
+            if ($this->isSixPointDev($card_type_id)) {
                 $result['card_types'][$card_type_id]['sixdev_scoring'] = $this->sixcostdev_html($card_type_id);
             }
         }
@@ -886,6 +885,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $result['drafted'] = $this->cards->getCardsInLocation('drafted', $player_id);
 
         $result['explored'] = $this->cards->getCardsInLocation("explored", $player_id);
+        $result['live_six_point_development_state'] = $this->getLiveSixPointDevelopmentDisplayState($player_id);
 
         if (count($this->scanTableau(2, $player_id, 'scavengerdev')) > 0) {
             $result['scavenger'] = $this->cards->getCardsInLocation('scavenger');
@@ -1106,6 +1106,22 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
         }
         $this->reset_defered_notif($notif_ref);
+    }
+
+    function notifyAllPlayers($notif_type, $notif_log = '', $notif_args = array())
+    {
+        parent::notifyAllPlayers($notif_type, $notif_log, $notif_args);
+
+        // Rather than keeping a list of which notifications should trigger us
+        // to update the live six-point development scores, just recalculate
+        // them after every notification.
+        $this->emitLiveSixPointDevelopmentState($this->buildLiveSixPointDevelopmentDisplayState());
+    }
+
+    function notifyPlayer($player_id, $notif_type, $notif_log = '', $notif_args = array())
+    {
+        parent::notifyPlayer($player_id, $notif_type, $notif_log, $notif_args);
+        $this->emitLiveSixPointDevelopmentState($this->buildLiveSixPointDevelopmentDisplayState());
     }
 
     private function getDeferedNotification($notif_ref)
@@ -1752,6 +1768,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 $html .= "<tr><td>{two_pts}</td><td>{blue_production}</td><td>{blue_windfall}</td><td class='six_dev_scoring_text'>" . self::_("Novelty world")."</td></tr>";
                 $html .= "<tr><td>{two_pts}</td><td colspan=2>{grey_world}</td><td class='six_dev_scoring_name'>" . self::_("Expanding Colony")."</td></tr>";
                 $html .= "<tr><td>{one_pt}</td><td colspan=2>{world}</td><td class='six_dev_scoring_text'>" . self::_("other world")."</td></tr>";
+                break;
+            case 187:
+                // Federation Capital gains an extra VP per prestige at game end.
+                $html .= "<tr><td>{one_pt}</td><td>PRG</td><td class='six_dev_scoring_text'>" . self::_("(additional)")."</td></tr>";
                 break;
             case 199:
                 $html .= "<tr><td>{one_pt}</td><td>PRG</td><td class='six_dev_scoring_text'>" . self::_("(additional)")."</td></tr>";
@@ -3416,7 +3436,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         return $result;
     }
 
-    function cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player = null, $oort_value = null)
+    function cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player = null, $oort_value = null, $change_oort_type = true)
     {
         $expansion = self::getGameStateValue('expansion');
 
@@ -3424,10 +3444,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             if ($oort_value === null) {
                 // We call cardsToSixDevelopmentsScore FOUR times with all possible values, and get the best configuration for Oort
                 $good_to_result = array(
-                    1 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 1),
-                    2 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 2),
-                    3 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 3),
-                    4 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 4)
+                    1 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 1, $change_oort_type),
+                    2 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 2, $change_oort_type),
+                    3 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 3, $change_oort_type),
+                    4 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 4, $change_oort_type)
                );
 
 
@@ -3451,7 +3471,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                     }
                 }
 
-                $this->changeOortType($best_good_id);
+                if ($change_oort_type) {
+                    $this->changeOortType($best_good_id);
+                }
 
                 return $max_result;
             }
@@ -3839,6 +3861,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             // Peace Institute (-military force)
             $dev_to_points[192] -= min(0, $player_infos[ $dev_to_players[ 192 ] ][ 'player_milforce' ]);
         }
+        if (isset($dev_to_players[ 187 ])) {
+            // Federation Capital (+prestige)
+            $dev_to_points[187] += $player_infos[ $dev_to_players[ 187 ] ][ 'player_prestige' ];
+        }
         if (isset($dev_to_players[ 199 ])) {
             // Pan-Galactic Affluence (+prestige)
             $dev_to_points[199] += $player_infos[ $dev_to_players[ 199 ] ][ 'player_prestige' ];
@@ -3897,48 +3923,180 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     // Gain points for 6-cost developments of each players
     function getSixDevelopmentsPoints()
     {
-        // Scan all cards in tableau
-        $cards = $this->cards->getCardsInLocation('tableau');
-
-        $dev_to_players = array();
-
-        // Scan cards to find 6-cost developments
-        $oort_player = null;
-        foreach ($cards as $card) {
-            $player_id = $card['location_arg'];
-            $card_type = $this->card_types[ $card['type'] ];
-            if ($card_type['type']=='development' && $card_type['cost']==6
-                && $card['type']!= 151) { // Pan-Galactic Research doesn't have variable cost
-                $dev_to_players[ $card['type'] ] = $player_id;
-            }
-            if ($card['type'] == 267 || $card['type'] == 247 || $card['type'] == 283 || $card['type'] == 294) {
-                $dev_to_players[ $card['type'] ] = $player_id;  // Non 6 dev that brings points
-            }
-
-            if ($card['type'] == 220) {
-                $oort_player = $player_id;
-            }
-        }
-
-        // Additional infos needed
-        $expansion = self::getGameStateValue('expansion');
-        $player_infos = array();
-        $sql = "SELECT player_id, player_vp, player_milforce, player_prestige FROM player ";
-        $dbres = self::DbQuery($sql);
-        while ($row = mysql_fetch_assoc($dbres)) {
-            $player_infos[ $row['player_id'] ] = $row;
-
-            if ($expansion == 5) {
-                $player_infos[ $row['player_id'] ]['artefacts'] = $this->artefacts->getCardsInLocation('tableau', $row['player_id']);
-            }
-        }
-
-
-        $dev_to_points = $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player );
+        $context = $this->getSixPointDevelopmentScoringContext(false);
+        $dev_to_points = $this->cardsToSixDevelopmentsScore(
+            $context['cards'],
+            $context['dev_to_players'],
+            $context['player_infos'],
+            $context['oort_player']
+        );
         return array(
             "devpoints" => $dev_to_points,
-            "devplayers" => $dev_to_players
+            "devplayers" => $context['dev_to_players']
        );
+    }
+
+    private function getZeroSixPointDevelopmentPlayerTotals()
+    {
+        $player_totals = array();
+        foreach (self::loadPlayersBasicInfos() as $player_id => $player) {
+            $player_totals[$player_id] = 0;
+        }
+
+        return $player_totals;
+    }
+
+    private function loadSixPointDevelopmentPlayerInfos()
+    {
+        $expansion = self::getGameStateValue('expansion');
+        $player_infos = array();
+        $dbres = self::DbQuery("SELECT player_id, player_vp, player_milforce, player_prestige FROM player");
+        while ($row = mysql_fetch_assoc($dbres)) {
+            $player_infos[$row['player_id']] = $row;
+            if ($expansion == 5) {
+                $player_infos[$row['player_id']]['artefacts'] = $this->artefacts->getCardsInLocation('tableau', $row['player_id']);
+            }
+        }
+
+        return $player_infos;
+    }
+
+    private function getSixPointDevelopmentScoringContext($include_live_display_worlds)
+    {
+        $cards = $this->cards->getCardsInLocation('tableau');
+        $dev_to_players = array();
+        $oort_player = null;
+        foreach ($cards as $card) {
+            if ($this->isSixPointDev($card['type'])) {
+                $dev_to_players[$card['type']] = $card['location_arg'];
+            }
+            if ($card['type'] == 220) {
+                $oort_player = $card['location_arg'];
+            }
+        }
+
+        return array(
+            'cards' => $cards,
+            'dev_to_players' => $dev_to_players,
+            'oort_player' => $oort_player,
+            'player_infos' => $this->loadSixPointDevelopmentPlayerInfos(),
+        );
+    }
+
+    private function buildLiveSixPointDevelopmentDisplayState()
+    {
+        $context = $this->getSixPointDevelopmentScoringContext(true);
+        $tableau_points = $this->cardsToSixDevelopmentsScore(
+            $context['cards'],
+            $context['dev_to_players'],
+            $context['player_infos'],
+            $context['oort_player'],
+            null,
+            false
+        );
+        $player_totals = $this->getZeroSixPointDevelopmentPlayerTotals();
+        $applied_card_types = array_flip($this->getAppliedSixPointDevelopmentCardTypesForLiveTotals($context));
+
+        $public_card_scores = array();
+        foreach ($context['cards'] as $card) {
+            if ($this->isSixPointDev($card['type'])) {
+                $public_card_scores[$card['id']] = $tableau_points[$card['type']];
+                if (!isset($applied_card_types[$card['type']])) {
+                    $player_totals[$card['location_arg']] += $tableau_points[$card['type']];
+                }
+            }
+        }
+
+        $private_card_scores = array();
+        // Hand/explore previews are private information, so score them separately and send each
+        // player only the hypothetical value of the cards they can currently see.
+        foreach (array_keys($context['player_infos']) as $visible_player_id) {
+            $visible_cards = array_merge(
+                $this->cards->getCardsInLocation('hand', $visible_player_id),
+                $this->cards->getCardsInLocation('explored', $visible_player_id)
+            );
+            foreach ($visible_cards as $card) {
+                if (!$this->isSixPointDev($card['type'])) {
+                    continue;
+                }
+
+                // Reuse the real scoring helper by projecting this card onto the tableau as if it
+                // were played right now. That keeps expansion-specific scoring rules in one place.
+                $projected_cards = $context['cards'];
+                $projected_card = $card;
+                $projected_card['location_arg'] = $visible_player_id;
+                $projected_cards[] = $projected_card;
+
+                $projected_dev_to_players = $context['dev_to_players'];
+                $projected_dev_to_players[$card['type']] = $visible_player_id;
+                $projected_points = $this->cardsToSixDevelopmentsScore(
+                    $projected_cards,
+                    $projected_dev_to_players,
+                    $context['player_infos'],
+                    $context['oort_player'],
+                    null,
+                    false
+                );
+                $private_card_scores[$visible_player_id][$card['id']] = $projected_points[$card['type']];
+            }
+        }
+
+        return array(
+            'player_totals' => $player_totals,
+            'public_card_scores' => $public_card_scores,
+            'private_card_scores' => $private_card_scores,
+        );
+    }
+
+    function getLiveSixPointDevelopmentDisplayState($player_id)
+    {
+        $state = $this->buildLiveSixPointDevelopmentDisplayState();
+        $card_scores = $state['public_card_scores'];
+        if (isset($state['private_card_scores'][$player_id])) {
+            $card_scores += $state['private_card_scores'][$player_id];
+        }
+
+        return array(
+            'card_scores' => $card_scores,
+            'player_totals' => $state['player_totals'],
+        );
+    }
+
+    private function getAppliedSixPointDevelopmentCardTypesForLiveTotals($context)
+    {
+        if ($this->gamestate->getCurrentMainStateId() >= 98) {
+            return array_keys($context['dev_to_players']);
+        }
+
+        return array_keys($this->appliedSixPointDevelopmentCardTypes);
+    }
+
+    // Includes worlds that are scored like 6-point developments.
+    private function isSixPointDev($card_type_id)
+    {
+        $card = $this->card_types[$card_type_id];
+        return ($card['type'] == 'development' && $card['cost'] == 6 && $card_type_id != 151) ||
+            in_array($card_type_id, [187, 247, 267, 283, 294]);
+    }
+
+    private function emitLiveSixPointDevelopmentState($state)
+    {
+        $notif_args = array(
+            'player_totals' => $state['player_totals'],
+            'card_scores' => $state['public_card_scores'],
+        );
+        // BGA delivers `_private[$player_id]` only to that player, so we can bundle private hand
+        // projections and public tableau values in the same notification.
+        foreach ($state['private_card_scores'] as $player_id => $card_scores) {
+            if (count($card_scores) == 0) {
+                continue;
+            }
+            $notif_args['_private'][$player_id] = array(
+                'card_scores' => $card_scores,
+            );
+        }
+
+        parent::notifyAllPlayers('updateSixPointDevelopmentVp', '', $notif_args);
     }
 
     // Compute scores from 6 cost devs and give them to players
@@ -3946,23 +4104,17 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     {
         $players = self::loadPlayersBasicInfos();
         $sixdevpoints = $this->getSixDevelopmentsPoints();
+        $this->appliedSixPointDevelopmentCardTypes = array();
+        $player_to_total_points = array();
+        $player_to_dev_ids = array();
         foreach ($sixdevpoints['devplayers'] as $dev_id => $player_id) {
             $points = $sixdevpoints['devpoints'][$dev_id];
-
-            $pscore = $this->updatePlayerScore($player_id, $points, false);
-
-            $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} gains ${points_nbr} with ${dev_name}'),
-                                            array(
-                                                "i18n" => array("dev_name"),
-                                                "player_id" => $player_id,
-                                                "score_delta" => $points,
-                                                "vp_delta" => 0,
-                                                "score" => $pscore['score'],
-                                                "vp" => $pscore['vp'],
-                                                "player_name" => $players[$player_id]['player_name'] ,
-                                                "points_nbr" => $points,
-                                                "dev_name" => $this->card_types[ $dev_id ]['name']
-                                           ) );
+            if (!isset($player_to_total_points[$player_id])) {
+                $player_to_total_points[$player_id] = 0;
+                $player_to_dev_ids[$player_id] = array();
+            }
+            $player_to_total_points[$player_id] += $points;
+            $player_to_dev_ids[$player_id][] = $dev_id;
 
 
             $card_type = $this->card_types[ $dev_id ];
@@ -3973,30 +4125,29 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
         }
 
-        // Score also Federation Capital
-        $player_capital = self::getObjectFromDB("SELECT player_id,player_prestige
-                    FROM player
-                    INNER JOIN card ON card_location_arg=player_id
-                    WHERE card_type='187' and card_location='tableau'
-                    ", true);
-        if ($player_capital !== null) {
-            $pscore = $this->updatePlayerScore($player_capital['player_id'], $player_capital['player_prestige'], false);
+        foreach ($players as $player_id => $player) {
+            if (!isset($player_to_total_points[$player_id])) {
+                continue;
+            }
 
-            $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} gains ${points_nbr} with ${dev_name}'),
+            foreach ($player_to_dev_ids[$player_id] as $dev_id) {
+                $this->appliedSixPointDevelopmentCardTypes[$dev_id] = true;
+            }
+
+            $points = $player_to_total_points[$player_id];
+            $pscore = $this->updatePlayerScore($player_id, $points, false);
+            $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} gains ${points_nbr} from end-game development scoring'),
                                             array(
-                                                "i18n" => array("dev_name"),
-                                                "player_id" => $player_capital['player_id'],
-                                                "score_delta" => $player_capital['player_prestige'],
+                                                "player_id" => $player_id,
+                                                "score_delta" => $points,
                                                 "vp_delta" => 0,
                                                 "score" => $pscore['score'],
                                                 "vp" => $pscore['vp'],
-                                                "player_name" => $players[ $player_capital['player_id'] ]['player_name'] ,
-                                                "points_nbr" => $player_capital['player_prestige'],
-                                                "dev_name" => $this->card_types[ 187 ]['name']
+                                                "player_name" => $player['player_name'],
+                                                "points_nbr" => $points,
                                            ) );
-                                           
-            self::incStat($player_capital['player_prestige'], 'tableau_points', $player_capital['player_id']);
         }
+
     }
 
     function updatePlayerScore($player_id, $score_delta, $bIsVpChip, $bIsDefenseAward = False)
@@ -7118,7 +7269,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         if ($win) {
-            self::NotifyPlayer($player_id, "rviGambling", '', $cards);
+            $this->notifyPlayer($player_id, "rviGambling", '', $cards);
         } else {
             $this->notifyAllPlayers('simpleNote', clienttranslate('None of the revealed cards have a cost or defense higher the ${cost}. ${player_name} loses his ante'), array(
                     "player_id" => $player_id,
@@ -8676,7 +8827,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             } else {
                 // Standard case
                 $cards = $this->cards->pickCardsForLocation($card_numbers['draw'], $this->getDeck($player_id), 'explored', $player_id);
-                self::NotifyPlayer($player_id, "explored_choice", '', $cards);
+                $this->notifyPlayer($player_id, "explored_choice", '', $cards);
             }
             $this->notifyAllPlayers('explored_choice_log', clienttranslate('${player_name} draws ${nbr} cards'), array(
                     'player_name' => $players[ $player_id ]['player_name'],
@@ -12052,6 +12203,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
                 }
             }
         }
+
     }
 
     ///////////////////////////////////////////////////////////
