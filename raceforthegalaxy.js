@@ -839,14 +839,9 @@ define([
                     node.innerHTML = this.gamedatas.prestigeleadercount;
                 }));
                 this.hideLiveSixPointDevPlayerTotals = this.isEndgameForLiveSixPointDevTotals();
+                this.refreshLiveSixPointDevDisplay();
                 if (this.liveSixPointDevScoringEnabled() && this.gamedatas.live_six_point_development_state) {
-                    this.applyLiveSixPointDevState(this.gamedatas.live_six_point_development_state);
                     this.refreshLiveSixPointDevScoresWhenPanelsReady();
-                } else {
-                    this.clearLiveSixPointDevBadges();
-                    for (var player_id in this.gamedatas.players) {
-                        this.updateDisplayedPlayerScore(player_id);
-                    }
                 }
             },
             initPreferences: function() {
@@ -938,6 +933,11 @@ define([
                     return [97, 98, 99].indexOf(toint(gamestate.id)) !== -1;
                 }
                 return gamestate.name == 'finalScoring' || gamestate.name == 'gameEndScore' || gamestate.name == 'gameEnd';
+            },
+            shouldShowLiveSixPointDevDisplay: function(stateName) {
+                var gamestate = this.gamedatas.gamestate || {};
+                var name = stateName || gamestate.name;
+                return ['gameSetup', 'draftNewRound', 'draft', 'draftNextCard', 'initialDiscard', 'initialDiscardHomeWorld'].indexOf(name) === -1;
             },
             setHideLiveSixPointDevPlayerTotals: function(hidden) {
                 if (this.hideLiveSixPointDevPlayerTotals == hidden) {
@@ -1031,12 +1031,12 @@ define([
                     dojo.style(node, 'display', 'none');
                 });
             },
-            updateDisplayedPlayerScore: function(player_id) {
+            updateDisplayedPlayerScore: function(player_id, stateName) {
                 var player = this.gamedatas.players[player_id];
                 // `player.score` stays as the real server score; the live preference only overlays
                 // the not-yet-scored six-point-development value in the player panel.
                 var displayed_score = toint(player.score);
-                if (this.liveSixPointDevScoringEnabled() && !this.hideLiveSixPointDevPlayerTotals) {
+                if (this.liveSixPointDevScoringEnabled() && this.shouldShowLiveSixPointDevDisplay(stateName) && !this.hideLiveSixPointDevPlayerTotals) {
                     displayed_score += toint(player.six_point_development_vp || 0);
                 }
                 this.bga.playerPanels.getScoreCounter(player_id).toValue(displayed_score);
@@ -1053,14 +1053,28 @@ define([
                 }
                 window.addEventListener('load', refresh, {once: true});
             },
+            refreshLiveSixPointDevDisplay: function(stateName) {
+                if (this.liveSixPointDevScoringEnabled() && this.gamedatas.live_six_point_development_state) {
+                    this.applyLiveSixPointDevState(this.gamedatas.live_six_point_development_state, stateName);
+                } else {
+                    this.clearLiveSixPointDevBadges();
+                    for (var player_id in this.gamedatas.players) {
+                        this.updateDisplayedPlayerScore(player_id, stateName);
+                    }
+                }
+            },
 
-            applyLiveSixPointDevState: function(state) {
+            applyLiveSixPointDevState: function(state, stateName) {
                 this.gamedatas.live_six_point_development_state = state;
                 this.clearLiveSixPointDevBadges();
 
                 for (var player_id in this.gamedatas.players) {
                     this.gamedatas.players[player_id].six_point_development_vp = (state.player_totals && state.player_totals[player_id]) || 0;
-                    this.updateDisplayedPlayerScore(player_id);
+                    this.updateDisplayedPlayerScore(player_id, stateName);
+                }
+
+                if (!this.shouldShowLiveSixPointDevDisplay(stateName)) {
+                    return;
                 }
 
                 // Public tableau values and private hand/explore projections arrive separately from
@@ -1960,10 +1974,12 @@ define([
                 console.log('Entering state: ' + stateName);
                 console.log(args);
 
+                if (stateName == 'finalScoring') {
+                    this.setHideLiveSixPointDevPlayerTotals(true);
+                }
+                this.refreshLiveSixPointDevDisplay(stateName);
+
                 switch (stateName) {
-                    case 'finalScoring':
-                        this.setHideLiveSixPointDevPlayerTotals(true);
-                        break;
                     case 'initialDiscardHomeWorld':
                         dojo.style('my_deck_wrap', 'display', 'none');
                         break;

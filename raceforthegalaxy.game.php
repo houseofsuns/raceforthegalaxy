@@ -2183,32 +2183,11 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         return false;
     }
 
-    // Give cards and prestige to the player for the card they just played
-    function phaseBonus($player_id)
+    // Returns array('card' => <cards drawn>, 'pr' => <prestige gained>) for placing this card now.
+    private function getPhaseBonusForPlacedCard($player_id, $card)
     {
-        $card_id = self::getUniqueValueFromDB("SELECT player_just_played FROM player WHERE player_id=$player_id");
-
-        // If they haven't played anything, no bonus
-        if (is_null($card_id)) {
-            return;
-        }
-
-        $timing = self::getObjectFromDB("SELECT card_played_round round, card_played_phase phase, card_played_subphase subphase FROM card WHERE card_id = $card_id");
-        $cround = self::getGameStateValue('current_round');
-        $cphase = self::getGameStateValue('current_phase');
-        $csubphase = self::getGameStateValue('current_subphase');
-
-        // Check that the card was actually played right now
-        // Especially with all the settle subphases this is important
-        // The check could probably be done only on the subphase
-        if ($timing['round'] != $cround || $timing['phase'] != $cphase || $timing['subphase'] != $csubphase) {
-            return;
-        }
-
         $drawCard = 0;  // Number of card drawn if you play this card successfully
         $drawPr = 0;    // Number of prestige if .....
-
-        $card = $this->cards->getCard($card_id);
         $card_type = $this->card_types[ $card['type'] ];
         $phase = $card_type['type'] == 'development' ? 2 : 3;
 
@@ -2255,21 +2234,50 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
         }
 
-         // Draw cards
-        if ($drawCard > 0) {
-            $this->drawCardForPlayer($player_id, $drawCard, true);
-        }
-
-         // Gain prestige
         if (in_array('prestige', $this->card_types[$card['type']]['category'])) {
-            $card_status = self::getUniqueValueFromDB("SELECT card_status FROM card WHERE card_id=$card_id");
-            if ($card_status != -2) { // If the card hasn't been taken over
+            if (!isset($card['status']) || $card['status'] != -2) { // If the card hasn't been taken over
                 ++$drawPr; // Draw 1 prestige when placing a "prestige" category world
             }
         }
 
-        if ($drawPr > 0) {
-            $this->givePrestige($player_id, $drawPr, true);
+        return array(
+            'card' => $drawCard,
+            'pr' => $drawPr,
+        );
+    }
+
+    // Give cards and prestige to the player for the card they just played
+    function phaseBonus($player_id)
+    {
+        $card_id = self::getUniqueValueFromDB("SELECT player_just_played FROM player WHERE player_id=$player_id");
+
+        // If they haven't played anything, no bonus
+        if (is_null($card_id)) {
+            return;
+        }
+
+        $timing = self::getObjectFromDB("SELECT card_played_round round, card_played_phase phase, card_played_subphase subphase FROM card WHERE card_id = $card_id");
+        $cround = self::getGameStateValue('current_round');
+        $cphase = self::getGameStateValue('current_phase');
+        $csubphase = self::getGameStateValue('current_subphase');
+
+        // Check that the card was actually played right now
+        // Especially with all the settle subphases this is important
+        // The check could probably be done only on the subphase
+        if ($timing['round'] != $cround || $timing['phase'] != $cphase || $timing['subphase'] != $csubphase) {
+            return;
+        }
+
+        $card = $this->cards->getCard($card_id);
+        $bonus = $this->getPhaseBonusForPlacedCard($player_id, $card);
+
+         // Draw cards
+        if ($bonus['card'] > 0) {
+            $this->drawCardForPlayer($player_id, $bonus['card'], true);
+        }
+
+        if ($bonus['pr'] > 0) {
+            $this->givePrestige($player_id, $bonus['pr'], true);
         }
     }
 
@@ -2520,18 +2528,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
     }
 
-    // Update military force for current player if needed by card type
-    // NOTE : now, we scan the WHOLE tableau to update the military force to make sure nothing has been forget
-    function updateMilforceIfNeeded($player_id, $notif_defered = false, $bXenoForce = false)
+    private function getMilitaryForceFromCards($cards, $player_id, $bXenoForce = false)
     {
-        $cards = $this->cards->getCardsInLocation('tableau', $player_id);
-
-        if (! $bXenoForce) {
-            $current_milforce = self::getUniqueValueFromDB("SELECT player_milforce FROM player WHERE player_id='$player_id'");
-        } else {
-            $current_milforce = self::getUniqueValueFromDB("SELECT player_xeno_milforce FROM player WHERE player_id='$player_id'");
-        }
-
         $new_milforce = 0;
         $military_world_count = 0;
         $chromosome_world_count = 0;
@@ -2548,42 +2546,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $bHiddenFortressXeno = ($expansion == 7 || $expansion == 8);
 
         foreach ($cards as $card) {
-            $card_type_id = $card['type'];
-
-            $card_type = $this->card_types[ $card_type_id ];
-
-            if (isset($card_type['powers'][3])) {
-                foreach ($card_type['powers'][3] as $power) {
-                    if ($power['power'] == 'militaryforce' && !isset($power['arg']['worldtype']) && !isset($power['arg']['worldfilter'])&& (!isset($power['arg']['xeno']) || $bXenoForce)&& !isset($power['arg']['xenodefense'])) {   // Note: only unspecialized military force is taking into account
-                        $force_delta = $power['arg']['force'];
-
-                        if (isset($power['condition'])) {
-                            if ($power['condition'] == 'imperium') {
-                                // Only valid if player has an imperium card
-                                if ($this->checkAtLeastOneCardInTableauWithTag($player_id, 'imperium')) {
-                                    $new_milforce += $force_delta;
-                                }
-                            }
-                        } else {
-                            // Standard case
-                            $new_milforce += $force_delta;
-                        }
-                    } elseif ($power['power'] == 'militaryforce_permilitary') {
-                        $bHiddenFortress = true;
-                    } elseif ($power['power'] == 'militaryforce_perchromosome') {
-                        $mil_per_chromosome ++;
-                    } elseif ($power['power'] == 'militaryforce_perimperium') {
-                        $mil_per_imperium ++;
-                    } elseif ($power['power'] == 'militaryforce_percivil') {
-                        $mil_per_civil ++;
-                    }
-
-
-                    if ($power['power'] == 'militaryforce' && $bXenoForce && isset($power['arg']['xenodefense'])) {
-                        $current_xenodefense += $power['arg']['force'];
-                    }
-                }
+            if ($card['location_arg'] != $player_id) {
+                continue;
             }
+
+            $card_type_id = $card['type'];
+            $card_type = $this->card_types[ $card_type_id ];
 
             if (in_array('military', $card_type['category']) && $card_type['type']=='world') {
                 if ($bHiddenFortressXeno) {
@@ -2606,6 +2574,37 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 && $card_type_id != 1000) {
                 $civil_world_count ++;
             }
+
+            if (isset($card_type['powers'][3])) {
+                foreach ($card_type['powers'][3] as $power) {
+                    if ($power['power'] == 'militaryforce' && !isset($power['arg']['worldtype']) && !isset($power['arg']['worldfilter'])&& (!isset($power['arg']['xeno']) || $bXenoForce)&& !isset($power['arg']['xenodefense'])) {   // Note: only unspecialized military force is taking into account
+                        $force_delta = $power['arg']['force'];
+
+                        if (isset($power['condition']) && $power['condition'] == 'imperium') {
+                            // Only valid if player has an imperium card.
+                            if ($imperium_count > 0) {
+                                $new_milforce += $force_delta;
+                            }
+                        } else {
+                            // Standard case
+                            $new_milforce += $force_delta;
+                        }
+                    } elseif ($power['power'] == 'militaryforce_permilitary') {
+                        $bHiddenFortress = true;
+                    } elseif ($power['power'] == 'militaryforce_perchromosome') {
+                        $mil_per_chromosome ++;
+                    } elseif ($power['power'] == 'militaryforce_perimperium') {
+                        $mil_per_imperium ++;
+                    } elseif ($power['power'] == 'militaryforce_percivil') {
+                        $mil_per_civil ++;
+                    }
+
+
+                    if ($power['power'] == 'militaryforce' && $bXenoForce && isset($power['arg']['xenodefense'])) {
+                        $current_xenodefense += $power['arg']['force'];
+                    }
+                }
+            }
         }
 
         if ($bHiddenFortress) {
@@ -2615,6 +2614,28 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $new_milforce += ($mil_per_chromosome * $chromosome_world_count);
         $new_milforce += ($mil_per_imperium * $imperium_count);
         $new_milforce += ($mil_per_civil * $civil_world_count);
+
+        return array(
+            'force' => $new_milforce,
+            'xeno_defense' => $current_xenodefense,
+        );
+    }
+
+    // Update military force for current player if needed by card type
+    // NOTE : now, we scan the WHOLE tableau to update the military force to make sure nothing has been forget
+    function updateMilforceIfNeeded($player_id, $notif_defered = false, $bXenoForce = false)
+    {
+        $cards = $this->cards->getCardsInLocation('tableau', $player_id);
+
+        if (! $bXenoForce) {
+            $current_milforce = self::getUniqueValueFromDB("SELECT player_milforce FROM player WHERE player_id='$player_id'");
+        } else {
+            $current_milforce = self::getUniqueValueFromDB("SELECT player_xeno_milforce FROM player WHERE player_id='$player_id'");
+        }
+
+        $military = $this->getMilitaryForceFromCards($cards, $player_id, $bXenoForce);
+        $new_milforce = $military['force'];
+        $current_xenodefense = $military['xeno_defense'];
 
         if ($new_milforce != $current_milforce || $bXenoForce) {
             if (! $bXenoForce) {
@@ -4025,10 +4046,14 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
                 $projected_dev_to_players = $context['dev_to_players'];
                 $projected_dev_to_players[$card['type']] = $visible_player_id;
+                $projected_player_infos = $context['player_infos'];
+                $projected_player_infos[$visible_player_id]['player_milforce'] = $this->getMilitaryForceFromCards($projected_cards, $visible_player_id)['force'];
+                $projected_bonus = $this->getPhaseBonusForPlacedCard($visible_player_id, $projected_card);
+                $projected_player_infos[$visible_player_id]['player_prestige'] += $projected_bonus['pr'];
                 $projected_points = $this->cardsToSixDevelopmentsScore(
                     $projected_cards,
                     $projected_dev_to_players,
-                    $context['player_infos'],
+                    $projected_player_infos,
                     $context['oort_player'],
                     null,
                     false
