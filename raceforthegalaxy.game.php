@@ -2534,6 +2534,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
     }
 
+    // This function is used for both real tableau scans and calculating how
+    // much a six-cost development *would* score if played.
     private function getMilitaryForceFromCards($cards, $player_id, $bXenoForce = false)
     {
         $new_milforce = 0;
@@ -4020,6 +4022,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         );
     }
 
+    // Build the live six-point-development display payload.
+    //
+    // Public tableau values are sent to everyone, whereas private hand/explore
+    // "value if played now" projections are computed per player.
     private function buildLiveSixPointDevelopmentDisplayState($visible_player_id = null)
     {
         $context = $this->getSixPointDevelopmentScoringContext();
