@@ -1107,21 +1107,24 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $this->reset_defered_notif($notif_ref);
     }
 
+    // In addition to sending the given notification to all players, this
+    // function also recalculates the live six-point development scores and
+    // sends them to all players as well, as a separate notification.
+    //
+    // (We could instead try to keep a list of which events should trigger us to
+    // recalculate the live six-point development scores, but that would be
+    // fragile, whereas this does some extra work but is always correct.)
     function notifyAllPlayers($notif_type, $notif_log = '', $notif_args = array())
     {
         parent::notifyAllPlayers($notif_type, $notif_log, $notif_args);
-
-        // Rather than keeping a list of which notifications should trigger us
-        // to update the live six-point development scores, just recalculate
-        // them after every notification.
         $this->emitLiveSixPointDevelopmentState($this->buildLiveSixPointDevelopmentDisplayState());
     }
 
+    // Like notifyAllPlayers(), this updates the live six-point development
+    // scores for the player in question (but only that player).
     function notifyPlayer($player_id, $notif_type, $notif_log = '', $notif_args = array())
     {
         parent::notifyPlayer($player_id, $notif_type, $notif_log, $notif_args);
-
-        // Update just this player's live six-point development scores.
         parent::notifyPlayer($player_id, 'updateSixPointDevelopmentVp', '',
                              $this->getLiveSixPointDevelopmentDisplayState($player_id));
     }
@@ -1772,7 +1775,6 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 $html .= "<tr><td>{one_pt}</td><td colspan=2>{world}</td><td class='six_dev_scoring_text'>" . self::_("other world")."</td></tr>";
                 break;
             case 187:
-                // Federation Capital gains an extra VP per prestige at game end.
                 $html .= "<tr><td>{one_pt}</td><td>PRG</td><td class='six_dev_scoring_text'>" . self::_("(additional)")."</td></tr>";
                 break;
             case 199:
@@ -2186,9 +2188,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         return false;
     }
 
-    // Returns array('card' => <cards drawn>, 'pr' => <prestige gained>) for placing this card now.
-    // This is used both for the real phase bonus and for live "value if played now" previews,
-    // so it intentionally follows the current round's phase bonuses and card powers.
+    // Returns array('card' => <cards drawn>, 'pr' => <prestige gained>) for
+    // placing this card now.  This is used both for the real phase bonus and
+    // for "value if played now" previews.
     private function getPhaseBonusForPlacedCard($player_id, $card)
     {
         $drawCard = 0;  // Number of card drawn if you play this card successfully
@@ -2206,9 +2208,11 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
         }
 
-        // Bonus from card powers
-        // It's important to filter_available so that cards played in this phase are not active
-        // example: don't draw after placing Public Works
+        // Bonus from card powers.
+        //
+        // It's important to filter_available so that cards played in this phase
+        // are not active.  For example, we don't draw a card after placing
+        // Public Works.
         $powers = $this->scanTableau($phase, $player_id, null, true);
         foreach ($powers as $power) {
             if ($power['power'] != 'drawifdev' && $power['power'] != 'drawifsettle') {
@@ -2252,8 +2256,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         );
     }
 
-    // Give cards and prestige to the player for the card they just played
-    function phaseBonus($player_id)
+    // Apply cards and prestige bonuses for the card the player just played.
+    function applyPhaseBonus($player_id)
     {
         $card_id = self::getUniqueValueFromDB("SELECT player_just_played FROM player WHERE player_id=$player_id");
 
@@ -2534,8 +2538,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
     }
 
-    // This function is used for both real tableau scans and calculating how
-    // much a six-cost development *would* score if played.
+    // This function is used for both (a) real tableau scans and (b) calculating
+    // how much a six-cost development *would* score if played.
     private function getMilitaryForceFromCards($cards, $player_id, $bXenoForce = false)
     {
         $new_milforce = 0;
@@ -4113,9 +4117,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     // Includes worlds that are scored like 6-point developments.
     private function isSixPointDev($card_type_id)
     {
-        $card = $this->card_types[$card_type_id];
-        return ($card['type'] == 'development' && $card['cost'] == 6 && $card_type_id != 151) ||
-            in_array($card_type_id, [187, 247, 267, 283, 294]);
+        return in_array($card_type_id, $this->six_cost_developments);
     }
 
     private function emitLiveSixPointDevelopmentState($state)
@@ -8992,7 +8994,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         // but before Imperium Fuel Depot discard after settle
         $players = array_keys(self::loadPlayersBasicInfos());
         foreach ($players as $player_id) {
-            $this->phaseBonus($player_id);
+            $this->applyPhaseBonus($player_id);
         }
 
         $player_to_discard = $this->getSettleDiscard();
@@ -9031,7 +9033,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     {
         $players = self::loadPlayersBasicInfos();
         foreach ($players as $player_id => $player) {
-            $this->phaseBonus($player_id);
+            $this->applyPhaseBonus($player_id);
         }
 
         $sql = "UPDATE player SET player_just_played=NULL WHERE 1 ";
