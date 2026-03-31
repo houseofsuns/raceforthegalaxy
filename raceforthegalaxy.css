@@ -395,7 +395,7 @@ html.new_design {
     --variable-vp-live-border-width: 1px;
     --variable-vp-live-width: 21px;
     --variable-vp-live-height: 18px;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 /********** Medium **********/
@@ -634,7 +634,7 @@ html.new_design {
     left: 64px;
     --variable-vp-live-width: 36px;
     --variable-vp-live-height: 31px;
-    font-size: 20px;
+    font-size: 22px;
 }
 
 /********************/
