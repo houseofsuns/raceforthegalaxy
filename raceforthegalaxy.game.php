@@ -1120,7 +1120,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     function notifyPlayer($player_id, $notif_type, $notif_log = '', $notif_args = array())
     {
         parent::notifyPlayer($player_id, $notif_type, $notif_log, $notif_args);
-        $this->emitLiveSixPointDevelopmentState($this->buildLiveSixPointDevelopmentDisplayState());
+
+        // Update just this player's live six-point development scores.
+        parent::notifyPlayer($player_id, 'updateSixPointDevelopmentVp', '',
+                             $this->getLiveSixPointDevelopmentDisplayState($player_id));
     }
 
     private function getDeferedNotification($notif_ref)
@@ -2184,6 +2187,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     }
 
     // Returns array('card' => <cards drawn>, 'pr' => <prestige gained>) for placing this card now.
+    // This is used both for the real phase bonus and for live "value if played now" previews,
+    // so it intentionally follows the current round's phase bonuses and card powers.
     private function getPhaseBonusForPlacedCard($player_id, $card)
     {
         $drawCard = 0;  // Number of card drawn if you play this card successfully
@@ -2235,7 +2240,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         if (in_array('prestige', $this->card_types[$card['type']]['category'])) {
-            if (!isset($card['status']) || $card['status'] != -2) { // If the card hasn't been taken over
+            $card_status = self::getUniqueValueFromDB("SELECT card_status FROM card WHERE card_id=" . intval($card['id']));
+            if ($card_status != -2) { // If the card hasn't been taken over
                 ++$drawPr; // Draw 1 prestige when placing a "prestige" category world
             }
         }
@@ -2535,6 +2541,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $chromosome_world_count = 0;
         $civil_world_count = 0;
         $imperium_count = 0;
+        $has_imperium = false;
         $bHiddenFortress = false;
         $mil_per_chromosome = 0;
         $mil_per_imperium = 0;
@@ -2544,6 +2551,16 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         $expansion = self::getGameStateValue('expansion');
         $bHiddenFortressXeno = ($expansion == 7 || $expansion == 8);
+
+        foreach ($cards as $card) {
+            if ($card['location_arg'] != $player_id) {
+                continue;
+            }
+            if (in_array('imperium', $this->card_types[$card['type']]['category'])) {
+                $has_imperium = true;
+                break;
+            }
+        }
 
         foreach ($cards as $card) {
             if ($card['location_arg'] != $player_id) {
@@ -2581,8 +2598,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                         $force_delta = $power['arg']['force'];
 
                         if (isset($power['condition']) && $power['condition'] == 'imperium') {
-                            // Only valid if player has an imperium card.
-                            if ($imperium_count > 0) {
+                            // Only valid if player has an imperium card anywhere in tableau.
+                            if ($has_imperium) {
                                 $new_milforce += $force_delta;
                             }
                         } else {
@@ -4003,9 +4020,11 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         );
     }
 
-    private function buildLiveSixPointDevelopmentDisplayState()
+    private function buildLiveSixPointDevelopmentDisplayState($visible_player_id = null)
     {
         $context = $this->getSixPointDevelopmentScoringContext();
+        // Live previews intentionally reuse the real endgame scoring logic, but they must not
+        // mutate Alien Oort Cloud Refinery while evaluating hypothetical values.
         $tableau_points = $this->cardsToSixDevelopmentsScore(
             $context['cards'],
             $context['dev_to_players'],
@@ -4027,10 +4046,11 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $private_card_scores = array();
         // Hand/explore previews are private information, so score them separately and send each
         // player only the hypothetical value of the cards they can currently see.
-        foreach (array_keys($context['player_infos']) as $visible_player_id) {
+        $visible_player_ids = $visible_player_id === null ? array_keys($context['player_infos']) : array($visible_player_id);
+        foreach ($visible_player_ids as $private_player_id) {
             $visible_cards = array_merge(
-                $this->cards->getCardsInLocation('hand', $visible_player_id),
-                $this->cards->getCardsInLocation('explored', $visible_player_id)
+                $this->cards->getCardsInLocation('hand', $private_player_id),
+                $this->cards->getCardsInLocation('explored', $private_player_id)
             );
             foreach ($visible_cards as $card) {
                 if (!$this->isSixPointDev($card['type'])) {
@@ -4038,18 +4058,19 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 }
 
                 // Reuse the real scoring helper by projecting this card onto the tableau as if it
-                // were played right now. That keeps expansion-specific scoring rules in one place.
+                // were played right now. That keeps expansion-specific scoring rules in one place,
+                // including the current round's phase bonuses for "value if played now" previews.
                 $projected_cards = $context['cards'];
                 $projected_card = $card;
-                $projected_card['location_arg'] = $visible_player_id;
+                $projected_card['location_arg'] = $private_player_id;
                 $projected_cards[] = $projected_card;
 
                 $projected_dev_to_players = $context['dev_to_players'];
-                $projected_dev_to_players[$card['type']] = $visible_player_id;
+                $projected_dev_to_players[$card['type']] = $private_player_id;
                 $projected_player_infos = $context['player_infos'];
-                $projected_player_infos[$visible_player_id]['player_milforce'] = $this->getMilitaryForceFromCards($projected_cards, $visible_player_id)['force'];
-                $projected_bonus = $this->getPhaseBonusForPlacedCard($visible_player_id, $projected_card);
-                $projected_player_infos[$visible_player_id]['player_prestige'] += $projected_bonus['pr'];
+                $projected_player_infos[$private_player_id]['player_milforce'] = $this->getMilitaryForceFromCards($projected_cards, $private_player_id)['force'];
+                $projected_bonus = $this->getPhaseBonusForPlacedCard($private_player_id, $projected_card);
+                $projected_player_infos[$private_player_id]['player_prestige'] += $projected_bonus['pr'];
                 $projected_points = $this->cardsToSixDevelopmentsScore(
                     $projected_cards,
                     $projected_dev_to_players,
@@ -4058,7 +4079,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                     null,
                     false
                 );
-                $private_card_scores[$visible_player_id][$card['id']] = $projected_points[$card['type']];
+                $private_card_scores[$private_player_id][$card['id']] = $projected_points[$card['type']];
             }
         }
 
@@ -4071,7 +4092,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
     function getLiveSixPointDevelopmentDisplayState($player_id)
     {
-        $state = $this->buildLiveSixPointDevelopmentDisplayState();
+        $state = $this->buildLiveSixPointDevelopmentDisplayState($player_id);
         $card_scores = $state['public_card_scores'];
         if (isset($state['private_card_scores'][$player_id])) {
             $card_scores += $state['private_card_scores'][$player_id];
@@ -4108,6 +4129,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             );
         }
 
+        // Note we use parent::notifyAllPlayers() here instead of
+        // $this->notifyAllPlayers() because we don't want this call to trigger
+        // another updateSixPointDevelopmentVp notification.
         parent::notifyAllPlayers('updateSixPointDevelopmentVp', '', $notif_args);
     }
 
@@ -4116,14 +4140,21 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     {
         $players = self::loadPlayersBasicInfos();
         $sixdevpoints = $this->getSixDevelopmentsPoints();
-        $player_to_total_points = array();
         foreach ($sixdevpoints['devplayers'] as $dev_id => $player_id) {
             $points = $sixdevpoints['devpoints'][$dev_id];
-            if (!isset($player_to_total_points[$player_id])) {
-                $player_to_total_points[$player_id] = 0;
-            }
-            $player_to_total_points[$player_id] += $points;
-
+            $pscore = $this->updatePlayerScore($player_id, $points, false);
+            $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} gains ${points_nbr} with ${dev_name}'),
+                                            array(
+                                                "i18n" => array("dev_name"),
+                                                "player_id" => $player_id,
+                                                "score_delta" => $points,
+                                                "vp_delta" => 0,
+                                                "score" => $pscore['score'],
+                                                "vp" => $pscore['vp'],
+                                                "player_name" => $players[$player_id]['player_name'],
+                                                "points_nbr" => $points,
+                                                "dev_name" => $this->card_types[ $dev_id ]['name']
+                                           ) );
 
             $card_type = $this->card_types[ $dev_id ];
             if ($card_type['type'] == 'world') {
@@ -4132,21 +4163,6 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 self::incStat($points, 'sixcostdev_points', $player_id);
             }
         }
-
-        foreach ($player_to_total_points as $player_id => $points) {
-            $pscore = $this->updatePlayerScore($player_id, $points, false);
-            $this->notifyAllPlayers('updateScore', clienttranslate('${player_name} gains ${points_nbr} from end-game development scoring'),
-                                            array(
-                                                "player_id" => $player_id,
-                                                "score_delta" => $points,
-                                                "vp_delta" => 0,
-                                                "score" => $pscore['score'],
-                                                "vp" => $pscore['vp'],
-                                                "player_name" => $players[$player_id]['player_name'],
-                                                "points_nbr" => $points,
-                                           ) );
-        }
-
     }
 
     function stFinalScoring()
