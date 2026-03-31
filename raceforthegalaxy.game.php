@@ -8313,7 +8313,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $res[$good_id] = $this->getSellPrice($row['player_id'], $row['good_type'], $row['world_id']);
         }
 
-        foreach ($this->gamestate->getActivePlayerList() as $player_id) {
+        $players = self::loadPlayersBasicInfos();
+        foreach ($players as $player_id => $player) {
             if ($this->playerMayPassConsumeSell($player_id)) {
                 $can_pass[] = $player_id;
             }
