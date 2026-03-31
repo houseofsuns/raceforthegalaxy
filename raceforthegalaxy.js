@@ -4409,7 +4409,11 @@ define([
                                     lock: true,
                                     artifact: card.id,
                                     reason: 'sell'
-                                }, this, function() {}, function() {});
+                                }, this, function() {}, function() {
+                                    this.playerHandArt.unselectAll();
+                                });
+                            }), dojo.hitch(this, function() {
+                                    this.playerHandArt.unselectAll();
                             }));
 
                         } else if (this.checkAction('consume', false)) {
