@@ -59,6 +59,7 @@ define([
                 this.phases_chosen = 0;
                 this.current_phase_choices = null;
                 this.currentStateName = null;
+                this.hideLiveSixPointDevPlayerTotals = false;
                 this.pending_phase_choice = {};
                 this.tooltips = {};
                 this.tooltipsInfos = {};
@@ -930,8 +931,13 @@ define([
                 var name = stateName || this.currentStateName || (this.gamedatas.gamestate || {}).name;
                 return ['finalScoring', 'gameEndScore', 'gameEnd'].indexOf(name) !== -1;
             },
-            shouldShowLiveSixPointDevDisplay: function(stateName) {
+            shouldShowLiveSixPointDevBadges: function(stateName) {
                 var name = stateName || this.currentStateName || (this.gamedatas.gamestate || {}).name;
+                // Hide badges while endgame scoring is being applied, but show them again on the
+                // settled end-of-game screen for easier score auditing.
+                if (name == 'finalScoring') {
+                    return false;
+                }
                 return ['gameSetup', 'draftNewRound', 'draft', 'draftNextCard', 'initialDiscard', 'initialDiscardHomeWorld'].indexOf(name) === -1;
             },
             setHideLiveSixPointDevPlayerTotals: function(hidden) {
@@ -1031,7 +1037,9 @@ define([
                 // `player.score` stays as the real server score; the live preference only overlays
                 // the not-yet-scored six-point-development value in the player panel.
                 var displayed_score = toint(player.score);
-                if (this.liveSixPointDevScoringEnabled() && this.shouldShowLiveSixPointDevDisplay(stateName) && !this.hideLiveSixPointDevPlayerTotals) {
+                if (this.liveSixPointDevScoringEnabled()
+                    && !this.hideLiveSixPointDevPlayerTotals
+                    && !this.isEndgameForLiveSixPointDevTotals(stateName)) {
                     displayed_score += toint(player.six_point_development_vp || 0);
                 }
                 this.bga.playerPanels.getScoreCounter(player_id).toValue(displayed_score);
@@ -1056,7 +1064,7 @@ define([
                     this.updateDisplayedPlayerScore(player_id, stateName);
                 }
 
-                if (!this.shouldShowLiveSixPointDevDisplay(stateName)) {
+                if (!this.shouldShowLiveSixPointDevBadges(stateName)) {
                     return;
                 }
 
