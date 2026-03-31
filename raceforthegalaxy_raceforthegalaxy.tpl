@@ -262,7 +262,7 @@ var jstpl_card = '<div id="card_wrapper_${id}" class="card_wrapper card_type_${t
                   </div>';
 var jstpl_tooltip_card = '<div class="card_tooltip"\
     style="margin:0 auto; background-image: url(${background}); background-position: -${backx}px -${backy}px">\
-    <div class="cardname_tooltip"><span>${card_name}</span></div></div>';
+    <div class="cardname_tooltip"><span>${card_name}</span></div>${live_value}</div>';
 
 var jstpl_good = '<div class="good_wrap" id="good_wrap_${good_id}"><div class="good good${good_type}" id="good_${good_id}" role="button">${indicator}<div id="goodsell_${good_id}" class="goodsell"></div></div></div>';
 

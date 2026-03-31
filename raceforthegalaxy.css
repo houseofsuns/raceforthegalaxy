@@ -304,6 +304,14 @@ html.new_design {
     transform-origin: top right;
     scale: 75%;
 }
+.card_size_tiny .six_point_development_live_value {
+    top: 11px;
+    left: 31px;
+    --variable-vp-live-border-width: 1px;
+    --variable-vp-live-width: 17px;
+    --variable-vp-live-height: 15px;
+    font-size: 10px;
+}
 
 /********** Small **********/
 .card_size_small .card,
@@ -380,6 +388,15 @@ html.new_design {
     transform-origin: top right;
     scale: 85%;
 }
+.card_size_small .six_point_development_live_value,
+.card_tooltip_size_small .card_tooltip .six_point_development_live_value {
+    top: 13px;
+    left: 36px;
+    --variable-vp-live-border-width: 1px;
+    --variable-vp-live-width: 21px;
+    --variable-vp-live-height: 18px;
+    font-size: 12px;
+}
 
 /********** Medium **********/
 .card_size_medium .card,
@@ -452,6 +469,15 @@ html.new_design {
     right: 12px;
     top: 47px;
     font-size: 9px;
+}
+.card_size_medium .six_point_development_live_value,
+.card_tooltip_size_medium .card_tooltip .six_point_development_live_value {
+    top: 15px;
+    left: 42px;
+    --variable-vp-live-width: 24px;
+    --variable-vp-live-height: 21px;
+    --variable-vp-live-border-width: 1.5px;
+    font-size: 14px;
 }
 
 /********** Large **********/
@@ -529,6 +555,14 @@ html.new_design {
     transform-origin: top right;
     scale: 115%;
 }
+.card_size_large .six_point_development_live_value,
+.card_tooltip_size_large .card_tooltip .six_point_development_live_value {
+    top: 19px;
+    left: 57px;
+    --variable-vp-live-width: 30px;
+    --variable-vp-live-height: 26px;
+    font-size: 18px;
+}
 
 /********** Huge **********/
 .card_size_huge .card,
@@ -593,6 +627,14 @@ html.new_design {
     font-size: 10px;
     transform-origin: top right;
     scale: 119%;
+}
+.card_size_huge .six_point_development_live_value,
+.card_tooltip_size_huge .card_tooltip .six_point_development_live_value {
+    top: 23px;
+    left: 64px;
+    --variable-vp-live-width: 36px;
+    --variable-vp-live-height: 31px;
+    font-size: 22px;
 }
 
 /********************/
@@ -984,6 +1026,69 @@ td.six_dev_scoring_name {
 .sixdev_scoring_hover_tap .card:hover .six_dev,
 .sixdev_scoring_yes .six_dev {
     display: block;
+}
+
+.six_point_development_live_value {
+    position: absolute;
+    top: 8px;
+    left: 35px;
+    z-index: 2;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    isolation: isolate;
+    box-sizing: border-box;
+    --variable-vp-live-border-width: 2px;
+    --variable-vp-live-width: 25px;
+    --variable-vp-live-height: 22px;
+    width: var(--variable-vp-live-width);
+    height: var(--variable-vp-live-height);
+    padding: 0;
+    color: #111;
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 1;
+    text-align: center;
+    pointer-events: none;
+}
+
+.six_point_development_live_value::before,
+.six_point_development_live_value::after {
+    content: '';
+    position: absolute;
+    clip-path: polygon(25% 3%, 75% 3%, 97% 50%, 75% 97%, 25% 97%, 3% 50%);
+}
+
+/* Black border around live 6-point development value */
+.six_point_development_live_value::before {
+    inset: 0;
+    z-index: -2;
+    background: black;
+}
+
+/* White background within live 6-point development value */
+.six_point_development_live_value::after {
+    inset: var(--variable-vp-live-border-width);
+    z-index: -1;
+    background: white;
+}
+
+.six_point_development_live_value_two_digits {
+    font-size: 0.90em;
+    letter-spacing: -0.05em;
+}
+
+.card_tooltip .six_point_development_live_value {
+    display: flex;
+}
+
+.six_point_development_live_tooltip {
+    font-weight: bold;
+    text-align: center;
+}
+
+.six_point_development_live_tooltip strong {
+    font-size: 1.1em;
 }
 /*** icons ***/
 .icon {
