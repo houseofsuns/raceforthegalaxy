@@ -3943,7 +3943,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     // Gain points for 6-cost developments of each players
     function getSixDevelopmentsPoints()
     {
-        $context = $this->getSixPointDevelopmentScoringContext(false);
+        $context = $this->getSixPointDevelopmentScoringContext();
         $dev_to_points = $this->cardsToSixDevelopmentsScore(
             $context['cards'],
             $context['dev_to_players'],
@@ -3981,7 +3981,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         return $player_infos;
     }
 
-    private function getSixPointDevelopmentScoringContext($include_live_display_worlds)
+    private function getSixPointDevelopmentScoringContext()
     {
         $cards = $this->cards->getCardsInLocation('tableau');
         $dev_to_players = array();
@@ -4005,7 +4005,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
     private function buildLiveSixPointDevelopmentDisplayState()
     {
-        $context = $this->getSixPointDevelopmentScoringContext(true);
+        $context = $this->getSixPointDevelopmentScoringContext();
         $tableau_points = $this->cardsToSixDevelopmentsScore(
             $context['cards'],
             $context['dev_to_players'],

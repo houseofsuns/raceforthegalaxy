@@ -930,7 +930,7 @@ define([
             isEndgameForLiveSixPointDevTotals: function() {
                 var gamestate = this.gamedatas.gamestate || {};
                 if (typeof gamestate.id != 'undefined') {
-                    return [97, 98, 99].indexOf(toint(gamestate.id)) !== -1;
+                    return [97, 98].indexOf(toint(gamestate.id)) !== -1;
                 }
                 return gamestate.name == 'finalScoring' || gamestate.name == 'gameEndScore' || gamestate.name == 'gameEnd';
             },
@@ -981,7 +981,7 @@ define([
                 var card = this.cardBackgroundPos(card_type_id, this.tooltip_card_size);
                 card.card_name = this.gamedatas.card_types[card_type_id].nametr;
                 var points = node.getAttribute('live_six_point_development_points');
-                card.live_value = points ? this.buildLiveSixPointDevelopmentBadgeHtml(points) : '';
+                card.live_value = points !== null ? this.buildLiveSixPointDevelopmentBadgeHtml(points) : '';
                 return this.format_block('jstpl_tooltip_card', card);
             },
             buildCardTooltipHtml: function(node) {
