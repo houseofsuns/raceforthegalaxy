@@ -653,15 +653,7 @@ $machinestates = array(
         "descriptionmyturn" => '',
         "action" => "stEndRound",
         "type" => "game",
-        "transitions" => array("finalScoring" => 97, "nextRound" => 10)
-   ),
-    97 => array(
-        "name" => "finalScoring",
-        "description" => '',
-        "descriptionmyturn" => '',
-        "action" => "stFinalScoring",
-        "type" => "game",
-        "transitions" => array("" => 98)
+        "transitions" => array("endGame" => 98, "nextRound" => 10)
    ),
 
     // Invasion game

@@ -4164,42 +4164,6 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
     }
 
-    function stFinalScoring()
-    {
-        $this->scoreRemainingArtefacts();
-        $this->scoreSixDevelopments();
-
-        if (self::getGameStateValue('expansion') == 7 && self::getGameStateValue('xeno_empire_defeat') < 2) {
-            $this->scoreGreatestAdmiralEffort();
-        }
-
-        $this->checkGoals('endgame');
-
-        // Final statistics /////////
-
-        // Gets final military force & chips
-        $sql = "SELECT player_id, player_milforce, player_vp FROM player" ;
-        $dbres = self::DbQuery($sql);
-        while ($row = mysql_fetch_assoc($dbres)) {
-            self::setStat($row['player_milforce'], 'milforce', $row['player_id']);
-            self::setStat($row['player_vp'], 'chips_count', $row['player_id']);
-        }
-
-        // Get final number of card in tableau
-        $tableau_count = $this->cards->countCardsByLocationArgs("tableau");
-        foreach ($tableau_count as $player_id => $count) {
-            self::setStat($count, 'tableau_count', $player_id);
-        }
-
-        // Sum card on tableau VP
-        $cards = $this->cards->getCardsInLocation('tableau');
-        foreach ($cards as $card) {
-            self::incStat($this->card_types[ $card['type'] ]['vp'], 'tableau_points', $card['location_arg']);
-        }
-
-        $this->gamestate->nextState('');
-    }
-
     function updatePlayerScore($player_id, $score_delta, $bIsVpChip, $bIsDefenseAward = False)
     {
         if ($bIsVpChip) {
@@ -10773,7 +10737,38 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         if ($bEndOfGame) {
-            $this->gamestate->nextState('finalScoring');
+            $this->scoreRemainingArtefacts();
+            $this->scoreSixDevelopments();
+
+            if ($expansion == 7 && self::getGameStateValue('xeno_empire_defeat') < 2) {
+                $this->scoreGreatestAdmiralEffort();
+            }
+
+            $this->checkGoals('endgame');
+
+            // Final statistics /////////
+
+            // Gets final military force & chips
+            $sql = "SELECT player_id, player_milforce, player_vp FROM player" ;
+            $dbres = self::DbQuery($sql);
+            while ($row = mysql_fetch_assoc($dbres)) {
+                self::setStat($row['player_milforce'], 'milforce', $row['player_id']);
+                self::setStat($row['player_vp'], 'chips_count', $row['player_id']);
+            }
+
+            // Get final number of card in tableau
+            $tableau_count = $this->cards->countCardsByLocationArgs("tableau");
+            foreach ($tableau_count as $player_id => $count) {
+                self::setStat($count, 'tableau_count', $player_id);
+            }
+
+            // Sum card on tableau VP
+            $cards = $this->cards->getCardsInLocation('tableau');
+            foreach ($cards as $card) {
+                self::incStat($this->card_types[ $card['type'] ]['vp'], 'tableau_points', $card['location_arg']);
+            }
+
+            $this->gamestate->nextState('endGame');
         } else {
             // Prestige leader management
             $players = self::loadPlayersBasicInfos();

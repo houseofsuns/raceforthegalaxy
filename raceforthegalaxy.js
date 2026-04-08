@@ -929,15 +929,9 @@ define([
             },
             isEndgameForLiveSixCostDevTotals: function(stateName) {
                 var name = stateName || this.currentStateName || this.gamedatas.gamestate.name;
-                return ['finalScoring', 'gameEndScore', 'gameEnd'].indexOf(name) !== -1;
+                return ['gameEndScore', 'gameEnd'].indexOf(name) !== -1;
             },
             shouldShowLiveSixCostDevBadges: function(stateName) {
-                var name = stateName || this.currentStateName || this.gamedatas.gamestate.name;
-                // Hide badges while endgame scoring is being applied, but show them again on the
-                // settled end-of-game screen for easier score auditing.
-                if (name == 'finalScoring') {
-                    return false;
-                }
                 return ['gameSetup', 'draftNewRound', 'draft', 'draftNextCard', 'initialDiscard', 'initialDiscardHomeWorld'].indexOf(name) === -1;
             },
             setHideLiveSixCostDevPlayerTotals: function(hidden) {
@@ -1966,10 +1960,6 @@ define([
                 console.log(args);
 
                 this.currentStateName = stateName;
-                // Hide the overlay while endgame scoring is being applied.
-                if (stateName == 'finalScoring') {
-                    this.setHideLiveSixCostDevPlayerTotals(true);
-                }
                 this.refreshLiveSixCostDevDisplay(stateName);
 
                 switch (stateName) {
