@@ -1966,8 +1966,7 @@ define([
                 console.log(args);
 
                 this.currentStateName = stateName;
-                // `nomoreVp` hides the overlay as soon as the public end trigger is announced;
-                // entering `finalScoring` covers endgame paths that skip that notification.
+                // Hide the overlay while endgame scoring is being applied.
                 if (stateName == 'finalScoring') {
                     this.setHideLiveSixCostDevPlayerTotals(true);
                 }
@@ -4926,7 +4925,6 @@ define([
                 dojo.subscribe('updateCardCount', this, "notif_updateCardCount");
                 dojo.subscribe('updateScore', this, "notif_updateScore");
                 dojo.subscribe('updateSixCostDevelopmentVp', this, "notif_updateSixCostDevelopmentVp");
-                dojo.subscribe('nomoreVp', this, "notif_nomoreVp");
                 dojo.subscribe('consume', this, "notif_consume");
                 dojo.subscribe('tranship', this, "notif_tranship");
 
@@ -5560,9 +5558,6 @@ define([
                     }
                 }
                 this.applyLiveSixCostDevState(state, this.currentStateName);
-            },
-            notif_nomoreVp: function(notif) {
-                this.setHideLiveSixCostDevPlayerTotals(true);
             },
             notif_updatePrestige: function(notif) {
                 $('prestige_nbr_' + notif.args.player_id).innerHTML = notif.args.prestige;
