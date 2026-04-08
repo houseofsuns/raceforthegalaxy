@@ -748,7 +748,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $tooltip_html .= ' &bull; '.self::_('Cost').' '.$card['cost'];
             $tooltip_html .= ' &bull; '.self::_('Points').' ';
 
-            if ($this->isSixPointDev($card_type_id)) {
+            if ($this->isSixCostDev($card_type_id)) {
                 $tooltip_html .= '?';
             } else {
                 $tooltip_html .= $card['vp'];
@@ -821,7 +821,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $result['card_types'][$card_type_id]['tooltip'] = $tooltip_html;
             $result['card_types'][$card_type_id]['kind'] = $this->getCardColorFromType($card);
 
-            if ($this->isSixPointDev($card_type_id)) {
+            if ($this->isSixCostDev($card_type_id)) {
                 $result['card_types'][$card_type_id]['sixdev_scoring'] = $this->sixcostdev_html($card_type_id);
             }
         }
@@ -884,7 +884,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $result['drafted'] = $this->cards->getCardsInLocation('drafted', $player_id);
 
         $result['explored'] = $this->cards->getCardsInLocation("explored", $player_id);
-        $result['live_six_point_development_state'] = $this->getLiveSixPointDevelopmentDisplayState($player_id);
+        $result['live_six_cost_development_state'] = $this->getLiveSixCostDevelopmentDisplayState($player_id);
 
         if (count($this->scanTableau(2, $player_id, 'scavengerdev')) > 0) {
             $result['scavenger'] = $this->cards->getCardsInLocation('scavenger');
@@ -1108,25 +1108,25 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     }
 
     // In addition to sending the given notification to all players, this
-    // function also recalculates the live six-point development scores and
+    // function also recalculates the live six-cost development scores and
     // sends them to all players as well, as a separate notification.
     //
     // (We could instead try to keep a list of which events should trigger us to
-    // recalculate the live six-point development scores, but that would be
+    // recalculate the live six-cost development scores, but that would be
     // fragile, whereas this does some extra work but is always correct.)
     function notifyAllPlayers($notif_type, $notif_log = '', $notif_args = array())
     {
         parent::notifyAllPlayers($notif_type, $notif_log, $notif_args);
-        $this->emitLiveSixPointDevelopmentState($this->buildLiveSixPointDevelopmentDisplayState());
+        $this->emitLiveSixCostDevelopmentState($this->buildLiveSixCostDevelopmentDisplayState());
     }
 
-    // Like notifyAllPlayers(), this updates the live six-point development
+    // Like notifyAllPlayers(), this updates the live six-cost development
     // scores for the player in question (but only that player).
     function notifyPlayer($player_id, $notif_type, $notif_log = '', $notif_args = array())
     {
         parent::notifyPlayer($player_id, $notif_type, $notif_log, $notif_args);
-        parent::notifyPlayer($player_id, 'updateSixPointDevelopmentVp', '',
-                             $this->getLiveSixPointDevelopmentDisplayState($player_id));
+        parent::notifyPlayer($player_id, 'updateSixCostDevelopmentVp', '',
+                             $this->getLiveSixCostDevelopmentDisplayState($player_id));
     }
 
     private function getDeferedNotification($notif_ref)
@@ -3967,7 +3967,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     // Gain points for 6-cost developments of each players
     function getSixDevelopmentsPoints()
     {
-        $context = $this->getSixPointDevelopmentScoringContext();
+        $context = $this->getSixCostDevelopmentScoringContext();
         $dev_to_points = $this->cardsToSixDevelopmentsScore(
             $context['cards'],
             $context['dev_to_players'],
@@ -3980,7 +3980,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
        );
     }
 
-    private function getZeroSixPointDevelopmentPlayerTotals()
+    private function getZeroSixCostDevelopmentPlayerTotals()
     {
         $player_totals = array();
         foreach (self::loadPlayersBasicInfos() as $player_id => $player) {
@@ -3990,7 +3990,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         return $player_totals;
     }
 
-    private function loadSixPointDevelopmentPlayerInfos()
+    private function loadSixCostDevelopmentPlayerInfos()
     {
         $expansion = self::getGameStateValue('expansion');
         $player_infos = array();
@@ -4005,14 +4005,14 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         return $player_infos;
     }
 
-    private function getSixPointDevelopmentScoringContext()
+    private function getSixCostDevelopmentScoringContext()
     {
         $cards = $this->cards->getCardsInLocation('tableau');
         $dev_to_players = array();
         $oort_player = null;
         $oort_value = null;
         foreach ($cards as $card) {
-            if ($this->isSixPointDev($card['type'])) {
+            if ($this->isSixCostDev($card['type'])) {
                 $dev_to_players[$card['type']] = $card['location_arg'];
             }
             if ($card['type'] == 220) {
@@ -4026,17 +4026,17 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             'dev_to_players' => $dev_to_players,
             'oort_player' => $oort_player,
             'oort_value' => $oort_value,
-            'player_infos' => $this->loadSixPointDevelopmentPlayerInfos(),
+            'player_infos' => $this->loadSixCostDevelopmentPlayerInfos(),
         );
     }
 
-    // Build the live six-point-development display payload.
+    // Build the live six-cost-development display payload.
     //
     // Public tableau values are sent to everyone, whereas private hand/explore
     // "value if played now" projections are computed per player.
-    private function buildLiveSixPointDevelopmentDisplayState($visible_player_id = null)
+    private function buildLiveSixCostDevelopmentDisplayState($visible_player_id = null)
     {
-        $context = $this->getSixPointDevelopmentScoringContext();
+        $context = $this->getSixCostDevelopmentScoringContext();
         // Live previews intentionally reuse the real endgame scoring logic, but they must not
         // mutate Alien Oort Cloud Refinery while evaluating hypothetical values.
         $tableau_points = $this->cardsToSixDevelopmentsScore(
@@ -4047,11 +4047,11 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $context['oort_value'],
             false
         );
-        $player_totals = $this->getZeroSixPointDevelopmentPlayerTotals();
+        $player_totals = $this->getZeroSixCostDevelopmentPlayerTotals();
 
         $public_card_scores = array();
         foreach ($context['cards'] as $card) {
-            if ($this->isSixPointDev($card['type'])) {
+            if ($this->isSixCostDev($card['type'])) {
                 $public_card_scores[$card['id']] = $tableau_points[$card['type']];
                 $player_totals[$card['location_arg']] += $tableau_points[$card['type']];
             }
@@ -4067,7 +4067,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 $this->cards->getCardsInLocation('explored', $private_player_id)
             );
             foreach ($visible_cards as $card) {
-                if (!$this->isSixPointDev($card['type'])) {
+                if (!$this->isSixCostDev($card['type'])) {
                     continue;
                 }
 
@@ -4104,9 +4104,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         );
     }
 
-    function getLiveSixPointDevelopmentDisplayState($player_id)
+    function getLiveSixCostDevelopmentDisplayState($player_id)
     {
-        $state = $this->buildLiveSixPointDevelopmentDisplayState($player_id);
+        $state = $this->buildLiveSixCostDevelopmentDisplayState($player_id);
         $card_scores = $state['public_card_scores'];
         if (isset($state['private_card_scores'][$player_id])) {
             $card_scores += $state['private_card_scores'][$player_id];
@@ -4118,13 +4118,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         );
     }
 
-    // Includes worlds that are scored like 6-point developments.
-    private function isSixPointDev($card_type_id)
+    // Includes worlds that are scored like 6-cost developments.
+    private function isSixCostDev($card_type_id)
     {
         return in_array($card_type_id, $this->six_cost_developments);
     }
 
-    private function emitLiveSixPointDevelopmentState($state)
+    private function emitLiveSixCostDevelopmentState($state)
     {
         $notif_args = array(
             'player_totals' => $state['player_totals'],
@@ -4143,8 +4143,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         // Note we use parent::notifyAllPlayers() here instead of
         // $this->notifyAllPlayers() because we don't want this call to trigger
-        // another updateSixPointDevelopmentVp notification.
-        parent::notifyAllPlayers('updateSixPointDevelopmentVp', '', $notif_args);
+        // another updateSixCostDevelopmentVp notification.
+        parent::notifyAllPlayers('updateSixCostDevelopmentVp', '', $notif_args);
     }
 
     // Compute scores from 6 cost devs and give them to players
