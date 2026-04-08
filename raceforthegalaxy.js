@@ -840,7 +840,7 @@ define([
                 dojo.query('.prestigeleadercount').forEach(dojo.hitch(this, function(node) {
                     node.innerHTML = this.gamedatas.prestigeleadercount;
                 }));
-                this.currentStateName = (this.gamedatas.gamestate || {}).name || null;
+                this.currentStateName = this.gamedatas.gamestate.name;
                 this.hideLiveSixPointDevPlayerTotals = this.isEndgameForLiveSixPointDevTotals(this.currentStateName);
                 this.refreshLiveSixPointDevDisplay(this.currentStateName);
             },
@@ -928,11 +928,11 @@ define([
                 return this.bga.userPreferences.get(11).toString() == '1';
             },
             isEndgameForLiveSixPointDevTotals: function(stateName) {
-                var name = stateName || this.currentStateName || (this.gamedatas.gamestate || {}).name;
+                var name = stateName || this.currentStateName || this.gamedatas.gamestate.name;
                 return ['finalScoring', 'gameEndScore', 'gameEnd'].indexOf(name) !== -1;
             },
             shouldShowLiveSixPointDevBadges: function(stateName) {
-                var name = stateName || this.currentStateName || (this.gamedatas.gamestate || {}).name;
+                var name = stateName || this.currentStateName || this.gamedatas.gamestate.name;
                 // Hide badges while endgame scoring is being applied, but show them again on the
                 // settled end-of-game screen for easier score auditing.
                 if (name == 'finalScoring') {
