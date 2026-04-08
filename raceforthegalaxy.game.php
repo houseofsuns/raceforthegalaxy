@@ -3479,47 +3479,48 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         return $result;
     }
 
+    // If oort_player is provided but oort_value is null, we try all four
+    // possible values for the oort cloud, change it to the best one (if
+    // change_oort_type is true), and return the resulting total score.
     function cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player = null, $oort_value = null, $change_oort_type = true)
     {
         $expansion = self::getGameStateValue('expansion');
 
-        if ($oort_player !== null) {
-            if ($oort_value === null) {
-                // We call cardsToSixDevelopmentsScore FOUR times with all possible values, and get the best configuration for Oort
-                $good_to_result = array(
-                    1 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 1, $change_oort_type),
-                    2 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 2, $change_oort_type),
-                    3 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 3, $change_oort_type),
-                    4 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 4, $change_oort_type)
-               );
+        if ($oort_player !== null && $oort_value === null) {
+            // We call cardsToSixDevelopmentsScore FOUR times with all possible values, and get the best configuration for Oort
+            $good_to_result = array(
+                1 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 1, $change_oort_type),
+                2 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 2, $change_oort_type),
+                3 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 3, $change_oort_type),
+                4 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 4, $change_oort_type)
+            );
 
 
-                $max_for_player = -100;
-                $max_result = null;
-                $best_good_id = null;
-                foreach ($good_to_result as $good_id => $result) {
-                    $score = 0;
-                    foreach ($dev_to_players as $dev_id => $player_id) {
-                        if ($player_id == $oort_player) {
-                            if (isset($result[ $dev_id ])) {
-                                $score += $result[ $dev_id ];
-                            }
+            $max_for_player = -100;
+            $max_result = null;
+            $best_good_id = null;
+            foreach ($good_to_result as $good_id => $result) {
+                $score = 0;
+                foreach ($dev_to_players as $dev_id => $player_id) {
+                    if ($player_id == $oort_player) {
+                        if (isset($result[ $dev_id ])) {
+                            $score += $result[ $dev_id ];
                         }
                     }
-
-                    if ($score > $max_for_player) {
-                        $max_for_player = $score;
-                        $max_result = $result;
-                        $best_good_id = $good_id;
-                    }
                 }
 
-                if ($change_oort_type) {
-                    $this->changeOortType($best_good_id);
+                if ($score > $max_for_player) {
+                    $max_for_player = $score;
+                    $max_result = $result;
+                    $best_good_id = $good_id;
                 }
-
-                return $max_result;
             }
+
+            if ($change_oort_type) {
+                $this->changeOortType($best_good_id);
+            }
+
+            return $max_result;
         }
 
         // Init
@@ -4009,12 +4010,14 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $cards = $this->cards->getCardsInLocation('tableau');
         $dev_to_players = array();
         $oort_player = null;
+        $oort_value = null;
         foreach ($cards as $card) {
             if ($this->isSixPointDev($card['type'])) {
                 $dev_to_players[$card['type']] = $card['location_arg'];
             }
             if ($card['type'] == 220) {
                 $oort_player = $card['location_arg'];
+                $oort_value = self::getUniqueValueFromDB("SELECT card_status FROM card WHERE card_type=220");
             }
         }
 
@@ -4022,6 +4025,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             'cards' => $cards,
             'dev_to_players' => $dev_to_players,
             'oort_player' => $oort_player,
+            'oort_value' => $oort_value,
             'player_infos' => $this->loadSixPointDevelopmentPlayerInfos(),
         );
     }
@@ -4040,7 +4044,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $context['dev_to_players'],
             $context['player_infos'],
             $context['oort_player'],
-            null,
+            $context['oort_value'],
             false
         );
         $player_totals = $this->getZeroSixPointDevelopmentPlayerTotals();
@@ -4086,7 +4090,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                     $projected_dev_to_players,
                     $projected_player_infos,
                     $context['oort_player'],
-                    null,
+                    $context['oort_value'],
                     false
                 );
                 $private_card_scores[$private_player_id][$card['id']] = $projected_points[$card['type']];

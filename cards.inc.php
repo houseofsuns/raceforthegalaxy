@@ -9229,6 +9229,8 @@ $this->sell_prices = array(
     4 => 5
 );
 
+// Variable-point cards (6-cost developments and worlds with variable-point
+// powers).
 $this->six_cost_developments = array(
     11,21,22,23,24,25,26,27,28,29,30,31,
     100,101,119,
