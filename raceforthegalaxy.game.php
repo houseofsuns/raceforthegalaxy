@@ -20,6 +20,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     private $notif_defered_id = 1;
     private $bUpdateCardCount = false;
     private $bUpdateCardCountDefered = false;
+    // Six-cost development state at the start of the current AJAX action.
+    private $initialSixCostDevPointsState = null;
 
     function __construct()
     {
@@ -1107,26 +1109,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $this->reset_defered_notif($notif_ref);
     }
 
-    // In addition to sending the given notification to all players, this
-    // function also recalculates the live six-cost development scores and
-    // sends them to all players as well, as a separate notification.
-    //
-    // (We could instead try to keep a list of which events should trigger us to
-    // recalculate the live six-cost development scores, but that would be
-    // fragile, whereas this does some extra work but is always correct.)
-    function notifyAllPlayers($notif_type, $notif_log = '', $notif_args = array())
+    function saveInitialSixCostDevPointsState()
     {
-        parent::notifyAllPlayers($notif_type, $notif_log, $notif_args);
-        $this->emitLiveSixCostDevelopmentState($this->buildLiveSixCostDevelopmentDisplayState());
-    }
+        if ($this->initialSixCostDevPointsState !== null) {
+            return;
+        }
 
-    // Like notifyAllPlayers(), this updates the live six-cost development
-    // scores for the player in question (but only that player).
-    function notifyPlayer($player_id, $notif_type, $notif_log = '', $notif_args = array())
-    {
-        parent::notifyPlayer($player_id, $notif_type, $notif_log, $notif_args);
-        parent::notifyPlayer($player_id, 'updateSixCostDevelopmentVp', '',
-                             $this->getLiveSixCostDevelopmentDisplayState($player_id));
+        $this->initialSixCostDevPointsState = $this->buildLiveSixCostDevelopmentDisplayState();
     }
 
     private function getDeferedNotification($notif_ref)
@@ -2536,6 +2525,32 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 $this->defered_notifyAllPlayers( $this->notif_defered_id, "updateCardCount", '', $args);
             }
         }
+
+        // Update the live six-cost development scores if they have changed.
+        $initial_state = $this->initialSixCostDevPointsState;
+        $this->initialSixCostDevPointsState = null;
+        $state = $this->buildLiveSixCostDevelopmentDisplayState();
+        // initial_state could be null if we failed to capture it at the
+        // beginning of the action.  This is a bug, but we can defensively
+        // handle it by sending the notification anyway.
+        if ($initial_state === null || $state != $initial_state) {
+            $notif_args = array(
+                'player_totals' => $state['player_totals'],
+                'card_scores' => $state['public_card_scores'],
+            );
+            // BGA delivers `_private[$player_id]` only to that player, so we can bundle private hand
+            // projections and public tableau values in the same notification.
+            foreach ($state['private_card_scores'] as $player_id => $card_scores) {
+                if (count($card_scores) == 0) {
+                    continue;
+                }
+                $notif_args['_private'][$player_id] = array(
+                    'card_scores' => $card_scores,
+                );
+            }
+
+            $this->notifyAllPlayers('updateSixCostDevelopmentVp', '', $notif_args);
+        }
     }
 
     // This function is used for both (a) real tableau scans and (b) calculating
@@ -2547,7 +2562,6 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $chromosome_world_count = 0;
         $civil_world_count = 0;
         $imperium_count = 0;
-        $has_imperium = false;
         $bHiddenFortress = false;
         $mil_per_chromosome = 0;
         $mil_per_imperium = 0;
@@ -2563,8 +2577,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 continue;
             }
             if (in_array('imperium', $this->card_types[$card['type']]['category'])) {
-                $has_imperium = true;
-                break;
+                $imperium_count ++;
             }
         }
 
@@ -2588,9 +2601,6 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             if (in_array('chromosome', $card_type['category'])) {
                 $chromosome_world_count ++;
             }
-            if (in_array('imperium', $card_type['category'])) {
-                $imperium_count ++;
-            }
 
             if ($bXenoForce && $card_type['type'] == 'world'
                 && !in_array('military', $card_type['category'])
@@ -2605,7 +2615,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
                         if (isset($power['condition']) && $power['condition'] == 'imperium') {
                             // Only valid if player has an imperium card anywhere in tableau.
-                            if ($has_imperium) {
+                            if ($imperium_count > 0) {
                                 $new_milforce += $force_delta;
                             }
                         } else {
@@ -3489,10 +3499,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         if ($oort_player !== null && $oort_value === null) {
             // We call cardsToSixDevelopmentsScore FOUR times with all possible values, and get the best configuration for Oort
             $good_to_result = array(
-                1 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 1, $change_oort_type),
-                2 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 2, $change_oort_type),
-                3 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 3, $change_oort_type),
-                4 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 4, $change_oort_type)
+                1 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 1, false),
+                2 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 2, false),
+                3 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 3, false),
+                4 => $this->cardsToSixDevelopmentsScore($cards, $dev_to_players, $player_infos, $oort_player, 4, false)
             );
 
 
@@ -4122,29 +4132,6 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     private function isSixCostDev($card_type_id)
     {
         return in_array($card_type_id, $this->six_cost_developments);
-    }
-
-    private function emitLiveSixCostDevelopmentState($state)
-    {
-        $notif_args = array(
-            'player_totals' => $state['player_totals'],
-            'card_scores' => $state['public_card_scores'],
-        );
-        // BGA delivers `_private[$player_id]` only to that player, so we can bundle private hand
-        // projections and public tableau values in the same notification.
-        foreach ($state['private_card_scores'] as $player_id => $card_scores) {
-            if (count($card_scores) == 0) {
-                continue;
-            }
-            $notif_args['_private'][$player_id] = array(
-                'card_scores' => $card_scores,
-            );
-        }
-
-        // Note we use parent::notifyAllPlayers() here instead of
-        // $this->notifyAllPlayers() because we don't want this call to trigger
-        // another updateSixCostDevelopmentVp notification.
-        parent::notifyAllPlayers('updateSixCostDevelopmentVp', '', $notif_args);
     }
 
     // Compute scores from 6 cost devs and give them to players
