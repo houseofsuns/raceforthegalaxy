@@ -2530,10 +2530,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $initial_state = $this->initialSixCostDevPointsState;
         $this->initialSixCostDevPointsState = null;
         $state = $this->buildLiveSixCostDevelopmentDisplayState();
-        // initial_state could be null if we failed to capture it at the
-        // beginning of the action.  This is a bug, but we can defensively
-        // handle it by sending the notification anyway.
-        if ($initial_state === null || $state != $initial_state) {
+        if ($state != $initial_state) {
             $notif_args = array(
                 'player_totals' => $state['player_totals'],
                 'card_scores' => $state['public_card_scores'],
