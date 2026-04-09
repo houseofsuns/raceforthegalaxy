@@ -194,6 +194,10 @@ html.new_design {
     cursor: pointer;
 }
 
+.rftg_animating_card {
+    z-index: 20 !important;
+}
+
 .cardname, .cardname_tooltip {
     position: absolute;
     display: flex;
