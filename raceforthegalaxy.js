@@ -954,8 +954,41 @@ define([
                 var card_type = this.gamedatas.card_types[card_type_id];
                 return card_type && typeof card_type.sixdev_scoring != 'undefined';
             },
+            getReturnCardToHandAnimationDuration: function() {
+                return this.bgaAnimationsActive() ? 1000 : 0;
+            },
+            // For some reason, the animation for moving a card from a player's
+            // tableau back into their hand is janky: The card itself isn't
+            // visible for the first ~half of the animation.  This presents a
+            // problem for the six-cost development live VP badges; if we don't
+            // do anything, then the badge itself flies back into the hand while
+            // the card itself is invisible.  It looks weird!
+            //
+            // To work around this, we simply hide the badge during this animation.
+            hideLiveSixCostDevelopmentBadgeDuringReturnToHand: function(card_id) {
+                var hand_card = $('player_hand_item_' + card_id);
+                if (!hand_card) {
+                    return;
+                }
+
+                dojo.addClass(hand_card, 'hide_live_six_cost_development_badge');
+
+                var duration = this.getReturnCardToHandAnimationDuration();
+                if (duration === 0) {
+                    dojo.removeClass(hand_card, 'hide_live_six_cost_development_badge');
+                    return;
+                }
+
+                setTimeout(dojo.hitch(this, function() {
+                    var returned_hand_card = $('player_hand_item_' + card_id);
+                    if (returned_hand_card) {
+                        dojo.removeClass(returned_hand_card, 'hide_live_six_cost_development_badge');
+                    }
+                }), duration);
+            },
             returnCardToHand: function(card) {
                 this.playerHand.addToStockWithId(card.type, card.id, 'card_wrapper_' + card.id);
+                this.hideLiveSixCostDevelopmentBadgeDuringReturnToHand(card.id);
                 dojo.destroy($('card_wrapper_' + card.id));
             },
             moveHandCardToTableau: function(card) {
