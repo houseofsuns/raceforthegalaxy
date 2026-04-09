@@ -1052,10 +1052,6 @@ td.six_dev_scoring_name {
     pointer-events: none;
 }
 
-.hide_live_six_cost_development_badge .six_cost_development_live_value {
-    display: none !important;
-}
-
 .six_cost_development_live_value::before,
 .six_cost_development_live_value::after {
     content: '';
