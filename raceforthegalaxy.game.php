@@ -2530,7 +2530,11 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $initial_state = $this->initialSixCostDevPointsState;
         $this->initialSixCostDevPointsState = null;
         $state = $this->buildLiveSixCostDevelopmentDisplayState();
-        if ($state != $initial_state) {
+        // Don't send a notification if initial_state is null.  This happens for
+        // AJAX actions that don't go through an action handler in action.php.
+        // These are events like `wakeup` that don't change the game state and
+        // so can't affect the six-cost development scores.
+        if ($initial_state !== null && $state != $initial_state) {
             $notif_args = array(
                 'player_totals' => $state['player_totals'],
                 'card_scores' => $state['public_card_scores'],
