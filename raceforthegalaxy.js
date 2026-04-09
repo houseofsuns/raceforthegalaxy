@@ -956,9 +956,11 @@ define([
             },
             returnCardToHand: function(card) {
                 this.playerHand.addToStockWithId(card.type, card.id, 'card_wrapper_' + card.id);
+                dojo.destroy($('card_wrapper_' + card.id));
             },
             moveHandCardToTableau: function(card) {
                 this.addCardToTableau(card, 'player_hand_item_' + card.id);
+                // removeFromStockById tears down player_hand_item_<id> after we animate from it.
                 this.playerHand.removeFromStockById(card.id);
             },
             isTableauCardNode: function(node) {
@@ -2169,7 +2171,6 @@ define([
                         if (this.nextCardToPlay) {
                             dojo.query('.nextCardToPlay').removeClass('nextCardToPlay');
                             this.returnCardToHand(this.nextCardToPlay);
-                            dojo.destroy($('card_wrapper_' + this.nextCardToPlay.id));
                             $('tableau_nbr_' + this.player_id).innerHTML = toint($('tableau_nbr_' + this.player_id).innerHTML) - 1;
                         }
 
@@ -3307,7 +3308,6 @@ define([
                 console.log("onDontPay");
                 if (this.nextCardToPlay) {
                     this.returnCardToHand(this.nextCardToPlay);
-                    dojo.destroy($('card_wrapper_' + this.nextCardToPlay.id));
                     $('tableau_nbr_' + this.player_id).innerHTML = toint($('tableau_nbr_' + this.player_id).innerHTML) - 1;
                 }
 
@@ -5230,7 +5230,6 @@ define([
                 if (this.nextCardToPlay) {
                     dojo.query('.nextCardToPlay').removeClass('nextCardToPlay');
                     this.returnCardToHand(this.nextCardToPlay);
-                    dojo.destroy($('card_wrapper_' + this.nextCardToPlay.id));
                     $('tableau_nbr_' + this.player_id).innerHTML = toint($('tableau_nbr_' + this.player_id).innerHTML) - 1;
                 }
 
