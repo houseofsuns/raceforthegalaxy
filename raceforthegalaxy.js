@@ -316,6 +316,14 @@ define([
                   }
                 }));
             },
+            destroyManagedTooltip: function(nodeId) {
+                var tooltip = this.tooltips[nodeId];
+                var node = $(nodeId);
+                tooltip.close(node);
+                tooltip.destroy();
+                delete this.tooltips[nodeId];
+                delete this.tooltipsInfos[nodeId];
+            },
             addTooltip: function(nodeId, helpStringTranslated, actionStringTranslated, delay) {
                 if (!this.isTouchInterface()) {
                     this.inherited(arguments);
@@ -957,6 +965,7 @@ define([
             returnCardToHand: function(card) {
                 var from = $('card_wrapper_' + card.id);
                 var hand_parent = $('player_hand');
+                this.destroyManagedTooltip('card_' + card.id);
                 this.playerHand.addToStockWithId(card.type, card.id);
                 var hand_item = $('player_hand_item_' + card.id);
                 var hand_box = dojo.position(hand_item);
@@ -977,6 +986,7 @@ define([
                 anim.play();
             },
             moveHandCardToTableau: function(card) {
+                this.destroyManagedTooltip('player_hand_item_' + card.id);
                 this.addCardToTableau(card, 'player_hand_item_' + card.id);
                 // removeFromStockById tears down player_hand_item_<id> after we animate from it.
                 this.playerHand.removeFromStockById(card.id);
@@ -1314,6 +1324,9 @@ define([
                 }
 
                 this.tooltips[id] = this.createManagedTooltipForNode($(id), dojo.hitch(this, function(node) {
+                        if (dojo.hasClass(node, 'rftg_suppress_tooltip')) {
+                            return;
+                        }
                         // If we're trading, don't show the tooltip to not disrupt the price tooltip from the good.
                         // On mobile, if we're consuming, don't show the tooltip, it's triggered by tapping the good.
                         var price = false;
@@ -1508,8 +1521,13 @@ define([
                 }
 
                 if (from != null) {
+                    dojo.addClass($('card_' + card.id), 'rftg_suppress_tooltip');
                     this.placeOnObject($('card_' + card.id), from);
-                    this.slideToObject(('card_' + card.id), ('card_wrapper_' + card.id)).play();
+                    var anim = this.slideToObject(('card_' + card.id), ('card_wrapper_' + card.id));
+                    dojo.connect(anim, 'onEnd', this, function() {
+                        dojo.removeClass($('card_' + card.id), 'rftg_suppress_tooltip');
+                    });
+                    anim.play();
                 }
 
                 if (card.damaged) {
@@ -1537,8 +1555,13 @@ define([
                     dojo.connect($('card_' + card.id), 'onclick', this, 'onClickOnOpponentCardOnTableau');
                 }
 
+                dojo.addClass($('card_' + card.id), 'rftg_suppress_tooltip');
                 this.placeOnObject($('card_' + card.id), from);
-                this.slideToObject(('card_' + card.id), ('card_wrapper_' + card.id)).play();
+                var anim = this.slideToObject(('card_' + card.id), ('card_wrapper_' + card.id));
+                dojo.connect(anim, 'onEnd', this, function() {
+                    dojo.removeClass($('card_' + card.id), 'rftg_suppress_tooltip');
+                });
+                anim.play();
                 dojo.destroy(from);
 
                 this.updateVulnerabilities();
