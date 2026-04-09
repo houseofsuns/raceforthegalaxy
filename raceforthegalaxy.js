@@ -1027,7 +1027,11 @@ define([
                 dojo.style(badge, 'display', 'flex');
             },
             setLiveSixCostDevelopmentBadge: function(card_id, points) {
-                this.setLiveSixCostDevelopmentBadgeOnNode($('live_six_cost_development_' + card_id), points);
+                dojo.query('.six_cost_development_live_value').forEach(function(badge) {
+                    if (badge.id == 'live_six_cost_development_' + card_id) {
+                        this.setLiveSixCostDevelopmentBadgeOnNode(badge, points);
+                    }
+                }, this);
             },
             clearLiveSixCostDevBadges: function() {
                 dojo.query('.six_cost_development_live_value').forEach(function(node) {
@@ -1274,7 +1278,7 @@ define([
                 }
                 if (this.liveSixCostDevScoringEnabled() && this.hasLiveSixCostDevDisplay(card_type_id)) {
                     dojo.place(`<div id="live_six_cost_development_${card_id}" class="six_cost_development_live_value"></div>`, id);
-                    this.syncLiveSixCostDevelopmentBadgeForCard(card_id, null, $('live_six_cost_development_' + card_id));
+                    this.syncLiveSixCostDevelopmentBadgeForCard(card_id, null, dojo.query('.six_cost_development_live_value', id)[0]);
                 }
 
                 dojo.style(id, "background-size", "auto " + this.card_size['h'] * 10 + "px");
