@@ -198,6 +198,10 @@ html.new_design {
     z-index: 20 !important;
 }
 
+.rftg_suppress_tooltip {
+    pointer-events: none;
+}
+
 .cardname, .cardname_tooltip {
     position: absolute;
     display: flex;
