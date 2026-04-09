@@ -955,8 +955,26 @@ define([
                 return card_type && typeof card_type.sixdev_scoring != 'undefined';
             },
             returnCardToHand: function(card) {
-                this.playerHand.addToStockWithId(card.type, card.id, 'card_wrapper_' + card.id);
-                dojo.destroy($('card_wrapper_' + card.id));
+                var from = $('card_wrapper_' + card.id);
+                var hand_parent = $('player_hand');
+                this.playerHand.addToStockWithId(card.type, card.id);
+                var hand_item = $('player_hand_item_' + card.id);
+                var hand_box = dojo.position(hand_item);
+                var hand_parent_box = dojo.position(hand_parent);
+                var target_x = hand_box.x - hand_parent_box.x;
+                var target_y = hand_box.y - hand_parent_box.y;
+
+                dojo.style(hand_item, 'visibility', 'hidden');
+                this.attachToNewParentNoDestroy(from, hand_parent);
+                dojo.addClass(from, 'rftg_animating_card');
+
+                var anim = this.slideToObjectPos(from, hand_parent, target_x, target_y);
+                dojo.connect(anim, 'onEnd', this, function() {
+                    dojo.style(hand_item, 'visibility', 'visible');
+                    dojo.removeClass(from, 'rftg_animating_card');
+                    dojo.destroy(from);
+                });
+                anim.play();
             },
             moveHandCardToTableau: function(card) {
                 this.addCardToTableau(card, 'player_hand_item_' + card.id);
