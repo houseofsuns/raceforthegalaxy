@@ -932,6 +932,7 @@ define([
                 return ['gameEndScore', 'gameEnd'].indexOf(name) !== -1;
             },
             shouldShowLiveSixCostDevBadges: function(stateName) {
+                var name = stateName || this.currentStateName || this.gamedatas.gamestate.name;
                 return ['gameSetup', 'draftNewRound', 'draft', 'draftNextCard', 'initialDiscard', 'initialDiscardHomeWorld'].indexOf(name) === -1;
             },
             setHideLiveSixCostDevPlayerTotals: function(hidden) {
@@ -997,8 +998,7 @@ define([
                 tooltip += '</div>';
                 return tooltip;
             },
-            setLiveSixCostDevelopmentBadge: function(card_id, points) {
-                var badge = $('live_six_cost_development_' + card_id);
+            setLiveSixCostDevelopmentBadgeOnNode: function(badge, points) {
                 if (!badge) {
                     return;
                 }
@@ -1017,6 +1017,13 @@ define([
                 dojo.toggleClass(badge, 'six_cost_development_live_value_two_digits', String(points).length > 1);
                 dojo.style(badge, 'display', 'flex');
             },
+            setLiveSixCostDevelopmentBadge: function(card_id, points) {
+                dojo.query('.six_cost_development_live_value').forEach(function(badge) {
+                    if (badge.id == 'live_six_cost_development_' + card_id) {
+                        this.setLiveSixCostDevelopmentBadgeOnNode(badge, points);
+                    }
+                }, this);
+            },
             clearLiveSixCostDevBadges: function() {
                 dojo.query('.six_cost_development_live_value').forEach(function(node) {
                     if (node.parentNode) {
@@ -1025,6 +1032,39 @@ define([
                     dojo.removeClass(node, 'six_cost_development_live_value_two_digits');
                     dojo.style(node, 'display', 'none');
                 });
+            },
+            getLiveSixCostDevelopmentPointsForCard: function(card_id) {
+                var state = this.gamedatas.live_six_cost_development_state;
+                if (!state) {
+                    return null;
+                }
+                if (state.card_scores && typeof state.card_scores[card_id] != 'undefined') {
+                    return state.card_scores[card_id];
+                }
+                if (state.private_card_scores && typeof state.private_card_scores[card_id] != 'undefined') {
+                    return state.private_card_scores[card_id];
+                }
+                if (state.private_card_scores
+                    && state.private_card_scores[this.player_id]
+                    && typeof state.private_card_scores[this.player_id][card_id] != 'undefined') {
+                    return state.private_card_scores[this.player_id][card_id];
+                }
+                return null;
+            },
+            syncLiveSixCostDevelopmentBadgeForCard: function(card_id, stateName, badge) {
+                if (!this.liveSixCostDevScoringEnabled()
+                    || !this.shouldShowLiveSixCostDevBadges(stateName)) {
+                    return;
+                }
+                var points = this.getLiveSixCostDevelopmentPointsForCard(card_id);
+                if (points === null) {
+                    return;
+                }
+                if (badge) {
+                    this.setLiveSixCostDevelopmentBadgeOnNode(badge, points);
+                } else {
+                    this.setLiveSixCostDevelopmentBadge(card_id, points);
+                }
             },
             updateDisplayedPlayerScore: function(player_id, stateName) {
                 var player = this.gamedatas.players[player_id];
@@ -1234,6 +1274,7 @@ define([
                 }
                 if (this.liveSixCostDevScoringEnabled() && this.hasLiveSixCostDevDisplay(card_type_id)) {
                     dojo.place(`<div id="live_six_cost_development_${card_id}" class="six_cost_development_live_value"></div>`, id);
+                    this.syncLiveSixCostDevelopmentBadgeForCard(card_id, null, dojo.query('.six_cost_development_live_value', id)[0]);
                 }
 
                 dojo.style(id, "background-size", "auto " + this.card_size['h'] * 10 + "px");
