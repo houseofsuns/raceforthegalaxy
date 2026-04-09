@@ -954,6 +954,13 @@ define([
                 var card_type = this.gamedatas.card_types[card_type_id];
                 return card_type && typeof card_type.sixdev_scoring != 'undefined';
             },
+            returnCardToHand: function(card) {
+                this.playerHand.addToStockWithId(card.type, card.id, 'card_wrapper_' + card.id);
+            },
+            moveHandCardToTableau: function(card) {
+                this.addCardToTableau(card, 'player_hand_item_' + card.id);
+                this.playerHand.removeFromStockById(card.id);
+            },
             isTableauCardNode: function(node) {
                 return /^card_\d+$/.test(node.id);
             },
@@ -1018,11 +1025,7 @@ define([
                 dojo.style(badge, 'display', 'flex');
             },
             setLiveSixCostDevelopmentBadge: function(card_id, points) {
-                dojo.query('.six_cost_development_live_value').forEach(function(badge) {
-                    if (badge.id == 'live_six_cost_development_' + card_id) {
-                        this.setLiveSixCostDevelopmentBadgeOnNode(badge, points);
-                    }
-                }, this);
+                this.setLiveSixCostDevelopmentBadgeOnNode($('live_six_cost_development_' + card_id), points);
             },
             clearLiveSixCostDevBadges: function() {
                 dojo.query('.six_cost_development_live_value').forEach(function(node) {
@@ -1043,11 +1046,6 @@ define([
                 }
                 if (state.private_card_scores && typeof state.private_card_scores[card_id] != 'undefined') {
                     return state.private_card_scores[card_id];
-                }
-                if (state.private_card_scores
-                    && state.private_card_scores[this.player_id]
-                    && typeof state.private_card_scores[this.player_id][card_id] != 'undefined') {
-                    return state.private_card_scores[this.player_id][card_id];
                 }
                 return null;
             },
@@ -1274,7 +1272,7 @@ define([
                 }
                 if (this.liveSixCostDevScoringEnabled() && this.hasLiveSixCostDevDisplay(card_type_id)) {
                     dojo.place(`<div id="live_six_cost_development_${card_id}" class="six_cost_development_live_value"></div>`, id);
-                    this.syncLiveSixCostDevelopmentBadgeForCard(card_id, null, dojo.query('.six_cost_development_live_value', id)[0]);
+                    this.syncLiveSixCostDevelopmentBadgeForCard(card_id, null, $('live_six_cost_development_' + card_id));
                 }
 
                 dojo.style(id, "background-size", "auto " + this.card_size['h'] * 10 + "px");
@@ -2170,7 +2168,7 @@ define([
                         // This is necessary as the onDontPay is not triggered by a notification.
                         if (this.nextCardToPlay) {
                             dojo.query('.nextCardToPlay').removeClass('nextCardToPlay');
-                            this.playerHand.addToStockWithId(this.nextCardToPlay.type, this.nextCardToPlay.id, $('card_' + this.nextCardToPlay.id));
+                            this.returnCardToHand(this.nextCardToPlay);
                             dojo.destroy($('card_wrapper_' + this.nextCardToPlay.id));
                             $('tableau_nbr_' + this.player_id).innerHTML = toint($('tableau_nbr_' + this.player_id).innerHTML) - 1;
                         }
@@ -3308,7 +3306,7 @@ define([
             onDontPay: function() {
                 console.log("onDontPay");
                 if (this.nextCardToPlay) {
-                    this.playerHand.addToStockWithId(this.nextCardToPlay.type, this.nextCardToPlay.id, $('card_' + this.nextCardToPlay.id));
+                    this.returnCardToHand(this.nextCardToPlay);
                     dojo.destroy($('card_wrapper_' + this.nextCardToPlay.id));
                     $('tableau_nbr_' + this.player_id).innerHTML = toint($('tableau_nbr_' + this.player_id).innerHTML) - 1;
                 }
@@ -5231,7 +5229,7 @@ define([
                 // This is necessary as the onDontPay is not triggered by a notification.
                 if (this.nextCardToPlay) {
                     dojo.query('.nextCardToPlay').removeClass('nextCardToPlay');
-                    this.playerHand.addToStockWithId(this.nextCardToPlay.type, this.nextCardToPlay.id, $('card_' + this.nextCardToPlay.id));
+                    this.returnCardToHand(this.nextCardToPlay);
                     dojo.destroy($('card_wrapper_' + this.nextCardToPlay.id));
                     $('tableau_nbr_' + this.player_id).innerHTML = toint($('tableau_nbr_' + this.player_id).innerHTML) - 1;
                 }
@@ -5275,11 +5273,8 @@ define([
                 this.onUpdatePageTitle();
                 this.onUpdateActionButtons(this.gamedatas.gamestate.name, this.gamedatas.gamestate.args);
 
-                // Move this card to tableau
-                this.addCardToTableau(notif.args.card, $('player_hand_item_' + notif.args.card.id));
-                this.playerHand.removeFromStockById(notif.args.card.id);
-                // ... display it immediately
-                dojo.destroy('player_hand_item_' + notif.args.card.id);
+                // Move this card to tableau.
+                this.moveHandCardToTableau(notif.args.card);
                 dojo.addClass($('card_' + notif.args.card.id), 'nextCardToPlay');
 
                 if(this.nextCardToPlay.type == 220 && (this.immediateAlternatives === null || this.immediateAlternatives.length === 0)) {
@@ -5303,9 +5298,7 @@ define([
 
                     if(notif.args.immediate) {
                         // notif_cardcost was not executed in this branch, so we need to add the relevant pieces
-                        this.addCardToTableau(notif.args.card, $('player_hand_item_' + notif.args.card.id));
-                        this.playerHand.removeFromStockById(notif.args.card.id);
-                        dojo.destroy('player_hand_item_' + notif.args.card.id);
+                        this.moveHandCardToTableau(notif.args.card);
                     }
 
                     if (notif.args.need_scavenging) {
