@@ -313,11 +313,10 @@ html.new_design {
     scale: 75%;
 }
 .card_size_tiny .six_cost_development_live_value {
-    top: 11px;
-    left: 31px;
-    --variable-vp-live-border-width: 1px;
-    --variable-vp-live-width: 17px;
-    --variable-vp-live-height: 15px;
+    top: 12px;
+    left: 25px;
+    width: 12px;
+    height: 13px;
     font-size: 10px;
 }
 
@@ -398,11 +397,10 @@ html.new_design {
 }
 .card_size_small .six_cost_development_live_value,
 .card_tooltip_size_small .card_tooltip .six_cost_development_live_value {
-    top: 13px;
-    left: 36px;
-    --variable-vp-live-border-width: 1px;
-    --variable-vp-live-width: 21px;
-    --variable-vp-live-height: 18px;
+    top: 14px;
+    left: 29px;
+    width: 16px;
+    height: 15px;
     font-size: 12px;
 }
 
@@ -480,11 +478,10 @@ html.new_design {
 }
 .card_size_medium .six_cost_development_live_value,
 .card_tooltip_size_medium .card_tooltip .six_cost_development_live_value {
-    top: 15px;
-    left: 42px;
-    --variable-vp-live-width: 24px;
-    --variable-vp-live-height: 21px;
-    --variable-vp-live-border-width: 1.5px;
+    top: 16px;
+    left: 33px;
+    width: 19px;
+    height: 18px;
     font-size: 14px;
 }
 
@@ -565,10 +562,10 @@ html.new_design {
 }
 .card_size_large .six_cost_development_live_value,
 .card_tooltip_size_large .card_tooltip .six_cost_development_live_value {
-    top: 19px;
-    left: 57px;
-    --variable-vp-live-width: 30px;
-    --variable-vp-live-height: 26px;
+    top: 22px;
+    left: 43px;
+    width: 23px;
+    height: 20px;
     font-size: 18px;
 }
 
@@ -638,10 +635,10 @@ html.new_design {
 }
 .card_size_huge .six_cost_development_live_value,
 .card_tooltip_size_huge .card_tooltip .six_cost_development_live_value {
-    top: 23px;
-    left: 64px;
-    --variable-vp-live-width: 36px;
-    --variable-vp-live-height: 31px;
+    top: 24.5px;
+    left: 49px;
+    width: 30px;
+    height: 27px;
     font-size: 22px;
 }
 
@@ -1038,47 +1035,18 @@ td.six_dev_scoring_name {
 
 .six_cost_development_live_value {
     position: absolute;
-    top: 8px;
-    left: 35px;
     z-index: 2;
     display: none;
     align-items: center;
     justify-content: center;
-    isolation: isolate;
-    box-sizing: border-box;
-    --variable-vp-live-border-width: 2px;
-    --variable-vp-live-width: 25px;
-    --variable-vp-live-height: 22px;
-    width: var(--variable-vp-live-width);
-    height: var(--variable-vp-live-height);
     padding: 0;
-    color: #111;
-    font-size: 13px;
-    font-weight: bold;
+    color: #a97822;
+    font-weight: 700;
     line-height: 1;
     text-align: center;
     pointer-events: none;
-}
-
-.six_cost_development_live_value::before,
-.six_cost_development_live_value::after {
-    content: '';
-    position: absolute;
-    clip-path: polygon(25% 3%, 75% 3%, 97% 50%, 75% 97%, 25% 97%, 3% 50%);
-}
-
-/* Black border around live 6-cost development value */
-.six_cost_development_live_value::before {
-    inset: 0;
-    z-index: -2;
-    background: black;
-}
-
-/* White background within live 6-cost development value */
-.six_cost_development_live_value::after {
-    inset: var(--variable-vp-live-border-width);
-    z-index: -1;
     background: white;
+    clip-path: polygon(25% 4%, 75% 4%, 96% 50%, 75% 96%, 25% 96%, 4% 50%);
 }
 
 .six_cost_development_live_value_two_digits {
