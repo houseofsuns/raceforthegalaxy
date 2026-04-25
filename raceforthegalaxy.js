@@ -5624,6 +5624,11 @@ define([
                     } else if (notif.args._private[this.player_id] && notif.args._private[this.player_id].card_scores) {
                         state.private_card_scores = notif.args._private[this.player_id].card_scores;
                     }
+                    if (notif.args._private.player_totals) {
+                        state.player_totals = notif.args._private.player_totals;
+                    } else if (notif.args._private[this.player_id] && notif.args._private[this.player_id].player_totals) {
+                        state.player_totals = notif.args._private[this.player_id].player_totals;
+                    }
                 }
                 this.applyLiveSixCostDevState(state, this.currentStateName);
             },
