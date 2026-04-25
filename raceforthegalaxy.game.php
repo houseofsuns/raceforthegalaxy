@@ -2549,6 +2549,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                     'card_scores' => $card_scores,
                 );
             }
+            foreach ($state['private_player_totals'] as $player_id => $player_totals) {
+                if (!isset($notif_args['_private'][$player_id])) {
+                    $notif_args['_private'][$player_id] = array();
+                }
+                $notif_args['_private'][$player_id]['player_totals'] = $player_totals;
+            }
 
             $this->notifyAllPlayers('updateSixCostDevelopmentVp', '', $notif_args);
         }
@@ -3978,7 +3984,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     // Gain points for 6-cost developments of each players
     function getSixDevelopmentsPoints()
     {
-        $context = $this->getSixCostDevelopmentScoringContext();
+        $context = $this->getSixCostDevelopmentScoringContext(
+            $this->cards->getCardsInLocation('tableau'),
+            /*recompute_military=*/false
+        );
         $dev_to_points = $this->cardsToSixDevelopmentsScore(
             $context['cards'],
             $context['dev_to_players'],
@@ -4016,9 +4025,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         return $player_infos;
     }
 
-    private function getSixCostDevelopmentScoringContext()
+    private function getSixCostDevelopmentScoringContext($cards, $recompute_military)
     {
-        $cards = $this->cards->getCardsInLocation('tableau');
         $dev_to_players = array();
         $oort_player = null;
         $oort_value = null;
@@ -4032,22 +4040,44 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
         }
 
+        $player_infos = $this->loadSixCostDevelopmentPlayerInfos();
+        if ($recompute_military) {
+            foreach ($player_infos as $player_id => $player_info) {
+                $player_infos[$player_id]['player_milforce'] = $this->getMilitaryForceFromCards($cards, $player_id)['force'];
+            }
+        }
+
         return array(
             'cards' => $cards,
             'dev_to_players' => $dev_to_players,
             'oort_player' => $oort_player,
             'oort_value' => $oort_value,
-            'player_infos' => $this->loadSixCostDevelopmentPlayerInfos(),
+            'player_infos' => $player_infos,
         );
     }
 
-    // Build the live six-cost-development display payload.
-    //
-    // Public tableau values are sent to everyone, whereas private hand/explore
-    // "value if played now" projections are computed per player.
-    private function buildLiveSixCostDevelopmentDisplayState($visible_player_id = null)
+    // Return the tableau cards visible to one player, hiding other players' just-played cards.
+    // A null player id means the public view, so every just-played card is hidden.
+    private function getVisibleTableauCards($all_cards, $just_played_by_player, $visible_player_id = null)
     {
-        $context = $this->getSixCostDevelopmentScoringContext();
+        $visible_cards = array();
+
+        foreach ($all_cards as $card) {
+            $owner_id = $card['location_arg'];
+            if (isset($just_played_by_player[$owner_id])
+                && $just_played_by_player[$owner_id] == $card['id']
+                && $owner_id != $visible_player_id) {
+                continue;
+            }
+
+            $visible_cards[] = $card;
+        }
+
+        return $visible_cards;
+    }
+
+    private function getLiveSixCostDevelopmentTableauScores($context)
+    {
         // Live previews intentionally reuse the real endgame scoring logic, but they must not
         // mutate Alien Oort Cloud Refinery while evaluating hypothetical values.
         $tableau_points = $this->cardsToSixDevelopmentsScore(
@@ -4059,20 +4089,51 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             false
         );
         $player_totals = $this->getZeroSixCostDevelopmentPlayerTotals();
+        $card_scores = array();
 
-        $public_card_scores = array();
         foreach ($context['cards'] as $card) {
             if ($this->isSixCostDev($card['type'])) {
-                $public_card_scores[$card['id']] = $tableau_points[$card['type']];
+                $card_scores[$card['id']] = $tableau_points[$card['type']];
                 $player_totals[$card['location_arg']] += $tableau_points[$card['type']];
             }
         }
 
+        return array(
+            'player_totals' => $player_totals,
+            'card_scores' => $card_scores,
+        );
+    }
+
+    // Build the live six-cost-development display payload.
+    //
+    // Public tableau values are sent to everyone, whereas each player's own
+    // just-played card and hand/explore projections are computed privately.
+    private function buildLiveSixCostDevelopmentDisplayState($visible_player_id = null)
+    {
+        $all_cards = $this->cards->getCardsInLocation('tableau');
+        $just_played_by_player = self::getCollectionFromDB("
+            SELECT player.player_id, player.player_just_played
+            FROM player
+            INNER JOIN card ON card.card_id = player.player_just_played
+            WHERE card.card_location = 'tableau'", true);
+        $public_cards = $this->getVisibleTableauCards($all_cards, $just_played_by_player);
+        $public_context = $this->getSixCostDevelopmentScoringContext($public_cards, /*recompute_military=*/true);
+        $public_scores = $this->getLiveSixCostDevelopmentTableauScores($public_context);
+
         $private_card_scores = array();
+        $private_player_totals = array();
         // Hand/explore previews are private information, so score them separately and send each
         // player only the hypothetical value of the cards they can currently see.
-        $visible_player_ids = $visible_player_id === null ? array_keys($context['player_infos']) : array($visible_player_id);
+        $visible_player_ids = $visible_player_id === null ? array_keys($public_context['player_infos']) : array($visible_player_id);
         foreach ($visible_player_ids as $private_player_id) {
+            $private_cards = $this->getVisibleTableauCards($all_cards, $just_played_by_player, $private_player_id);
+            $private_context = $this->getSixCostDevelopmentScoringContext($private_cards, /*recompute_military=*/true);
+            $private_scores = $this->getLiveSixCostDevelopmentTableauScores($private_context);
+            if ($private_scores != $public_scores) {
+                $private_card_scores[$private_player_id] = $private_scores['card_scores'];
+                $private_player_totals[$private_player_id] = $private_scores['player_totals'];
+            }
+
             $visible_cards = array_merge(
                 $this->cards->getCardsInLocation('hand', $private_player_id),
                 $this->cards->getCardsInLocation('explored', $private_player_id)
@@ -4085,23 +4146,23 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 // Reuse the real scoring helper by projecting this card onto the tableau as if it
                 // were played right now. That keeps expansion-specific scoring rules in one place,
                 // including the current round's phase bonuses for "value if played now" previews.
-                $projected_cards = $context['cards'];
+                $projected_cards = $private_context['cards'];
                 $projected_card = $card;
                 $projected_card['location_arg'] = $private_player_id;
                 $projected_cards[] = $projected_card;
 
-                $projected_dev_to_players = $context['dev_to_players'];
+                $projected_context = $this->getSixCostDevelopmentScoringContext($projected_cards, /*recompute_military=*/true);
+                $projected_dev_to_players = $projected_context['dev_to_players'];
                 $projected_dev_to_players[$card['type']] = $private_player_id;
-                $projected_player_infos = $context['player_infos'];
-                $projected_player_infos[$private_player_id]['player_milforce'] = $this->getMilitaryForceFromCards($projected_cards, $private_player_id)['force'];
+                $projected_player_infos = $projected_context['player_infos'];
                 $projected_bonus = $this->getPhaseBonusForPlacedCard($private_player_id, $projected_card);
                 $projected_player_infos[$private_player_id]['player_prestige'] += $projected_bonus['pr'];
                 $projected_points = $this->cardsToSixDevelopmentsScore(
                     $projected_cards,
                     $projected_dev_to_players,
                     $projected_player_infos,
-                    $context['oort_player'],
-                    $context['oort_value'],
+                    $projected_context['oort_player'],
+                    $projected_context['oort_value'],
                     false
                 );
                 $private_card_scores[$private_player_id][$card['id']] = $projected_points[$card['type']];
@@ -4109,9 +4170,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         return array(
-            'player_totals' => $player_totals,
-            'public_card_scores' => $public_card_scores,
+            'player_totals' => $public_scores['player_totals'],
+            'public_card_scores' => $public_scores['card_scores'],
             'private_card_scores' => $private_card_scores,
+            'private_player_totals' => $private_player_totals,
         );
     }
 
@@ -4122,10 +4184,14 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         if (isset($state['private_card_scores'][$player_id])) {
             $card_scores += $state['private_card_scores'][$player_id];
         }
+        $player_totals = $state['player_totals'];
+        if (isset($state['private_player_totals'][$player_id])) {
+            $player_totals = $state['private_player_totals'][$player_id];
+        }
 
         return array(
             'card_scores' => $card_scores,
-            'player_totals' => $state['player_totals'],
+            'player_totals' => $player_totals,
         );
     }
 
