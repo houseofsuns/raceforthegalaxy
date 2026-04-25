@@ -996,14 +996,20 @@ define([
             },
             buildLiveSixCostDevelopmentTooltipLine: function(node, points) {
                 var label = this.isTableauCardNode(node) ? _("Current value:") : _("Value if played now:");
-                return `<div class="six_cost_development_live_tooltip">${label} <strong>${points}</strong> VP</div>`;
+                return `<div class="variable_point_live_tooltip">${label} <strong>${points}</strong> VP</div>`;
             },
-            buildLiveSixCostDevelopmentBadgeHtml: function(points) {
-                var live_value_class = 'six_cost_development_live_value';
-                if (String(points).length > 1) {
-                    live_value_class += ' six_cost_development_live_value_two_digits';
+            liveSixCostDevelopmentBadgeTypeClass: function(card_type_id) {
+                var card_type = this.gamedatas.card_types[card_type_id];
+                return card_type && card_type.type == 'world' ? 'variable_point_settlement_live_value' : 'variable_point_development_live_value';
+            },
+            buildLiveSixCostDevelopmentBadgeHtml: function(points, card_type_id, id) {
+                var live_value_class = 'variable_point_live_value variable_point_card ' + this.liveSixCostDevelopmentBadgeTypeClass(card_type_id);
+                var value = points === null || typeof points == 'undefined' ? '' : points;
+                var id_attr = id ? ` id="${id}"` : '';
+                if (String(value).length > 1) {
+                    live_value_class += ' variable_point_live_value_two_digits';
                 }
-                return `<div class="${live_value_class}">${points}</div>`;
+                return `<div${id_attr} class="${live_value_class}">${value}</div>`;
             },
             buildCardTooltipCardHtml: function(node) {
                 var card_type_id = node.getAttribute('tooltip_card_type');
@@ -1014,7 +1020,7 @@ define([
                 var card = this.cardBackgroundPos(card_type_id, this.tooltip_card_size);
                 card.card_name = this.gamedatas.card_types[card_type_id].nametr;
                 var points = node.getAttribute('live_six_cost_development_points');
-                card.live_value = points !== null ? this.buildLiveSixCostDevelopmentBadgeHtml(points) : '';
+                card.live_value = points !== null ? this.buildLiveSixCostDevelopmentBadgeHtml(points, card_type_id) : '';
                 return this.format_block('jstpl_tooltip_card', card);
             },
             buildCardTooltipHtml: function(node) {
@@ -1051,22 +1057,22 @@ define([
                     tooltip_target.setAttribute('live_six_cost_development_points', points);
                 }
                 badge.innerHTML = points;
-                dojo.toggleClass(badge, 'six_cost_development_live_value_two_digits', String(points).length > 1);
+                dojo.toggleClass(badge, 'variable_point_live_value_two_digits', String(points).length > 1);
                 dojo.style(badge, 'display', 'flex');
             },
             setLiveSixCostDevelopmentBadge: function(card_id, points) {
-                dojo.query('.six_cost_development_live_value').forEach(function(badge) {
+                dojo.query('.variable_point_live_value').forEach(function(badge) {
                     if (badge.id == 'live_six_cost_development_' + card_id) {
                         this.setLiveSixCostDevelopmentBadgeOnNode(badge, points);
                     }
                 }, this);
             },
             clearLiveSixCostDevBadges: function() {
-                dojo.query('.six_cost_development_live_value').forEach(function(node) {
+                dojo.query('.variable_point_live_value').forEach(function(node) {
                     if (node.parentNode) {
                         node.parentNode.removeAttribute('live_six_cost_development_points');
                     }
-                    dojo.removeClass(node, 'six_cost_development_live_value_two_digits');
+                    dojo.removeClass(node, 'variable_point_live_value_two_digits');
                     dojo.style(node, 'display', 'none');
                 });
             },
@@ -1305,8 +1311,8 @@ define([
                     dojo.place(`<div id="six_dev_${card_id}" class="six_dev">${sixdev_scoring}</div>`, id);
                 }
                 if (this.liveSixCostDevScoringEnabled() && this.hasLiveSixCostDevDisplay(card_type_id)) {
-                    dojo.place(`<div id="live_six_cost_development_${card_id}" class="six_cost_development_live_value"></div>`, id);
-                    this.syncLiveSixCostDevelopmentBadgeForCard(card_id, null, dojo.query('.six_cost_development_live_value', id)[0]);
+                    dojo.place(this.buildLiveSixCostDevelopmentBadgeHtml(null, card_type_id, `live_six_cost_development_${card_id}`), id);
+                    this.syncLiveSixCostDevelopmentBadgeForCard(card_id, null, dojo.query('.variable_point_live_value', id)[0]);
                 }
 
                 dojo.style(id, "background-size", "auto " + this.card_size['h'] * 10 + "px");
