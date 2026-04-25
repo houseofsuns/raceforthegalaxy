@@ -312,12 +312,18 @@ html.new_design {
     transform-origin: top right;
     scale: 75%;
 }
-.card_size_tiny .six_cost_development_live_value {
+.card_size_tiny .variable_point_card {
     top: 12px;
-    left: 25px;
     width: 12px;
     height: 13px;
     font-size: 10px;
+}
+.card_size_tiny .variable_point_development_live_value {
+    left: 25px;
+}
+.card_size_tiny .variable_point_settlement_live_value {
+    left: 25px;
+    width: 14px;
 }
 
 /********** Small **********/
@@ -395,13 +401,20 @@ html.new_design {
     transform-origin: top right;
     scale: 85%;
 }
-.card_size_small .six_cost_development_live_value,
-.card_tooltip_size_small .card_tooltip .six_cost_development_live_value {
+.card_size_small .variable_point_card,
+.card_tooltip_size_small .card_tooltip .variable_point_card {
     top: 14px;
-    left: 29px;
     width: 16px;
     height: 15px;
     font-size: 12px;
+}
+.card_size_small .variable_point_development_live_value,
+.card_tooltip_size_small .card_tooltip .variable_point_development_live_value {
+    left: 29px;
+}
+.card_size_small .variable_point_settlement_live_value,
+.card_tooltip_size_small .card_tooltip .variable_point_settlement_live_value {
+    left: 29.5px;
 }
 
 /********** Medium **********/
@@ -476,13 +489,20 @@ html.new_design {
     top: 47px;
     font-size: 9px;
 }
-.card_size_medium .six_cost_development_live_value,
-.card_tooltip_size_medium .card_tooltip .six_cost_development_live_value {
+.card_size_medium .variable_point_card,
+.card_tooltip_size_medium .card_tooltip .variable_point_card {
     top: 16px;
-    left: 33px;
     width: 19px;
     height: 18px;
     font-size: 14px;
+}
+.card_size_medium .variable_point_development_live_value,
+.card_tooltip_size_medium .card_tooltip .variable_point_development_live_value {
+    left: 33px;
+}
+.card_size_medium .variable_point_settlement_live_value,
+.card_tooltip_size_medium .card_tooltip .variable_point_settlement_live_value {
+    left: 34px;
 }
 
 /********** Large **********/
@@ -560,13 +580,20 @@ html.new_design {
     transform-origin: top right;
     scale: 115%;
 }
-.card_size_large .six_cost_development_live_value,
-.card_tooltip_size_large .card_tooltip .six_cost_development_live_value {
+.card_size_large .variable_point_card,
+.card_tooltip_size_large .card_tooltip .variable_point_card {
     top: 22px;
-    left: 43px;
     width: 23px;
     height: 20px;
     font-size: 18px;
+}
+.card_size_large .variable_point_development_live_value,
+.card_tooltip_size_large .card_tooltip .variable_point_development_live_value {
+    left: 43px;
+}
+.card_size_large .variable_point_settlement_live_value,
+.card_tooltip_size_large .card_tooltip .variable_point_settlement_live_value {
+    left: 44px;
 }
 
 /********** Huge **********/
@@ -633,13 +660,20 @@ html.new_design {
     transform-origin: top right;
     scale: 119%;
 }
-.card_size_huge .six_cost_development_live_value,
-.card_tooltip_size_huge .card_tooltip .six_cost_development_live_value {
+.card_size_huge .variable_point_card,
+.card_tooltip_size_huge .card_tooltip .variable_point_card {
     top: 24.5px;
-    left: 49px;
     width: 30px;
     height: 27px;
     font-size: 22px;
+}
+.card_size_huge .variable_point_development_live_value,
+.card_tooltip_size_huge .card_tooltip .variable_point_development_live_value {
+    left: 49px;
+}
+.card_size_huge .variable_point_settlement_live_value,
+.card_tooltip_size_huge .card_tooltip .variable_point_settlement_live_value {
+    left: 51px;
 }
 
 /********************/
@@ -1033,7 +1067,7 @@ td.six_dev_scoring_name {
     display: block;
 }
 
-.six_cost_development_live_value {
+.variable_point_live_value {
     position: absolute;
     z-index: 2;
     display: none;
@@ -1049,21 +1083,21 @@ td.six_dev_scoring_name {
     clip-path: polygon(25% 4%, 75% 4%, 96% 50%, 75% 96%, 25% 96%, 4% 50%);
 }
 
-.six_cost_development_live_value_two_digits {
+.variable_point_live_value_two_digits {
     font-size: 0.90em;
     letter-spacing: -0.05em;
 }
 
-.card_tooltip .six_cost_development_live_value {
+.card_tooltip .variable_point_live_value {
     display: flex;
 }
 
-.six_cost_development_live_tooltip {
+.variable_point_live_tooltip {
     font-weight: bold;
     text-align: center;
 }
 
-.six_cost_development_live_tooltip strong {
+.variable_point_live_tooltip strong {
     font-size: 1.1em;
 }
 /*** icons ***/
