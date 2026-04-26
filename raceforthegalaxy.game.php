@@ -2540,7 +2540,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 'card_scores' => $state['public_card_scores'],
             );
             // BGA delivers `_private[$player_id]` only to that player, so we can bundle private hand
-            // projections and public tableau values in the same notification.
+            // projections and public tableau values in the same notification. On the client, BGA
+            // flattens that player's payload to `notif.args._private`.
             foreach ($state['private_card_scores'] as $player_id => $card_scores) {
                 if (count($card_scores) == 0) {
                     continue;
@@ -3985,8 +3986,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     function getSixDevelopmentsPoints()
     {
         $context = $this->getSixCostDevelopmentScoringContext(
-            $this->cards->getCardsInLocation('tableau'),
-            /*recompute_military=*/false
+            $this->cards->getCardsInLocation('tableau')
         );
         $dev_to_points = $this->cardsToSixDevelopmentsScore(
             $context['cards'],
@@ -4025,7 +4025,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         return $player_infos;
     }
 
-    private function getSixCostDevelopmentScoringContext($cards, $recompute_military)
+    private function getSixCostDevelopmentScoringContext($cards)
     {
         $dev_to_players = array();
         $oort_player = null;
@@ -4041,10 +4041,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         $player_infos = $this->loadSixCostDevelopmentPlayerInfos();
-        if ($recompute_military) {
-            foreach ($player_infos as $player_id => $player_info) {
-                $player_infos[$player_id]['player_milforce'] = $this->getMilitaryForceFromCards($cards, $player_id)['force'];
-            }
+        foreach ($player_infos as $player_id => $player_info) {
+            $player_infos[$player_id]['player_milforce'] = $this->getMilitaryForceFromCards($cards, $player_id)['force'];
         }
 
         return array(
@@ -4117,7 +4115,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             INNER JOIN card ON card.card_id = player.player_just_played
             WHERE card.card_location = 'tableau'", true);
         $public_cards = $this->getVisibleTableauCards($all_cards, $just_played_by_player);
-        $public_context = $this->getSixCostDevelopmentScoringContext($public_cards, /*recompute_military=*/true);
+        $public_context = $this->getSixCostDevelopmentScoringContext($public_cards);
         $public_scores = $this->getLiveSixCostDevelopmentTableauScores($public_context);
 
         $private_card_scores = array();
@@ -4127,7 +4125,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $visible_player_ids = $visible_player_id === null ? array_keys($public_context['player_infos']) : array($visible_player_id);
         foreach ($visible_player_ids as $private_player_id) {
             $private_cards = $this->getVisibleTableauCards($all_cards, $just_played_by_player, $private_player_id);
-            $private_context = $this->getSixCostDevelopmentScoringContext($private_cards, /*recompute_military=*/true);
+            $private_context = $this->getSixCostDevelopmentScoringContext($private_cards);
             $private_scores = $this->getLiveSixCostDevelopmentTableauScores($private_context);
             if ($private_scores != $public_scores) {
                 $private_card_scores[$private_player_id] = $private_scores['card_scores'];
@@ -4151,7 +4149,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 $projected_card['location_arg'] = $private_player_id;
                 $projected_cards[] = $projected_card;
 
-                $projected_context = $this->getSixCostDevelopmentScoringContext($projected_cards, /*recompute_military=*/true);
+                $projected_context = $this->getSixCostDevelopmentScoringContext($projected_cards);
                 $projected_dev_to_players = $projected_context['dev_to_players'];
                 $projected_dev_to_players[$card['type']] = $private_player_id;
                 $projected_player_infos = $projected_context['player_infos'];

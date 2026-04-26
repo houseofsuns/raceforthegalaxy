@@ -1000,7 +1000,7 @@ define([
             },
             liveSixCostDevelopmentBadgeTypeClass: function(card_type_id) {
                 var card_type = this.gamedatas.card_types[card_type_id];
-                return card_type && card_type.type == 'world' ? 'variable_point_settlement_live_value' : 'variable_point_development_live_value';
+                return card_type && card_type.type == 'world' ? 'variable_point_world_live_value' : 'variable_point_development_live_value';
             },
             buildLiveSixCostDevelopmentBadgeHtml: function(points, card_type_id, id) {
                 var live_value_class = 'variable_point_live_value variable_point_card ' + this.liveSixCostDevelopmentBadgeTypeClass(card_type_id);
@@ -5627,13 +5627,9 @@ define([
                 if (notif.args._private) {
                     if (notif.args._private.card_scores) {
                         state.private_card_scores = notif.args._private.card_scores;
-                    } else if (notif.args._private[this.player_id] && notif.args._private[this.player_id].card_scores) {
-                        state.private_card_scores = notif.args._private[this.player_id].card_scores;
                     }
                     if (notif.args._private.player_totals) {
                         state.player_totals = notif.args._private.player_totals;
-                    } else if (notif.args._private[this.player_id] && notif.args._private[this.player_id].player_totals) {
-                        state.player_totals = notif.args._private[this.player_id].player_totals;
                     }
                 }
                 this.applyLiveSixCostDevState(state, this.currentStateName);
