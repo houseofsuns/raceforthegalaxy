@@ -321,7 +321,7 @@ html.new_design {
 .card_size_tiny .variable_point_development_live_value {
     left: 25px;
 }
-.card_size_tiny .variable_point_settlement_live_value {
+.card_size_tiny .variable_point_world_live_value {
     left: 25px;
     width: 14px;
 }
@@ -412,8 +412,8 @@ html.new_design {
 .card_tooltip_size_small .card_tooltip .variable_point_development_live_value {
     left: 29px;
 }
-.card_size_small .variable_point_settlement_live_value,
-.card_tooltip_size_small .card_tooltip .variable_point_settlement_live_value {
+.card_size_small .variable_point_world_live_value,
+.card_tooltip_size_small .card_tooltip .variable_point_world_live_value {
     left: 29.5px;
 }
 
@@ -500,8 +500,8 @@ html.new_design {
 .card_tooltip_size_medium .card_tooltip .variable_point_development_live_value {
     left: 33px;
 }
-.card_size_medium .variable_point_settlement_live_value,
-.card_tooltip_size_medium .card_tooltip .variable_point_settlement_live_value {
+.card_size_medium .variable_point_world_live_value,
+.card_tooltip_size_medium .card_tooltip .variable_point_world_live_value {
     left: 34px;
 }
 
@@ -591,8 +591,8 @@ html.new_design {
 .card_tooltip_size_large .card_tooltip .variable_point_development_live_value {
     left: 43px;
 }
-.card_size_large .variable_point_settlement_live_value,
-.card_tooltip_size_large .card_tooltip .variable_point_settlement_live_value {
+.card_size_large .variable_point_world_live_value,
+.card_tooltip_size_large .card_tooltip .variable_point_world_live_value {
     left: 44px;
 }
 
@@ -671,8 +671,8 @@ html.new_design {
 .card_tooltip_size_huge .card_tooltip .variable_point_development_live_value {
     left: 49px;
 }
-.card_size_huge .variable_point_settlement_live_value,
-.card_tooltip_size_huge .card_tooltip .variable_point_settlement_live_value {
+.card_size_huge .variable_point_world_live_value,
+.card_tooltip_size_huge .card_tooltip .variable_point_world_live_value {
     left: 51px;
 }
 
