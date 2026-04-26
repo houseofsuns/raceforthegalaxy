@@ -14,6 +14,12 @@
 
 class action_raceforthegalaxy extends APP_GameAction
 {
+    private function startAction()
+    {
+        self::setAjaxMode();
+        $this->game->saveInitialSixCostDevPointsState();
+    }
+
     public function __default()
     {
         if (self::isArg('notifwindow')) {
@@ -26,7 +32,7 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function initialdiscard()
     {
-        self::setAjaxMode();
+        $this->startAction();
 
         $money_raw = self::getArg("cards", AT_numberlist, true);
 
@@ -45,7 +51,7 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function initialdiscardhome()
     {
-        self::setAjaxMode();
+        $this->startAction();
 
         $start_world = self::getArg("start_world", AT_posint, true);
         $cards_raw = self::getArg("cards", AT_numberlist, true);
@@ -66,7 +72,7 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function choosePhase()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $phase = self::getArg("phase", AT_posint, true);
         $bonus = self::getArg("bonus", AT_posint, true);
         $bonuscard = self::getArg("cardbonus", AT_bool, false, false);
@@ -75,34 +81,34 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function cancelPhase()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $this->game->cancelPhase();
         self::ajaxResponse();
     }
     function defeatTakeover()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $choice = self::getArg("choice", AT_bool, true);
         $this->game->defeatTakeover($choice);
         self::ajaxResponse();
     }
     function search()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $category = self::getArg("category", AT_posint, true);
         $this->game->search($category);
         self::ajaxResponse();
     }
     function searchchoose()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $action = self::getArg("actio", AT_posint, true);
         $this->game->searchchoose($action);
         self::ajaxResponse();
     }
     public function exploreCardChoice()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $cards_raw = self::getArg("tokeep", AT_numberlist, true);
 
         // Removing last ';' if exists
@@ -120,20 +126,20 @@ class action_raceforthegalaxy extends APP_GameAction
 
     public function nothingToPlay()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $this->game->nothingToPlay();
         self::ajaxResponse();
     }
     public function playCard()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $card = self::getArg("card", AT_posint, true);
         $this->game->playCard($card);
         self::ajaxResponse();
     }
     public function playCardAndPay()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $card = self::getArg("card", AT_posint, true);
 
         $money_raw = self::getArg("money", AT_numberlist, true);
@@ -203,7 +209,7 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function militarytactics()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $card = self::getArg("card", AT_posint, true);
         $discard_raw = self::getArg("discard", AT_numberlist, false, null);
         // Removing last ';' if exists
@@ -220,7 +226,7 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function prestigeformilitary()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $card = self::getArg("card", AT_posint, true);
         $this->game->prestigeformilitary($card);
         self::ajaxResponse();
@@ -228,14 +234,14 @@ class action_raceforthegalaxy extends APP_GameAction
 
     public function sell()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $card = self::getArg("card", AT_posint, true);
         $this->game->sell($card);
         self::ajaxResponse();
     }
     public function warEffort()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $card = self::getArg("card", AT_posint, true);
         $this->game->warEffort($card);
         self::ajaxResponse();
@@ -244,7 +250,7 @@ class action_raceforthegalaxy extends APP_GameAction
 
     public function consume()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $good = self::getArg("good", AT_alphanum, true);
         $world = self::getArg("world", AT_posint, true);
         $this->game->consume($good, $world);
@@ -252,7 +258,7 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function consumecard()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $cards_raw = self::getArg("cards", AT_numberlist, true);
 
         // Removing last ';' if exists
@@ -271,14 +277,14 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function rviGambling()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $ante = self::getArg("ante_card_id", AT_posint, true);
         $this->game->rviGambling($ante);
         self::ajaxResponse();
     }
     public function consumeprestige()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $consumecard_card_id = self::getArg("consumecard_card_id", AT_posint, true);
 
         $result = $this->game->consumeprestige($consumecard_card_id);
@@ -286,27 +292,27 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function gambling()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $number = self::getArg("gambling", AT_posint, true);
         $this->game->gambling($number);
         self::ajaxResponse();
     }
     public function stopConsumption()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $this->game->stopConsumption();
         self::ajaxResponse();
     }
 
     public function noWindfallProduction()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $this->game->noWindfallProduction();
         self::ajaxResponse();
     }
     public function windfallProduction()
     {
-        self::setAjaxMode();
+        $this->startAction();
 
 
 
@@ -324,7 +330,7 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function produceifdiscard()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $card = self::getArg("card", AT_posint, true);
         $discard = self::getArg("discard", AT_posint, true);
         $this->game->produceifdiscard($card, $discard);
@@ -333,7 +339,7 @@ class action_raceforthegalaxy extends APP_GameAction
 
     public function endRoundDiscard()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $cards_raw = self::getArg("cards", AT_numberlist, true);
 
         // Removing last ';' if exists
@@ -350,7 +356,7 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function developdiscard()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $cards_raw = self::getArg("cards", AT_numberlist, true);
 
         // Removing last ';' if exists
@@ -367,7 +373,7 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function settlediscard()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $cards_raw = self::getArg("cards", AT_numberlist, true);
 
         // Removing last ';' if exists
@@ -384,14 +390,14 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function wormhole()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $result = $this->game->wormhole();
         self::ajaxResponse();
     }
 
     public function discardToPutGood()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $cards_raw = self::getArg("cards", AT_numberlist, true);
 
         // Removing last ';' if exists
@@ -408,7 +414,7 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function goodForMilitary()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $card_id = self::getArg("card", AT_posint, true);
         $good_id = self::getArg("good", AT_alphanum, true);
         $result = $this->game->goodForMilitary($card_id, $good_id);
@@ -418,7 +424,7 @@ class action_raceforthegalaxy extends APP_GameAction
 
     public function exploreDiscard()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $cards_raw = self::getArg("cards", AT_numberlist, true);
 
         // Removing last ';' if exists
@@ -436,7 +442,7 @@ class action_raceforthegalaxy extends APP_GameAction
 
     public function draft()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $card = self::getArg("card", AT_posint, true);
         $this->game->draft($card);
         self::ajaxResponse();
@@ -444,7 +450,7 @@ class action_raceforthegalaxy extends APP_GameAction
 
     public function takeover()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $card = self::getArg("card", AT_posint, true);
         $target = self::getArg("target", AT_posint, true);
         $confirmed = self::getArg("confirmed", AT_bool, true);
@@ -454,14 +460,14 @@ class action_raceforthegalaxy extends APP_GameAction
 
     public function noMoreBoost()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $this->game->noMoreBoost();
         self::ajaxResponse();
     }
 
     public function changeOortType()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $kind = self::getArg("kind", AT_posint, true);
         $this->game->changeOortType($kind);
         self::ajaxResponse();
@@ -469,7 +475,7 @@ class action_raceforthegalaxy extends APP_GameAction
 
     public function playOrbCard()
     {
-        self::setAjaxMode();
+        $this->startAction();
 
         $card = self::getArg("card", AT_posint, true);
         $x = self::getArg("x", AT_int, true);
@@ -484,7 +490,7 @@ class action_raceforthegalaxy extends APP_GameAction
 
     public function moveTeam()
     {
-        self::setAjaxMode();
+        $this->startAction();
 
         $x = self::getArg("x", AT_int, true);
         $y = self::getArg("y", AT_int, true);
@@ -495,7 +501,7 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function moveTeamSelect()
     {
-        self::setAjaxMode();
+        $this->startAction();
 
         $team_id = self::getArg("id", AT_posint, true);
 
@@ -507,7 +513,7 @@ class action_raceforthegalaxy extends APP_GameAction
 
     public function placeTeam()
     {
-        self::setAjaxMode();
+        $this->startAction();
 
         $x = self::getArg("x", AT_int, true);
         $y = self::getArg("y", AT_int, true);
@@ -519,31 +525,31 @@ class action_raceforthegalaxy extends APP_GameAction
 
     public function orbdraw()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $this->game->orbdraw();
         self::ajaxResponse();
     }
     public function orbpass()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $this->game->orbpass();
         self::ajaxResponse();
     }
     public function orbskip()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $this->game->orbskip();
         self::ajaxResponse();
     }
     public function orbstop()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $this->game->orbstop();
         self::ajaxResponse();
     }
     public function orbendmoveaction()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $this->game->orbendmoveaction();
         self::ajaxResponse();
     }
@@ -551,7 +557,7 @@ class action_raceforthegalaxy extends APP_GameAction
 
     public function useArtefact()
     {
-        self::setAjaxMode();
+        $this->startAction();
 
         $artifact_id = self::getArg("artifact", AT_posint, true);
         $reason = self::getArg("reason", AT_alphanum, true);
@@ -562,7 +568,7 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function orbBackToSas()
     {
-        self::setAjaxMode();
+        $this->startAction();
 
         $team_id = self::getArg("team", AT_posint, true);
         $x = self::getArg("x", AT_int, true);
@@ -574,27 +580,27 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function bunker()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $card_id = self::getArg('card', AT_posint, true);
         $this->game->bunker($card_id);
         self::ajaxResponse();
     }
     public function xenoDonotrepulse()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $this->game->xenoDonotrepulse();
         self::ajaxResponse();
     }
     public function chooseDamage()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $card_id = self::getArg('card', AT_posint, true);
         $this->game->chooseDamage($card_id);
         self::ajaxResponse();
     }
     public function repairDamaged()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $card_id = self::getArg('card', AT_posint, true);
 
         $cards_raw = self::getArg("discard_id", AT_numberlist, true);
@@ -616,14 +622,14 @@ class action_raceforthegalaxy extends APP_GameAction
     }
     public function drawForEachWorld()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $card_id = self::getArg('card', AT_posint, true);
         $this->game->drawForEachWorld($card_id);
         self::ajaxResponse();
     }
     public function drawForEachGood()
     {
-        self::setAjaxMode();
+        $this->startAction();
         $card_id = self::getArg('card', AT_posint, true);
         $this->game->drawForEachGood($card_id);
         self::ajaxResponse();

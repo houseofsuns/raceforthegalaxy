@@ -58,6 +58,8 @@ define([
                 this.prestige_action = false;
                 this.phases_chosen = 0;
                 this.current_phase_choices = null;
+                this.currentStateName = null;
+                this.hideLiveSixCostDevPlayerTotals = false;
                 this.pending_phase_choice = {};
                 this.tooltips = {};
                 this.tooltipsInfos = {};
@@ -313,6 +315,14 @@ define([
                     this.tooltipsInfos[id].hideOnHoverEvt = dojo.connect($('dijit__MasterTooltip_0'), 'onmouseenter', tooltip, 'close');
                   }
                 }));
+            },
+            destroyManagedTooltip: function(nodeId) {
+                var tooltip = this.tooltips[nodeId];
+                var node = $(nodeId);
+                tooltip.close(node);
+                tooltip.destroy();
+                delete this.tooltips[nodeId];
+                delete this.tooltipsInfos[nodeId];
             },
             addTooltip: function(nodeId, helpStringTranslated, actionStringTranslated, delay) {
                 if (!this.isTouchInterface()) {
@@ -838,6 +848,9 @@ define([
                 dojo.query('.prestigeleadercount').forEach(dojo.hitch(this, function(node) {
                     node.innerHTML = this.gamedatas.prestigeleadercount;
                 }));
+                this.currentStateName = this.gamedatas.gamestate.name;
+                this.hideLiveSixCostDevPlayerTotals = this.isEndgameForLiveSixCostDevTotals(this.currentStateName);
+                this.refreshLiveSixCostDevDisplay(this.currentStateName);
             },
             initPreferences: function() {
                 console.log("user preferences");
@@ -916,6 +929,232 @@ define([
                     case "6":
                         this.tooltip_delay = 1000;
                         break;
+                }
+            },
+
+            liveSixCostDevScoringEnabled: function() {
+                return this.bga.userPreferences.get(11).toString() == '1';
+            },
+            isEndgameForLiveSixCostDevTotals: function(stateName) {
+                var name = stateName || this.currentStateName || this.gamedatas.gamestate.name;
+                return ['gameEndScore', 'gameEnd'].indexOf(name) !== -1;
+            },
+            shouldShowLiveSixCostDevBadges: function(stateName) {
+                var name = stateName || this.currentStateName || this.gamedatas.gamestate.name;
+                return ['gameSetup', 'draftNewRound', 'draft', 'draftNextCard', 'initialDiscard', 'initialDiscardHomeWorld'].indexOf(name) === -1;
+            },
+            setHideLiveSixCostDevPlayerTotals: function(hidden) {
+                if (this.hideLiveSixCostDevPlayerTotals == hidden) {
+                    return;
+                }
+                this.hideLiveSixCostDevPlayerTotals = hidden;
+                for (var player_id in this.gamedatas.players) {
+                    this.updateDisplayedPlayerScore(player_id, this.currentStateName);
+                }
+            },
+
+            extractCardId: function(node_id) {
+                var match = node_id.match(/(\d+)$/);
+                return match ? toint(match[1]) : null;
+            },
+
+            hasLiveSixCostDevDisplay: function(card_type_id) {
+                var card_type = this.gamedatas.card_types[card_type_id];
+                return card_type && typeof card_type.sixdev_scoring != 'undefined';
+            },
+            returnCardToHand: function(card) {
+                var from = $('card_wrapper_' + card.id);
+                var hand_parent = $('player_hand');
+                this.destroyManagedTooltip('card_' + card.id);
+                this.playerHand.addToStockWithId(card.type, card.id);
+                var hand_item = $('player_hand_item_' + card.id);
+                var hand_box = dojo.position(hand_item);
+                var hand_parent_box = dojo.position(hand_parent);
+                var target_x = hand_box.x - hand_parent_box.x;
+                var target_y = hand_box.y - hand_parent_box.y;
+
+                dojo.style(hand_item, 'visibility', 'hidden');
+                this.attachToNewParentNoDestroy(from, hand_parent);
+                dojo.addClass(from, 'rftg_animating_card');
+
+                var anim = this.slideToObjectPos(from, hand_parent, target_x, target_y);
+                dojo.connect(anim, 'onEnd', this, function() {
+                    dojo.style(hand_item, 'visibility', 'visible');
+                    dojo.removeClass(from, 'rftg_animating_card');
+                    dojo.destroy(from);
+                });
+                anim.play();
+            },
+            moveHandCardToTableau: function(card) {
+                this.destroyManagedTooltip('player_hand_item_' + card.id);
+                this.addCardToTableau(card, 'player_hand_item_' + card.id);
+                // removeFromStockById tears down player_hand_item_<id> after we animate from it.
+                this.playerHand.removeFromStockById(card.id);
+            },
+            isTableauCardNode: function(node) {
+                return /^card_\d+$/.test(node.id);
+            },
+            buildLiveSixCostDevelopmentTooltipLine: function(node, points) {
+                var label = this.isTableauCardNode(node) ? _("Current value:") : _("Value if played now:");
+                return `<div class="variable_point_live_tooltip">${label} <strong>${points}</strong> VP</div>`;
+            },
+            liveSixCostDevelopmentBadgeTypeClass: function(card_type_id) {
+                var card_type = this.gamedatas.card_types[card_type_id];
+                return card_type && card_type.type == 'world' ? 'variable_point_world_live_value' : 'variable_point_development_live_value';
+            },
+            buildLiveSixCostDevelopmentBadgeHtml: function(points, card_type_id, id) {
+                var live_value_class = 'variable_point_live_value variable_point_card ' + this.liveSixCostDevelopmentBadgeTypeClass(card_type_id);
+                var value = points === null || typeof points == 'undefined' ? '' : points;
+                var id_attr = id ? ` id="${id}"` : '';
+                if (String(value).length > 1) {
+                    live_value_class += ' variable_point_live_value_two_digits';
+                }
+                return `<div${id_attr} class="${live_value_class}">${value}</div>`;
+            },
+            buildCardTooltipCardHtml: function(node) {
+                var card_type_id = node.getAttribute('tooltip_card_type');
+                if (!card_type_id || !this.tooltip_card_size) {
+                    return '';
+                }
+
+                var card = this.cardBackgroundPos(card_type_id, this.tooltip_card_size);
+                card.card_name = this.gamedatas.card_types[card_type_id].nametr;
+                var points = node.getAttribute('live_six_cost_development_points');
+                card.live_value = points !== null ? this.buildLiveSixCostDevelopmentBadgeHtml(points, card_type_id) : '';
+                return this.format_block('jstpl_tooltip_card', card);
+            },
+            buildCardTooltipHtml: function(node) {
+                var tooltip = node.getAttribute('tooltip');
+
+                if (node.hasAttribute('oort')) {
+                    tooltip = tooltip.replace(/OORT_KIND/, _('Current kind:') + node.getAttribute('oort') + '<hr/>');
+                }
+
+                if (node.hasAttribute('live_six_cost_development_points')) {
+                    tooltip += '<hr/>' + this.buildLiveSixCostDevelopmentTooltipLine(node, node.getAttribute('live_six_cost_development_points'));
+                }
+
+                if (node.hasAttribute('tooltip_card_type')) {
+                    tooltip += '<hr/>' + this.buildCardTooltipCardHtml(node);
+                }
+
+                tooltip += '</div>';
+                return tooltip;
+            },
+            setLiveSixCostDevelopmentBadgeOnNode: function(badge, points) {
+                if (!badge) {
+                    return;
+                }
+                var tooltip_target = badge.parentNode;
+                if (points === null || typeof points == 'undefined') {
+                    if (tooltip_target) {
+                        tooltip_target.removeAttribute('live_six_cost_development_points');
+                    }
+                    dojo.style(badge, 'display', 'none');
+                    return;
+                }
+                if (tooltip_target) {
+                    tooltip_target.setAttribute('live_six_cost_development_points', points);
+                }
+                badge.innerHTML = points;
+                dojo.toggleClass(badge, 'variable_point_live_value_two_digits', String(points).length > 1);
+                dojo.style(badge, 'display', 'flex');
+            },
+            setLiveSixCostDevelopmentBadge: function(card_id, points) {
+                dojo.query('.variable_point_live_value').forEach(function(badge) {
+                    if (badge.id == 'live_six_cost_development_' + card_id) {
+                        this.setLiveSixCostDevelopmentBadgeOnNode(badge, points);
+                    }
+                }, this);
+            },
+            clearLiveSixCostDevBadges: function() {
+                dojo.query('.variable_point_live_value').forEach(function(node) {
+                    if (node.parentNode) {
+                        node.parentNode.removeAttribute('live_six_cost_development_points');
+                    }
+                    dojo.removeClass(node, 'variable_point_live_value_two_digits');
+                    dojo.style(node, 'display', 'none');
+                });
+            },
+            getLiveSixCostDevelopmentPointsForCard: function(card_id) {
+                var state = this.gamedatas.live_six_cost_development_state;
+                if (!state) {
+                    return null;
+                }
+                if (state.card_scores && typeof state.card_scores[card_id] != 'undefined') {
+                    return state.card_scores[card_id];
+                }
+                if (state.private_card_scores && typeof state.private_card_scores[card_id] != 'undefined') {
+                    return state.private_card_scores[card_id];
+                }
+                return null;
+            },
+            syncLiveSixCostDevelopmentBadgeForCard: function(card_id, stateName, badge) {
+                if (!this.liveSixCostDevScoringEnabled()
+                    || !this.shouldShowLiveSixCostDevBadges(stateName)) {
+                    return;
+                }
+                var points = this.getLiveSixCostDevelopmentPointsForCard(card_id);
+                if (points === null) {
+                    return;
+                }
+                if (badge) {
+                    this.setLiveSixCostDevelopmentBadgeOnNode(badge, points);
+                } else {
+                    this.setLiveSixCostDevelopmentBadge(card_id, points);
+                }
+            },
+            updateDisplayedPlayerScore: function(player_id, stateName) {
+                var player = this.gamedatas.players[player_id];
+                // `player.score` stays as the real server score; the live preference only overlays
+                // the not-yet-scored six-cost-development value in the player panel.
+                var displayed_score = toint(player.score);
+                if (this.liveSixCostDevScoringEnabled()
+                    && !this.hideLiveSixCostDevPlayerTotals
+                    && !this.isEndgameForLiveSixCostDevTotals(stateName)) {
+                    displayed_score += toint(player.six_cost_development_vp || 0);
+                }
+                this.bga.playerPanels.getScoreCounter(player_id).toValue(displayed_score);
+            },
+            refreshLiveSixCostDevDisplay: function(stateName) {
+                if (this.liveSixCostDevScoringEnabled() && this.gamedatas.live_six_cost_development_state) {
+                    this.applyLiveSixCostDevState(this.gamedatas.live_six_cost_development_state, stateName);
+                } else {
+                    this.clearLiveSixCostDevBadges();
+                    for (var player_id in this.gamedatas.players) {
+                        this.updateDisplayedPlayerScore(player_id, stateName);
+                    }
+                }
+            },
+
+            applyLiveSixCostDevState: function(state, stateName) {
+                this.gamedatas.live_six_cost_development_state = state;
+                this.clearLiveSixCostDevBadges();
+
+                for (var player_id in this.gamedatas.players) {
+                    this.gamedatas.players[player_id].six_cost_development_vp = (state.player_totals && state.player_totals[player_id]) || 0;
+                    this.updateDisplayedPlayerScore(player_id, stateName);
+                }
+
+                if (!this.shouldShowLiveSixCostDevBadges(stateName)) {
+                    return;
+                }
+
+                // Public tableau values and private hand/explore projections arrive separately from
+                // the server; merge them so badge rendering does not care where a score came from.
+                var private_card_scores = state.private_card_scores || {};
+                var merged_card_scores = {};
+                if (state.card_scores) {
+                    for (var card_id in state.card_scores) {
+                        merged_card_scores[card_id] = state.card_scores[card_id];
+                    }
+                }
+                for (var private_card_id in private_card_scores) {
+                    merged_card_scores[private_card_id] = private_card_scores[private_card_id];
+                }
+
+                for (var merged_card_id in merged_card_scores) {
+                    this.setLiveSixCostDevelopmentBadge(merged_card_id, merged_card_scores[merged_card_id]);
                 }
             },
 
@@ -1059,11 +1298,7 @@ define([
                 var sixdev_scoring = card_type.sixdev_scoring;
 
                 // Add card content
-                var card_id = '';
-                if (typeof div_id != 'undefined') {
-                    // player_hand_item_XX
-                    var card_id = div_id.substr(17);
-                }
+                var card_id = this.extractCardId(typeof div_id != 'undefined' ? div_id : id);
                 dojo.place(`<div class="cardname"><span>${card_name}</span></div><div class="cardcross"/><div id="scavengericon_${card_id}" class="scavengericon"/>`, id);
 
                 if (card_type_id == 181) {
@@ -1075,16 +1310,17 @@ define([
                     tooltip += '<hr/>' + sixdev_scoring;
                     dojo.place(`<div id="six_dev_${card_id}" class="six_dev">${sixdev_scoring}</div>`, id);
                 }
+                if (this.liveSixCostDevScoringEnabled() && this.hasLiveSixCostDevDisplay(card_type_id)) {
+                    dojo.place(this.buildLiveSixCostDevelopmentBadgeHtml(null, card_type_id, `live_six_cost_development_${card_id}`), id);
+                    this.syncLiveSixCostDevelopmentBadgeForCard(card_id, null, dojo.query('.variable_point_live_value', id)[0]);
+                }
 
                 dojo.style(id, "background-size", "auto " + this.card_size['h'] * 10 + "px");
                 dojo.style(id, "border-radius", this.card_size['r'] + "px");
                 $(id).setAttribute('tooltip', tooltip);
 
                 if (this.tooltip_card_size) {
-                    var card = this.cardBackgroundPos(card_type_id, this.tooltip_card_size);
-                    card['card_name'] = card_name;
-                    var tooltip_card = this.format_block('jstpl_tooltip_card', card);
-                    $(id).setAttribute('tooltip_card', tooltip_card);
+                    $(id).setAttribute('tooltip_card_type', card_type_id);
                 }
 
                 // Oort
@@ -1094,6 +1330,9 @@ define([
                 }
 
                 this.tooltips[id] = this.createManagedTooltipForNode($(id), dojo.hitch(this, function(node) {
+                        if (dojo.hasClass(node, 'rftg_suppress_tooltip')) {
+                            return;
+                        }
                         // If we're trading, don't show the tooltip to not disrupt the price tooltip from the good.
                         // On mobile, if we're consuming, don't show the tooltip, it's triggered by tapping the good.
                         var price = false;
@@ -1106,22 +1345,7 @@ define([
                         {
                             return;
                         }
-
-                        var tooltip = node.getAttribute('tooltip');
-
-                        // Add oort current kind
-                        if (node.hasAttribute('oort')) {
-                            tooltip = tooltip.replace(/OORT_KIND/, _('Current kind:') + node.getAttribute('oort') +'<hr/>');
-                        }
-
-                        // Add card image
-                        if (node.hasAttribute('tooltip_card')) {
-                            tooltip += '<hr/>' + node.getAttribute('tooltip_card');
-                        }
-
-                        tooltip += '</div>';
-                        return tooltip;
-
+                        return this.buildCardTooltipHtml(node);
                     }), this.tooltip_delay);
                 this.attachDesktopTooltipHoverClose(id, this.tooltips[id]);
 
@@ -1303,8 +1527,13 @@ define([
                 }
 
                 if (from != null) {
+                    dojo.addClass($('card_' + card.id), 'rftg_suppress_tooltip');
                     this.placeOnObject($('card_' + card.id), from);
-                    this.slideToObject(('card_' + card.id), ('card_wrapper_' + card.id)).play();
+                    var anim = this.slideToObject(('card_' + card.id), ('card_wrapper_' + card.id));
+                    dojo.connect(anim, 'onEnd', this, function() {
+                        dojo.removeClass($('card_' + card.id), 'rftg_suppress_tooltip');
+                    });
+                    anim.play();
                 }
 
                 if (card.damaged) {
@@ -1332,8 +1561,13 @@ define([
                     dojo.connect($('card_' + card.id), 'onclick', this, 'onClickOnOpponentCardOnTableau');
                 }
 
+                dojo.addClass($('card_' + card.id), 'rftg_suppress_tooltip');
                 this.placeOnObject($('card_' + card.id), from);
-                this.slideToObject(('card_' + card.id), ('card_wrapper_' + card.id)).play();
+                var anim = this.slideToObject(('card_' + card.id), ('card_wrapper_' + card.id));
+                dojo.connect(anim, 'onEnd', this, function() {
+                    dojo.removeClass($('card_' + card.id), 'rftg_suppress_tooltip');
+                });
+                anim.play();
                 dojo.destroy(from);
 
                 this.updateVulnerabilities();
@@ -1817,6 +2051,9 @@ define([
                 console.log('Entering state: ' + stateName);
                 console.log(args);
 
+                this.currentStateName = stateName;
+                this.refreshLiveSixCostDevDisplay(stateName);
+
                 switch (stateName) {
                     case 'initialDiscardHomeWorld':
                         dojo.style('my_deck_wrap', 'display', 'none');
@@ -1984,8 +2221,7 @@ define([
                         // This is necessary as the onDontPay is not triggered by a notification.
                         if (this.nextCardToPlay) {
                             dojo.query('.nextCardToPlay').removeClass('nextCardToPlay');
-                            this.playerHand.addToStockWithId(this.nextCardToPlay.type, this.nextCardToPlay.id, $('card_' + this.nextCardToPlay.id));
-                            dojo.destroy($('card_wrapper_' + this.nextCardToPlay.id));
+                            this.returnCardToHand(this.nextCardToPlay);
                             $('tableau_nbr_' + this.player_id).innerHTML = toint($('tableau_nbr_' + this.player_id).innerHTML) - 1;
                         }
 
@@ -3122,8 +3358,7 @@ define([
             onDontPay: function() {
                 console.log("onDontPay");
                 if (this.nextCardToPlay) {
-                    this.playerHand.addToStockWithId(this.nextCardToPlay.type, this.nextCardToPlay.id, $('card_' + this.nextCardToPlay.id));
-                    dojo.destroy($('card_wrapper_' + this.nextCardToPlay.id));
+                    this.returnCardToHand(this.nextCardToPlay);
                     $('tableau_nbr_' + this.player_id).innerHTML = toint($('tableau_nbr_' + this.player_id).innerHTML) - 1;
                 }
 
@@ -4773,6 +5008,7 @@ define([
 
                 dojo.subscribe('updateCardCount', this, "notif_updateCardCount");
                 dojo.subscribe('updateScore', this, "notif_updateScore");
+                dojo.subscribe('updateSixCostDevelopmentVp', this, "notif_updateSixCostDevelopmentVp");
                 dojo.subscribe('consume', this, "notif_consume");
                 dojo.subscribe('tranship', this, "notif_tranship");
 
@@ -5048,8 +5284,7 @@ define([
                 // This is necessary as the onDontPay is not triggered by a notification.
                 if (this.nextCardToPlay) {
                     dojo.query('.nextCardToPlay').removeClass('nextCardToPlay');
-                    this.playerHand.addToStockWithId(this.nextCardToPlay.type, this.nextCardToPlay.id, $('card_' + this.nextCardToPlay.id));
-                    dojo.destroy($('card_wrapper_' + this.nextCardToPlay.id));
+                    this.returnCardToHand(this.nextCardToPlay);
                     $('tableau_nbr_' + this.player_id).innerHTML = toint($('tableau_nbr_' + this.player_id).innerHTML) - 1;
                 }
 
@@ -5092,11 +5327,8 @@ define([
                 this.onUpdatePageTitle();
                 this.onUpdateActionButtons(this.gamedatas.gamestate.name, this.gamedatas.gamestate.args);
 
-                // Move this card to tableau
-                this.addCardToTableau(notif.args.card, $('player_hand_item_' + notif.args.card.id));
-                this.playerHand.removeFromStockById(notif.args.card.id);
-                // ... display it immediately
-                dojo.destroy('player_hand_item_' + notif.args.card.id);
+                // Move this card to tableau.
+                this.moveHandCardToTableau(notif.args.card);
                 dojo.addClass($('card_' + notif.args.card.id), 'nextCardToPlay');
 
                 if(this.nextCardToPlay.type == 220 && (this.immediateAlternatives === null || this.immediateAlternatives.length === 0)) {
@@ -5120,9 +5352,7 @@ define([
 
                     if(notif.args.immediate) {
                         // notif_cardcost was not executed in this branch, so we need to add the relevant pieces
-                        this.addCardToTableau(notif.args.card, $('player_hand_item_' + notif.args.card.id));
-                        this.playerHand.removeFromStockById(notif.args.card.id);
-                        dojo.destroy('player_hand_item_' + notif.args.card.id);
+                        this.moveHandCardToTableau(notif.args.card);
                     }
 
                     if (notif.args.need_scavenging) {
@@ -5357,8 +5587,9 @@ define([
             notif_updateScore: function(notif) {
                 console.log('notif_updateScore');
                 console.log(notif);
-                this.bga.playerPanels.getScoreCounter(notif.args.player_id).toValue(toint(notif.args.score));
-                if (notif.args.vp) {
+                this.gamedatas.players[notif.args.player_id].score = toint(notif.args.score);
+                this.updateDisplayedPlayerScore(notif.args.player_id);
+                if (typeof notif.args.vp != 'undefined') {
                     $('vp_nbr_' + notif.args.player_id).innerHTML = notif.args.vp;
                 }
                 if (notif.args.vp_delta) {
@@ -5387,6 +5618,25 @@ define([
                     this.slideToObjectPos('repulse_value_arrow', 'xeno_repulse_track', coord['x'], coord['y']).play();
 
                 }
+            },
+            notif_updateSixCostDevelopmentVp: function(notif) {
+                if (!this.liveSixCostDevScoringEnabled()) {
+                    this.clearLiveSixCostDevBadges();
+                    return;
+                }
+                var state = {
+                    player_totals: notif.args.player_totals || {},
+                    card_scores: notif.args.card_scores || {}
+                };
+                if (notif.args._private) {
+                    if (notif.args._private.card_scores) {
+                        state.private_card_scores = notif.args._private.card_scores;
+                    }
+                    if (notif.args._private.player_totals) {
+                        state.player_totals = notif.args._private.player_totals;
+                    }
+                }
+                this.applyLiveSixCostDevState(state, this.currentStateName);
             },
             notif_updatePrestige: function(notif) {
                 $('prestige_nbr_' + notif.args.player_id).innerHTML = notif.args.prestige;
