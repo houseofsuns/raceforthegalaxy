@@ -5629,11 +5629,17 @@ define([
                     card_scores: notif.args.card_scores || {}
                 };
                 if (notif.args._private) {
-                    if (notif.args._private.card_scores) {
-                        state.private_card_scores = notif.args._private.card_scores;
+                    var private_args = notif.args._private;
+                    // BGA framework versions have used both flattened and player-indexed
+                    // private payloads for notifications.
+                    if (private_args && typeof private_args[this.player_id] != 'undefined') {
+                        private_args = private_args[this.player_id];
                     }
-                    if (notif.args._private.player_totals) {
-                        state.player_totals = notif.args._private.player_totals;
+                    if (private_args && private_args.card_scores) {
+                        state.private_card_scores = private_args.card_scores;
+                    }
+                    if (private_args && private_args.player_totals) {
+                        state.player_totals = private_args.player_totals;
                     }
                 }
                 this.applyLiveSixCostDevState(state, this.currentStateName);
