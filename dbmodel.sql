@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS `card` (
   `card_type_arg` int(11) NOT NULL,
   `card_location` varchar(16) NOT NULL,
   `card_location_arg` int(11) NOT NULL,
-  `card_status` smallint(5) NOT NULL COMMENT '0=nothing,>0=in use,-1=used (or good type for goods)',
+  `card_status` smallint(5) NOT NULL COMMENT '0=nothing,>0=in use,-1=used (or good type for goods)' DEFAULT '0',
   `card_played_round` smallint(3) NOT NULL DEFAULT '-1' COMMENT 'TODO:use',
   `card_played_phase` smallint(3) NOT NULL DEFAULT '-1' COMMENT 'TODO:use',
   `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1' COMMENT 'TODO:use',
@@ -27,7 +27,7 @@ ALTER TABLE `player` ADD `player_vp` INT UNSIGNED NOT NULL DEFAULT '0';
 ALTER TABLE `player` ADD `player_prestige` INT UNSIGNED NOT NULL DEFAULT '0';
 ALTER TABLE `player` ADD `player_search` INT UNSIGNED NOT NULL DEFAULT '0';
 ALTER TABLE `player` ADD `player_milforce` INT NOT NULL DEFAULT '0';
-ALTER TABLE `player` ADD `player_tmp_milforce` SMALLINT UNSIGNED NOT NULL ,
+ALTER TABLE `player` ADD `player_tmp_milforce` SMALLINT UNSIGNED NOT NULL DEFAULT '0',
 ADD `player_consumed_types` VARCHAR( 128 ) NULL DEFAULT NULL ;
 ALTER TABLE `player` ADD  `player_takeover_target` INT UNSIGNED NULL DEFAULT NULL;
 ALTER TABLE `player` ADD  `player_startworld` INT NULL DEFAULT NULL;

@@ -194,6 +194,14 @@ html.new_design {
     cursor: pointer;
 }
 
+.rftg_animating_card {
+    z-index: 20 !important;
+}
+
+.rftg_suppress_tooltip {
+    pointer-events: none;
+}
+
 .cardname, .cardname_tooltip {
     position: absolute;
     display: flex;
@@ -304,6 +312,19 @@ html.new_design {
     transform-origin: top right;
     scale: 75%;
 }
+.card_size_tiny .variable_point_card {
+    top: 12px;
+    width: 12px;
+    height: 13px;
+    font-size: 10px;
+}
+.card_size_tiny .variable_point_development_live_value {
+    left: 25px;
+}
+.card_size_tiny .variable_point_world_live_value {
+    left: 25px;
+    width: 14px;
+}
 
 /********** Small **********/
 .card_size_small .card,
@@ -380,6 +401,21 @@ html.new_design {
     transform-origin: top right;
     scale: 85%;
 }
+.card_size_small .variable_point_card,
+.card_tooltip_size_small .card_tooltip .variable_point_card {
+    top: 14px;
+    width: 16px;
+    height: 15px;
+    font-size: 12px;
+}
+.card_size_small .variable_point_development_live_value,
+.card_tooltip_size_small .card_tooltip .variable_point_development_live_value {
+    left: 29px;
+}
+.card_size_small .variable_point_world_live_value,
+.card_tooltip_size_small .card_tooltip .variable_point_world_live_value {
+    left: 29.5px;
+}
 
 /********** Medium **********/
 .card_size_medium .card,
@@ -452,6 +488,21 @@ html.new_design {
     right: 12px;
     top: 47px;
     font-size: 9px;
+}
+.card_size_medium .variable_point_card,
+.card_tooltip_size_medium .card_tooltip .variable_point_card {
+    top: 16px;
+    width: 19px;
+    height: 18px;
+    font-size: 14px;
+}
+.card_size_medium .variable_point_development_live_value,
+.card_tooltip_size_medium .card_tooltip .variable_point_development_live_value {
+    left: 33px;
+}
+.card_size_medium .variable_point_world_live_value,
+.card_tooltip_size_medium .card_tooltip .variable_point_world_live_value {
+    left: 34px;
 }
 
 /********** Large **********/
@@ -529,6 +580,21 @@ html.new_design {
     transform-origin: top right;
     scale: 115%;
 }
+.card_size_large .variable_point_card,
+.card_tooltip_size_large .card_tooltip .variable_point_card {
+    top: 22px;
+    width: 23px;
+    height: 20px;
+    font-size: 18px;
+}
+.card_size_large .variable_point_development_live_value,
+.card_tooltip_size_large .card_tooltip .variable_point_development_live_value {
+    left: 43px;
+}
+.card_size_large .variable_point_world_live_value,
+.card_tooltip_size_large .card_tooltip .variable_point_world_live_value {
+    left: 44px;
+}
 
 /********** Huge **********/
 .card_size_huge .card,
@@ -593,6 +659,21 @@ html.new_design {
     font-size: 10px;
     transform-origin: top right;
     scale: 119%;
+}
+.card_size_huge .variable_point_card,
+.card_tooltip_size_huge .card_tooltip .variable_point_card {
+    top: 24.5px;
+    width: 30px;
+    height: 27px;
+    font-size: 22px;
+}
+.card_size_huge .variable_point_development_live_value,
+.card_tooltip_size_huge .card_tooltip .variable_point_development_live_value {
+    left: 49px;
+}
+.card_size_huge .variable_point_world_live_value,
+.card_tooltip_size_huge .card_tooltip .variable_point_world_live_value {
+    left: 51px;
 }
 
 /********************/
@@ -984,6 +1065,40 @@ td.six_dev_scoring_name {
 .sixdev_scoring_hover_tap .card:hover .six_dev,
 .sixdev_scoring_yes .six_dev {
     display: block;
+}
+
+.variable_point_live_value {
+    position: absolute;
+    z-index: 2;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: #a97822;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    pointer-events: none;
+    background: white;
+    clip-path: polygon(25% 4%, 75% 4%, 96% 50%, 75% 96%, 25% 96%, 4% 50%);
+}
+
+.variable_point_live_value_two_digits {
+    font-size: 0.90em;
+    letter-spacing: -0.05em;
+}
+
+.card_tooltip .variable_point_live_value {
+    display: flex;
+}
+
+.variable_point_live_tooltip {
+    font-weight: bold;
+    text-align: center;
+}
+
+.variable_point_live_tooltip strong {
+    font-size: 1.1em;
 }
 /*** icons ***/
 .icon {

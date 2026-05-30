@@ -55,5 +55,8 @@ $gameinfos = array(
     //  maximum possible value: 740 (ie: your game interface should fit with a 740px width (correspond to a 1024px screen)
     //  minimum possible value: 320 (the lowest value you specify, the better the display is on mobile)
     'min' => 650,
+    // Prevent mobile devices from resizing text.  Without this, things like
+    // card titles are sometimes displayed bigger than they should be.
+    'autoscale' => 'viewport',
 ),
 );

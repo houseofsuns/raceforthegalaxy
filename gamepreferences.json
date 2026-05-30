@@ -180,5 +180,18 @@
                 "name": "Never"
             }
         }
+    },
+    "11": {
+        "name": "Live variable-point card VP display",
+        "needReload": true,
+        "values": {
+            "0": {
+                "name": "Off"
+            },
+            "1": {
+                "name": "On"
+            }
+        },
+        "default": 1
     }
 }
