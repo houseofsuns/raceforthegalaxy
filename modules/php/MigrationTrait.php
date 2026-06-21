@@ -465,8 +465,7 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
                 }
             }
         }
-        if ($from_version <= 2606000000) {
-            # FIXME adjust version above
+        if ($from_version <= 2605301021) {
             $sql = "ALTER TABLE `DBPREFIX_player`
 ADD `player_consumed_types_by_card` TEXT NULL DEFAULT NULL;";
             self::applyDbUpgradeToAllDB($sql);
