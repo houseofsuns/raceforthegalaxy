@@ -18,6 +18,22 @@ html.new_design {
 {
     background-color: #dadbdf;
 }
+/*
+In dark mode we use the provided background color as otherwise things look
+bad.
+*/
+html[data-theme="dark"].new_design .roundedbox,
+html[data-theme="dark"].new_design .roundedbox .roundedbox_main,
+html[data-theme="dark"].new_design .roundedbox .roundedbox_topmain,
+html[data-theme="dark"].new_design .roundedbox .roundedbox_bottommain,
+html[data-theme="dark"].new_design .roundedbox .roundedbox_topleft,
+html[data-theme="dark"].new_design .roundedbox .roundedbox_topright,
+html[data-theme="dark"].new_design .roundedbox .roundedbox_bottomleft,
+html[data-theme="dark"].new_design .roundedbox .roundedbox_bottomright,
+html[data-theme="dark"].new_design .player-board
+{
+    background-color: var(--game-bga-player-panel-background);
+}
 .new_design #page-title a:link {
     color: white;
 }
@@ -1638,3 +1654,4 @@ td.six_dev_scoring_name {
 .explore_galaxy_text {
     font-size: 120%;
 }
+
