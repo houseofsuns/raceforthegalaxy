@@ -29,7 +29,6 @@ ALTER TABLE `player` ADD `player_search` INT UNSIGNED NOT NULL DEFAULT '0';
 ALTER TABLE `player` ADD `player_milforce` INT NOT NULL DEFAULT '0';
 ALTER TABLE `player` ADD `player_tmp_milforce` SMALLINT UNSIGNED NOT NULL DEFAULT '0',
 ADD `player_consumed_types` VARCHAR( 128 ) NULL DEFAULT NULL ;
-ALTER TABLE `player` ADD `player_consumed_types_by_card` TEXT NULL DEFAULT NULL;
 ALTER TABLE `player` ADD  `player_takeover_target` INT UNSIGNED NULL DEFAULT NULL;
 ALTER TABLE `player` ADD  `player_startworld` INT NULL DEFAULT NULL;
 ALTER TABLE `player` ADD  `player_defense_award` INT UNSIGNED NOT NULL DEFAULT '0';

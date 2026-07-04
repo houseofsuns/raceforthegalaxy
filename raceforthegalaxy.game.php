@@ -5892,16 +5892,6 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         return mysql_fetch_assoc($dbres);
     }
 
-    private function resetConsumedTypesForCard($player_id, $world_id) {
-        $sql = "SELECT player_consumed_types_by_card FROM player WHERE player_id='$player_id' ";
-        $dbres = self::DbQuery($sql);
-        $row = mysql_fetch_assoc($dbres);
-        $consumed_by_card = ($row['player_consumed_types_by_card'] != '') ? unserialize($row['player_consumed_types_by_card']) : array();
-        unset($consumed_by_card[$world_id]);
-        $sql = "UPDATE player SET player_consumed_types='', player_consumed_types_by_card='".addslashes(serialize($consumed_by_card))."' WHERE player_id='$player_id' ";
-        self::DbQuery($sql);
-    }
-
     // Consume give good on given world
     function consume($good_id, $world_id)
     {
@@ -6014,7 +6004,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         if (isset($consumption_power['arg']['different'])) {
             // Check if this type of good has been consumed already
-            $sql = "SELECT player_consumed_types, player_consumed_types_by_card FROM player WHERE player_id='$player_id' ";
+            $sql = "SELECT player_consumed_types FROM player WHERE player_id='$player_id' ";
             $dbres = self::DbQuery($sql);
             $row = mysql_fetch_assoc($dbres);
             $already_consumed = $row['player_consumed_types'];
@@ -6023,10 +6013,6 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             } else {
                 $already_consumed = unserialize($already_consumed);
             }
-            $consumed_by_card = ($row['player_consumed_types_by_card'] != '') ? unserialize($row['player_consumed_types_by_card']) : array();
-            if (!isset($consumed_by_card[$world_id])) {
-                $consumed_by_card[$world_id] = array();
-            }
             if (in_array($good_type, $already_consumed)) {
                 if ($card_type_in_use == 287 && $good_type == 3) {  // Note : Adaptable Uplift Race can ALWAYS accept Genes, even if a Gene has been consumed already
                 } else {
@@ -6034,8 +6020,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 }
             }
             $already_consumed[] = $good_type;
-            $consumed_by_card[$world_id][] = $good_type;
-            $sql = "UPDATE player SET player_consumed_types='".addslashes(serialize($already_consumed))."', player_consumed_types_by_card='".addslashes(serialize($consumed_by_card))."' WHERE player_id='$player_id' ";
+            $sql = "UPDATE player SET player_consumed_types='".addslashes(serialize($already_consumed))."' WHERE player_id='$player_id' ";
             self::DbQuery($sql);
         }
 
@@ -6151,7 +6136,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             if ($world_type_id == 253 && $world_status != 2) {
                 $bPowerStillActive = false;
                 // Reset "different resources used"
-                $this->resetConsumedTypesForCard($player_id, $world_id);
+                $sql = "UPDATE player SET player_consumed_types='' WHERE player_id='$player_id' ";
+                self::DbQuery($sql);
                 $sql = "UPDATE card SET card_status=1 WHERE card_id='$world_id' ";
                 self::DbQuery($sql);
             } elseif (($world_status+1) >= $repeat) {
@@ -6161,7 +6147,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 $bPowerStillActive = false;
 
                 // Reset "different resources used"
-                $this->resetConsumedTypesForCard($player_id, $world_id);
+                $sql = "UPDATE player SET player_consumed_types='' WHERE player_id='$player_id' ";
+                self::DbQuery($sql);
             } else {
                 // Can be used another time
                 $new_status = $world_status+1;
@@ -6180,7 +6167,8 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 $bPowerStillActive = false;
 
                 // Reset "different resources used"
-                $this->resetConsumedTypesForCard($player_id, $world_id);
+                $sql = "UPDATE player SET player_consumed_types='' WHERE player_id='$player_id' ";
+                self::DbQuery($sql);
             }
 
             if ((count($can_be_used['mand']) + count($can_be_used['opt'])) == 0) {
@@ -8768,7 +8756,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     {
         $this->resetCardStatus();
 
-        $sql = "UPDATE player SET player_consumed_types='', player_consumed_types_by_card='' WHERE 1 ";
+        $sql = "UPDATE player SET player_consumed_types='' WHERE 1 ";
         self::DbQuery($sql);
 
         $this->drawOnPhase(4);
@@ -8799,7 +8787,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         $this->resetCardStatus();
 
-        $sql = "UPDATE player SET player_consumed_types='', player_consumed_types_by_card='' WHERE 1 ";
+        $sql = "UPDATE player SET player_consumed_types='' WHERE 1 ";
         self::DbQuery($sql);
 
         // See who can consume
