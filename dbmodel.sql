@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS `card` (
   `card_type_arg` int(11) NOT NULL,
   `card_location` varchar(16) NOT NULL,
   `card_location_arg` int(11) NOT NULL,
-  `card_status` smallint(5) NOT NULL COMMENT '0=nothing,>0=in use,-1=used (or good type for goods);Oort=type' DEFAULT '0',
+  `card_status` smallint(5) NOT NULL COMMENT '0=nothing,>0=in use,-1=used (or good type for goods),Oort=type' DEFAULT '0',
   `card_played_round` smallint(3) NOT NULL DEFAULT '-1' COMMENT 'TODO:use',
   `card_played_phase` smallint(3) NOT NULL DEFAULT '-1' COMMENT 'TODO:use',
   `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1' COMMENT 'TODO:use',
