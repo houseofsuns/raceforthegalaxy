@@ -5,10 +5,13 @@ CREATE TABLE IF NOT EXISTS `card` (
   `card_type_arg` int(11) NOT NULL,
   `card_location` varchar(16) NOT NULL,
   `card_location_arg` int(11) NOT NULL,
-  `card_status` smallint(5) NOT NULL COMMENT '0=nothing,>0=in use,-1=used (or good type for goods),Oort=type' DEFAULT '0',
-  `card_played_round` smallint(3) NOT NULL DEFAULT '-1' COMMENT 'TODO:use',
-  `card_played_phase` smallint(3) NOT NULL DEFAULT '-1' COMMENT 'TODO:use',
-  `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1' COMMENT 'TODO:use',
+  -- worlds with consume abilities: 0=nothing,>0=in use,-1=used
+  -- goods: good type
+  -- Oort: type
+  `card_status` smallint(5) NOT NULL COMMENT 'consume ability status or good type' DEFAULT '0',
+  `card_played_round` smallint(3) NOT NULL DEFAULT '-1',
+  `card_played_phase` smallint(3) NOT NULL DEFAULT '-1',
+  `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1',
   PRIMARY KEY (`card_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=115 ;
 
@@ -17,12 +20,18 @@ CREATE TABLE IF NOT EXISTS `card` (
 CREATE TABLE IF NOT EXISTS `phase` (
   `phase_id` int(10) unsigned NOT NULL COMMENT '1-5=phase number, 7=search',
   `phase_player` int(10) unsigned NOT NULL,
-  `phase_bonus` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '(0->+1+1,1->+5+0,100->orb) (0->-1) (0->+1) (0->$,1->x2) (0->windfall,1->used,3->repair) / +10 prestige',
+  -- explore: 0->+1+1, 1->+5+0, 100->orb
+  -- develop: 0->-1
+  -- settle: 0->+1
+  -- consume: 0->$, 1->x2
+  -- produce: 0->windfall, 1->used, 3->repair
+  -- prestige bonus: +10
+  `phase_bonus` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT 'selected bonus / phase card',
   KEY `phase_player` (`phase_player`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `player` ADD `player_just_played` INT UNSIGNED NULL DEFAULT NULL COMMENT 'card just played by this player';
-ALTER TABLE `player` ADD  `player_previously_played` INT UNSIGNED NULL DEFAULT NULL ;
+ALTER TABLE `player` ADD `player_previously_played` INT UNSIGNED NULL DEFAULT NULL ;
 ALTER TABLE `player` ADD `player_vp` INT UNSIGNED NOT NULL DEFAULT '0';
 ALTER TABLE `player` ADD `player_prestige` INT UNSIGNED NOT NULL DEFAULT '0';
 ALTER TABLE `player` ADD `player_search` INT UNSIGNED NOT NULL DEFAULT '0';
