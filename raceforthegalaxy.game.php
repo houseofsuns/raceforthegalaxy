@@ -2628,6 +2628,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 $must_be_used = false;
                 $could_be_used = false;
                 $card = self::getObjectFromDB("SELECT card_type, card_status FROM card WHERE card_id=".$power['card_id']);
+                // already_consumed tracks which good types were consumed for the power currently in mid-use.
+                // Only apply it to that specific power (card_status > 0); other powers start fresh.
+                $effective_already_consumed = ($card['card_status'] > 0) ? $already_consumed[$player_id] : [];
 
                 if ($power['power'] == 'consume') {
                     if (isset($power['arg']['fromthisworld'])) {
@@ -2663,16 +2666,16 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                                 // Are all our alien goods artefact?
                                 $alien_only_as_artefact = false;
 
-                                if (! in_array(1, $already_consumed[ $player_id ])) {
+                                if (! in_array(1, $effective_already_consumed)) {
                                     $different_available += ($goods[ $player_id ][1]>0 ? 1 : 0);
                                 }
-                                if (! in_array(2, $already_consumed[ $player_id ])) {
+                                if (! in_array(2, $effective_already_consumed)) {
                                     $different_available += ($goods[ $player_id ][2]>0 ? 1 : 0);
                                 }
-                                if (! in_array(3, $already_consumed[ $player_id ])) {
+                                if (! in_array(3, $effective_already_consumed)) {
                                     $different_available += ($goods[ $player_id ][3]>0 ? 1 : 0);
                                 }
-                                if (! in_array(4, $already_consumed[ $player_id ])) {
+                                if (! in_array(4, $effective_already_consumed)) {
                                     $different_available += ($goods[ $player_id ][4]>0 ? 1 : 0);
                                     $alien_only_as_artefact = ($goods[ $player_id ][4] == $number_of_artefact_goods && $number_of_artefact_goods > 0);
                                 }
@@ -2700,7 +2703,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                                         $different_available += 1;
                                     }
                                 } else {
-                                    if (! in_array($good_type, $already_consumed[ $player_id ])) {
+                                    if (! in_array($good_type, $effective_already_consumed)) {
                                         $different_available += ($goods[ $player_id ][ $good_type ]>0 ? 1 : 0);
                                     }
                                 }
