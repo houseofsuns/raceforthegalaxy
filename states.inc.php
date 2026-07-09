@@ -402,8 +402,9 @@ $machinestates = array(
         "description" => clienttranslate('Settle: Everyone can place a world'),
         "descriptionmyturn" => clienttranslate('Settle: ${you} can place a world'),
         "action" => "stSettle",
+        "args" => "argSettle",
         "type" => "multipleactiveplayer",
-        "possibleactions" => array("nothingToPlay","settle", "militaryboost", "scavenge"),
+        "possibleactions" => array("nothingToPlay","settle", "militaryboost", "resetBoosts", "scavenge"),
         "transitions" => array("phaseNotSelected" => 50, "phaseCleared" => 43)
    ),
     41 => array(
@@ -442,8 +443,9 @@ $machinestates = array(
         "description" => clienttranslate('Improved logistics : some players may place another world'),
         "descriptionmyturn" => clienttranslate('Improved logistics: ${you} may place another world'),
         "action" => "stSettle",
+        "args" => "argSettle",
         "type" => "multipleactiveplayer",
-        "possibleactions" => array("nothingToPlay","settle", "militaryboost", "scavenge"),
+        "possibleactions" => array("nothingToPlay","settle", "militaryboost", "resetBoosts", "scavenge"),
         "transitions" => array("phaseNotSelected" => 50, "phaseCleared" => 43)
    ),
     242 => array(
@@ -451,8 +453,9 @@ $machinestates = array(
         "description" => clienttranslate('Rebel Sneak Attack : some players may place another world'),
         "descriptionmyturn" => clienttranslate('Rebel Sneak Attack: ${you} may discard Rebel Sneak Attack to place a military world'),
         "action" => "stSettle",
+        "args" => "argSettle",
         "type" => "multipleactiveplayer",
-        "possibleactions" => array("nothingToPlay","settle", "militaryboost","onlymilitarysettle"),
+        "possibleactions" => array("nothingToPlay","settle", "militaryboost", "resetBoosts","onlymilitarysettle"),
         "transitions" => array("phaseNotSelected" => 50, "phaseCleared" => 41)
    ),
     342 => array(
@@ -460,8 +463,9 @@ $machinestates = array(
         "description" => clienttranslate('Imperium Supply Convoy : some players may conquer another world'),
         "descriptionmyturn" => clienttranslate('Imperium Supply Convoy: ${you} may conquer another military world with remaining military'),
         "action" => "stSettle",
+        "args" => "argSettle",
         "type" => "multipleactiveplayer",
-        "possibleactions" => array("nothingToPlay","settle", "militaryboost","onlyremainingmilitary"),
+        "possibleactions" => array("nothingToPlay","settle", "militaryboost", "resetBoosts","onlyremainingmilitary"),
         "transitions" => array("phaseNotSelected" => 50, "phaseCleared" => 41)
    ),
     442 => array(
@@ -469,8 +473,9 @@ $machinestates = array(
         "description" => clienttranslate('Terraforming Project : some players may settle another world'),
         "descriptionmyturn" => clienttranslate('Terraforming Project: ${you} may discard Terraforming project to settle another (non military, non alien) world for free'),
         "action" => "stSettle",
+        "args" => "argSettle",
         "type" => "multipleactiveplayer",
-        "possibleactions" => array("nothingToPlay","settle", "militaryboost","onlycivilnonalien"),
+        "possibleactions" => array("nothingToPlay","settle", "militaryboost", "resetBoosts","onlycivilnonalien"),
         "transitions" => array("phaseNotSelected" => 50, "phaseCleared" => 41)
    ),
     542 => array(

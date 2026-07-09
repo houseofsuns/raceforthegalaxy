@@ -687,7 +687,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $result = array('players' => array());
 
         // Add players RFTG specific infos
-        $sql = "SELECT player_id id, player_score score, player_vp vp, player_milforce milforce, player_xeno_milforce xeno_milforce, player_effort effort, player_tmp_gene_force bunker_used ";
+        $sql = "SELECT player_id id, player_score score, player_vp vp, player_milforce milforce, player_xeno_milforce xeno_milforce, player_effort effort, player_tmp_gene_force bunker_used, player_tmp_milforce tmpmilforce, player_tmp_xenoforce tmpxenomilforce ";
         if (self::getGameStateValue('expansion') == 4) {
             $sql .= ', player_prestige prestige, player_search prestige_search ';
         }
@@ -4068,6 +4068,191 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 return self::getUniqueValueFromDB($sql) > 0;
         }
         return false;
+    }
+
+    // Snapshot the per-player resources relevant to military boost actions, so they can be restored on reset.
+    // Called at the start of each settle sub-phase
+    function saveSettleBoostSnapshot($player_id) {
+        $row = self::getObjectFromDB(
+            "SELECT player_prestige prestige, player_tmp_milforce tmpmil, player_tmp_xenoforce tmpxeno
+             FROM player WHERE player_id=$player_id"
+        );
+
+        $hand_cards = $this->cards->getCardsInLocation('hand', $player_id);
+        $hand_ids = array_map('intval', array_keys($hand_cards));
+
+        $goods = self::getObjectListFromDB(
+            "SELECT g.card_id id, g.card_location_arg world_id, g.card_status type
+             FROM card w JOIN card g ON g.card_location_arg = w.card_id
+             WHERE g.card_location = 'good' AND w.card_location = 'tableau' AND w.card_location_arg = $player_id"
+        );
+
+        $tableau_rows = self::getObjectListFromDB(
+            "SELECT card_id id, card_status status FROM card
+             WHERE card_location='tableau' AND card_location_arg=$player_id"
+        );
+        $tableau = array();
+        foreach ($tableau_rows as $trow) {
+            $tableau[] = array('id' => intval($trow['id']), 'status' => intval($trow['status']));
+        }
+
+        $snapshot = array(
+            'prestige'     => intval($row['prestige']),
+            'tmp_milforce' => intval($row['tmpmil']),
+            'tmp_xenoforce'=> intval($row['tmpxeno']),
+            'hand'         => $hand_ids,
+            'goods'        => $goods,
+            'tableau'      => $tableau,
+        );
+
+        $json = addslashes(json_encode($snapshot));
+        self::DbQuery("UPDATE player SET player_boost_snapshot='$json' WHERE player_id=$player_id");
+    }
+
+    function clearSettleBoostSnapshots() {
+        self::DbQuery("UPDATE player SET player_boost_snapshot=null");
+    }
+
+    // Undo all temporary military boosts used since the start of the current settle sub-phase,
+    // returning consumed resources (goods, hand cards, prestige, self-discarded tableau cards) to the player.
+    function resetSettleBoosts() {
+        self::checkAction('resetBoosts');
+
+        $player_id = self::getCurrentPlayerId();
+
+        // Must match the $bDefered logic used by the boost-applying functions (militaryTactics, etc.),
+        // otherwise this notification can be queued behind an immediate one and replay out of order
+        // when the deferred queue is flushed in stSettleProcess (see e.g. Improved Logistics sub-phase,
+        // where improvedLogisticsPhase != 0 and boost notifications are sent immediately).
+        $state = $this->gamestate->getCurrentMainState()->toArray();
+        $bDefered = $state['name'] == 'settle' && self::getGameStateValue('improvedLogisticsPhase') == 0;
+
+        $row = self::getObjectFromDB(
+            "SELECT player_tmp_milforce tmpmil, player_tmp_xenoforce tmpxeno, player_boost_snapshot snap
+             FROM player WHERE player_id=$player_id"
+        );
+        if (!$row['snap']) {
+            throw new BgaSystemException("No boost snapshot found");
+        }
+        $snapshot = json_decode($row['snap'], true);
+        $pre_boost_total = intval($snapshot['tmp_milforce']) + intval($snapshot['tmp_xenoforce']);
+        if (intval($row['tmpmil']) + intval($row['tmpxeno']) <= $pre_boost_total) {
+            throw new BgaUserException(self::_("No temporary military boost to reset"));
+        }
+
+        $returned_tableau_cards = array();
+        $returned_goods         = array();
+        $returned_hand_cards    = array();
+
+        // 1. Restore tableau cards that were self-discarded for military (in just_discarded → tableau)
+        $just_discarded = $this->cards->getCardsInLocation('just_discarded', $player_id);
+        $snapshot_tableau_ids = array_column($snapshot['tableau'], 'id');
+        foreach ($just_discarded as $card) {
+            if (in_array(intval($card['id']), $snapshot_tableau_ids)) {
+                $this->cards->moveCard($card['id'], 'tableau', $player_id);
+                self::DbQuery("INSERT IGNORE INTO tableau_order (card_id) VALUES (" . intval($card['id']) . ")");
+                $vp_delta = $this->card_types[$card['type']]['vp'];
+                if ($vp_delta != 0) {
+                    $this->updatePlayerScore($player_id, $vp_delta, false);
+                }
+                $returned_tableau_cards[] = array(
+                    'id'           => intval($card['id']),
+                    'type'         => intval($card['type']),
+                    'location'     => 'tableau',
+                    'location_arg' => intval($player_id),
+                    'status'       => 0,
+                    'damaged'      => 0,
+                );
+            }
+        }
+
+        // 2. Restore goods consumed for military
+        $discard_location = $this->getDiscard($player_id);
+        foreach ($snapshot['goods'] as $good_info) {
+            $good_id   = intval($good_info['id']);
+            $world_id  = intval($good_info['world_id']);
+            $good_type = intval($good_info['type']);
+            $good = $this->cards->getCard($good_id);
+            if ($good !== null && $good['location'] == $discard_location) {
+                $this->cards->moveCard($good_id, 'good', $world_id);
+                self::DbQuery("UPDATE card SET card_status=$good_type WHERE card_id=$good_id");
+                $returned_goods[] = array('good_id' => $good_id, 'world_id' => $world_id, 'good_type' => $good_type);
+            }
+        }
+
+        // 3. Restore hand cards discarded for military
+        $current_hand_ids = array_map('intval', array_keys($this->cards->getCardsInLocation('hand', $player_id)));
+        $missing_hand_ids = array_diff($snapshot['hand'], $current_hand_ids);
+        foreach ($missing_hand_ids as $card_id) {
+            $card = $this->cards->getCard($card_id);
+            if ($card !== null && $card['location'] == $discard_location) {
+                $this->cards->moveCard($card_id, 'hand', $player_id);
+                $returned_hand_cards[] = array('id' => intval($card_id), 'type' => intval($card['type']));
+            }
+        }
+
+        // 4. Restore prestige consumed for military
+        $current_prestige = intval(self::getUniqueValueFromDB("SELECT player_prestige FROM player WHERE player_id=$player_id"));
+        if ($current_prestige != $snapshot['prestige']) {
+            $this->givePrestige($player_id, $snapshot['prestige'] - $current_prestige, false, null);
+        }
+
+        // 5. Restore card statuses (re-enable cards whose status was changed by boosts)
+        foreach ($snapshot['tableau'] as $card_info) {
+            self::DbQuery(
+                "UPDATE card SET card_status=" . intval($card_info['status']) .
+                " WHERE card_id=" . intval($card_info['id']) . " AND card_location='tableau'"
+            );
+        }
+
+        // 6. Reset temporary military to snapshot values
+        $snap_tmpmil  = intval($snapshot['tmp_milforce']);
+        $snap_tmpxeno = intval($snapshot['tmp_xenoforce']);
+        self::DbQuery("UPDATE player SET player_tmp_milforce=$snap_tmpmil, player_tmp_xenoforce=$snap_tmpxeno WHERE player_id=$player_id");
+
+        // 7. Collect final state for notifications
+        $final_prestige = intval(self::getUniqueValueFromDB("SELECT player_prestige FROM player WHERE player_id=$player_id"));
+        $final_score    = self::getObjectFromDB("SELECT player_score score, player_vp vp FROM player WHERE player_id=$player_id");
+        $final_tmp      = $snap_tmpmil + $snap_tmpxeno;
+
+        $public_args = array(
+            'player_id'              => intval($player_id),
+            'player_name'            => self::getCurrentPlayerName(),
+            'i18n'                   => array(),
+            'returned_tableau_cards' => $returned_tableau_cards,
+            'returned_goods'         => $returned_goods,
+            'returned_hand_cards'    => array(), // omitted from public view (hand is private)
+            'prestige'               => $final_prestige,
+            'score'                  => intval($final_score['score']),
+            'vp'                     => intval($final_score['vp']),
+            'tmp_milforce'           => $final_tmp,
+        );
+        $private_args = array_merge($public_args, array('returned_hand_cards' => $returned_hand_cards));
+        $reset_log = clienttranslate('${player_name} resets their temporary military boost');
+
+        // Immediate notification to the resetting player so their view is restored without waiting for stSettleProcess.
+        // When boost-apply notifications are deferred in this sub-phase (main settle phase), the public notification
+        // below won't reach anyone until stSettleProcess, so this private one carries the log message on its own.
+        // When boost-apply notifications are immediate (e.g. Improved Logistics extra settle), the public notification
+        // fires right after and already delivers the log message to the acting player too, so stay silent here to
+        // avoid a duplicate log line.
+        $this->notifyPlayer($player_id, 'settleBoostReset',
+            $bDefered ? $reset_log : '',
+            $private_args);
+
+        // Notification for other players. Deferred only when boost-apply notifications are also deferred
+        // in this sub-phase, so replay order at stSettleProcess matches the real order of actions; otherwise
+        // sent immediately so it can't be overtaken by a later immediate boost notification (see note above).
+        if ($bDefered) {
+            $this->defered_notifyAllPlayers($this->notif_defered_id, 'settleBoostReset', $reset_log, $public_args);
+        } else {
+            $this->notifyAllPlayers('settleBoostReset', $reset_log, $public_args);
+        }
+
+        // 8. Re-snapshot current (restored) state so the player can boost-and-reset again if desired
+        $this->saveSettleBoostSnapshot($player_id);
+
+        $this->notifyUpdateCardCount();
     }
 
     // Set all cards to "inactive", except Oort which stores its kind in card_status and has not activable power anyway
@@ -7517,6 +7702,28 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
        );
     }
 
+    function argSettle()
+    {
+        $rows = self::getObjectListFromDB(
+            "SELECT player_id, player_tmp_milforce tmpmil, player_tmp_xenoforce tmpxeno,
+                    player_boost_snapshot
+             FROM player"
+        );
+        $pre_boost = array();
+        foreach ($rows as $row) {
+            $pid      = intval($row['player_id']);
+            $snapshot = json_decode($row['player_boost_snapshot'], true);
+            if ($snapshot) {
+                $pre_boost[$pid] = intval($snapshot['tmp_milforce']) + intval($snapshot['tmp_xenoforce']);
+            } else {
+                // no snapshot exists yet so we are at the beginning of the phase
+                // where the following calculation is actually correct
+                $pre_boost[$pid] = intval($row['tmpmil']) + intval($row['tmpxeno']);
+            }
+        }
+        return array('preBoostTotal' => $pre_boost);
+    }
+
     function argSettleDiscard()
     {
         return $this->getSettleDiscard();
@@ -8133,6 +8340,11 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             // Normal settle phase
             $this->drawOnPhase(3);
 
+            // Snapshot every player's resources at settle-start (no temporary military yet)
+            foreach (self::loadPlayersBasicInfos() as $pid => $pinfo) {
+                $this->saveSettleBoostSnapshot($pid);
+            }
+
             $this->gamestate->setAllPlayersMultiactive();
         } elseif (self::getGameStateValue('improvedLogisticsPhase') == 1) {
             // Improved logistics phase
@@ -8146,27 +8358,42 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             // Active only players that has really played a world during the previous phase
             self::setGameStateValue('current_subphase', 2);
             $players_with_improved = $this->playersThatMayUseImprovedLogistics();
+            // New snapshot so reset undoes only boosts added in this sub-phase
+            foreach ($players_with_improved as $pid) {
+                $this->saveSettleBoostSnapshot($pid);
+            }
+
             $this->gamestate->setPlayersMultiactive($players_with_improved, 'phaseCleared');
         } elseif (self::getGameStateValue('improvedLogisticsPhase') == 2) {
             // Rebel Sneak Attack phase
             self::setGameStateValue('current_subphase', 3);
             $players_with_improved = $this->playersThatMayUseSneakAttack();
             $this->gamestate->setPlayersMultiactive($players_with_improved, 'phaseCleared');
+            // New snapshot so reset undoes only boosts added in this sub-phase
+            foreach ($players_with_improved as $pid) {
+                $this->saveSettleBoostSnapshot($pid);
+            }
         } elseif (self::getGameStateValue('improvedLogisticsPhase') == 3) {
             // Imperium Supply Convoy
             self::setGameStateValue('current_subphase', 4);
             $players_with_improved = $this->playersThatMayUseImperiumSupplyConvoy();
             $this->gamestate->setPlayersMultiactive($players_with_improved, 'phaseCleared');
+            // New snapshot so reset undoes only boosts added in this sub-phase
+            foreach ($players_with_improved as $pid) {
+                $this->saveSettleBoostSnapshot($pid);
+            }
         } elseif (self::getGameStateValue('improvedLogisticsPhase') == 4) {
             // Terraforming project
             self::setGameStateValue('current_subphase', 5);
             $players_with_improved = $this->playersThatMayUseTerraformingProject();
             $this->gamestate->setPlayersMultiactive($players_with_improved, 'phaseCleared');
+            // No snapshot as no boosts are applicable here
         } elseif (self::getGameStateValue('improvedLogisticsPhase') == 5) {
             // Terraforming engineers
             self::setGameStateValue('current_subphase', 6);
             $players_with_improved = $this->playersThatMayUseTerraformingEngineers();
             $this->gamestate->setPlayersMultiactive($players_with_improved, 'phaseCleared');
+            // No snapshot as no boosts are applicable here
         }
     }
 
@@ -8175,6 +8402,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         // Notify all players about cards played by the others
         $this->send_defered_notif($this->notif_defered_id);
         $this->notifyUpdateCardCount();
+        // Boosts are now in use and cannot be undone
+        $this->clearSettleBoostSnapshots();
+
 
         if (self::getGameStateValue('improvedLogisticsPhase') == 0) {
             // Save what we played on the previous phase

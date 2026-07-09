@@ -52,6 +52,8 @@ ADD `player_consumed_types` VARCHAR( 128 ) NULL DEFAULT NULL COMMENT 'track curr
 ALTER TABLE `player` ADD  `player_takeover_target` INT UNSIGNED NULL DEFAULT NULL COMMENT 'a card_id';
 ALTER TABLE `player` ADD  `player_startworld` INT NULL DEFAULT NULL COMMENT 'number of start-world';
 ALTER TABLE `player` ADD  `player_defense_award` INT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'number of awards';
+-- JSON snapshot of resources at settle phase start for boost reset
+ALTER TABLE `player` ADD `player_boost_snapshot` TEXT NULL DEFAULT NULL COMMENT 'JSON for boost reset';
 
 CREATE TABLE `notification` (
 `notification_reference` INT UNSIGNED NOT NULL ,

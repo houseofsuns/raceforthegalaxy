@@ -453,7 +453,6 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
         }
 
         if ($from_version <= 2601310938) {
-            
             $state = $this->gamestate->getCurrentMainState()->name;
             if ($state == 'settlediscard') {
                 $active_players = $this->gamestate->getActivePlayerList();
@@ -467,5 +466,9 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             }
         }
 
+        if ($from_version <= 2607071751) {
+            $sql = "ALTER TABLE `DBPREFIX_player` ADD `player_boost_snapshot` TEXT NULL DEFAULT NULL;";
+            self::applyDbUpgradeToAllDB($sql);
+        }
     }
 }

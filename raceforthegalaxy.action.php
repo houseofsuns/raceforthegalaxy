@@ -465,6 +465,13 @@ class action_raceforthegalaxy extends APP_GameAction
         self::ajaxResponse();
     }
 
+    public function resetBoosts()
+    {
+        $this->startAction();
+        $this->game->resetSettleBoosts();
+        self::ajaxResponse();
+    }
+
     public function changeOortType()
     {
         $this->startAction();

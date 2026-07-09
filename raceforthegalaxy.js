@@ -56,6 +56,7 @@ define([
                 this.teamPlace = {};
                 this.playerPlayedArt = {};
                 this.prestige_action = false;
+                this.myTmpMil = 0; // current player's active tmp military boost (client-side tracking)
                 this.phases_chosen = 0;
                 this.current_phase_choices = null;
                 this.currentStateName = null;
@@ -433,6 +434,8 @@ define([
                         dojo.style('prestige_search_' + player_id, 'visibility', 'visible');
                     }
                     $('milforce_' + player_id).innerHTML = player.milforce;
+                    const tmpMil = (parseInt(player.tmpmilforce) || 0) + (parseInt(player.tmpxenomilforce) || 0);
+                    $('tmpmilforce_' + player_id).innerHTML = tmpMil > 0 ? '(+' + tmpMil + ')' : '';
 
                     $('xenomilforce_' + player_id).innerHTML = player.xeno_milforce;
                     if (this.gamedatas.xeno.current_wave > 0) {
@@ -851,6 +854,11 @@ define([
                 this.currentStateName = this.gamedatas.gamestate.name;
                 this.hideLiveSixCostDevPlayerTotals = this.isEndgameForLiveSixCostDevTotals(this.currentStateName);
                 this.refreshLiveSixCostDevDisplay(this.currentStateName);
+
+                const myPlayer = gamedatas.players[this.player_id];
+                if (myPlayer) {
+                    this.myTmpMil = (parseInt(myPlayer.tmpmilforce) || 0) + (parseInt(myPlayer.tmpxenomilforce) || 0);
+                }
             },
             initPreferences: function() {
                 console.log("user preferences");
@@ -2488,6 +2496,10 @@ define([
                                     // No cancel in scavenging
                                     $('pagemaintitletext').innerHTML = _("You must choose one card to save under Galactic Scavengers");
                                     dojo.style('action_nothing_to_play', 'display', 'none');
+                                }
+                                const preBoost = this.gamedatas.gamestate.args.preBoostTotal[this.player_id] || 0;
+                                if (this.myTmpMil > preBoost) {
+                                    this.addActionButton('action_reset_boosts', _("Reset Boosts"), 'onResetBoosts', null, false, 'red');
                                 }
                             } else {
                                 if ((this.immediateAlternatives === null || this.immediateAlternatives.length === 0)
@@ -5032,6 +5044,7 @@ define([
                 dojo.subscribe('takeover', this, 'notif_takeover');
                 dojo.subscribe('confirmTakeover', this, 'notif_confirmTakeover');
                 dojo.subscribe('updateTmpMilforce', this, 'notif_updateTmpMilforce');
+                dojo.subscribe('settleBoostReset', this, 'notif_settleBoostReset');
                 dojo.subscribe('mercenary_used', this, 'notif_mercenary_used');
 
                 dojo.subscribe('updatePrestige', this, "notif_updatePrestige");
@@ -5700,6 +5713,7 @@ define([
             notif_clearTmpMilforce: function(notif) {
                 console.log('notif_clearTmpMilforce');
                 console.log(notif);
+                this.myTmpMil = 0;
                 for (var i in this.gamedatas.players) {
                     $('tmpmilforce_' + i).innerHTML = '';
                 }
@@ -5714,6 +5728,69 @@ define([
             },
             notif_updateTmpMilforce: function(notif) {
                 $('tmpmilforce_' + notif.args.player).innerHTML = '(+' + notif.args.tmp + ')';
+                if (notif.args.player == this.player_id) {
+                    this.myTmpMil = notif.args.tmp;
+                    if (!this.paymentMode && this.gamedatas.gamestate.name === 'settle'
+                            && !$('action_reset_boosts')) {
+                        dojo.empty('generalactions');
+                        this.onUpdateActionButtons(this.gamedatas.gamestate.name, this.gamedatas.gamestate.args);
+                    }
+                }
+            },
+
+            onResetBoosts: function() {
+                if (!this.checkAction('resetBoosts')) {
+                    return;
+                }
+                this.ajaxcall('/raceforthegalaxy/raceforthegalaxy/resetBoosts.html', {}, this, function() {});
+            },
+
+            notif_settleBoostReset: function(notif) {
+                console.log('notif_settleBoostReset');
+                console.log(notif);
+
+                const player_id = notif.args.player_id;
+
+                // Restore tableau cards that were discarded for military boosts
+                for (const i in notif.args.returned_tableau_cards) {
+                    this.addCardToTableau(notif.args.returned_tableau_cards[i]);
+                }
+
+                // Restore goods to their worlds
+                for (const j in notif.args.returned_goods) {
+                    const good = notif.args.returned_goods[j];
+                    this.addGood({world_id: good.world_id, good_id: good.good_id, good_type: good.good_type});
+                }
+
+                // Restore hand cards — only the resetting player's own client can see their hand
+                if (player_id == this.player_id && notif.args.returned_hand_cards.length > 0) {
+                    for (const k in notif.args.returned_hand_cards) {
+                        const card_info = notif.args.returned_hand_cards[k];
+                        this.playerHand.addToStockWithId(card_info.type, card_info.id);
+                    }
+                }
+
+                // Update temporary military display
+                const tmp = notif.args.tmp_milforce;
+                $('tmpmilforce_' + player_id).innerHTML = tmp > 0 ? '(+' + tmp + ')' : '';
+
+                // Restore prestige display
+                if ($('prestige_nbr_' + player_id)) {
+                    $('prestige_nbr_' + player_id).innerHTML = notif.args.prestige;
+                }
+
+                // Restore score display
+                this.gamedatas.players[player_id].score = notif.args.score;
+                this.updateDisplayedPlayerScore(player_id);
+                if (typeof notif.args.vp !== 'undefined') {
+                    $('vp_nbr_' + player_id).innerHTML = notif.args.vp;
+                }
+
+                if (player_id == this.player_id) {
+                    this.myTmpMil = tmp;
+                    dojo.empty('generalactions');
+                    this.onUpdateActionButtons(this.gamedatas.gamestate.name, this.gamedatas.gamestate.args);
+                }
             },
             notif_discardfromtableau: function(notif) {
                 console.log('notif_discardfromtableau');
