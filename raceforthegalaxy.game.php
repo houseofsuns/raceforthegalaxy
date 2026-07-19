@@ -7630,7 +7630,15 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     {
         // With preset hands, we can reach this state before the player has joined the table
         try {
-            $phasechoices = $this->getPhaseChoices(self::getCurrentPlayerId());
+            // Other players' choices must stay hidden while still in phaseChoice (pre-reveal),
+            // but by the time we're in phaseChoiceCrystal everyone's choices have already been
+            // revealed (see stPhaseChoiceSignal), so there is no need to filter them out anymore -
+            // and doing so anyway would hide the other player's revealed choice from view.
+            if ($this->gamestate->getCurrentMainState()->name == 'phaseChoice') {
+                $phasechoices = $this->getPhaseChoices(self::getCurrentPlayerId());
+            } else {
+                $phasechoices = $this->getPhaseChoices();
+            }
             $bCrystalPlayer = (self::getCurrentPlayerId() == $this->getPsyCrystalPlayer());
         } catch (Exception $e) {
             $phasechoices = $this->getPhaseChoices();

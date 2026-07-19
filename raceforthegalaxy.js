@@ -1652,7 +1652,7 @@ define([
                 return 1;
             },
 
-            updatePhaseChoices: function(choices) {
+            updatePhaseChoices: function(choices, previewingFinalChoice) {
                 console.log('updatePhaseChoices');
                 console.log(choices);
 
@@ -1793,12 +1793,16 @@ define([
                         dojo.style('action_phaseCancel', 'display', 'none');
                     }
                     if (this.isCurrentPlayerActive()) {
-                        const selectionDone = (this.phases_chosen > 1
-                                               || (this.numberPlayers() > 2 && this.phases_chosen > 0)); // FIXME psi-crystal
+                        // Whether the round's phase selection is fully decided (including any
+                        // not-yet-submitted pending choice) is decided once, by checkPhaseSelectArm,
+                        // when it chooses to preview the pending choice instead of submitting it
+                        // right away - see isFinalPhaseChoice(). A bare/committed-only render (no
+                        // pending choice attached) always means more choices are still needed,
+                        // since the player would no longer be active here otherwise.
                         if (this.phaseSelectNeedsConfirm()) {
                             dojo.style('phase_select_confirm', 'display', 'inline');
                         }
-                        if (selectionDone) {
+                        if (previewingFinalChoice) {
                             dojo.style('phasechoice_panel', 'display', 'none');
                             dojo.query('#phase_select_confirm').removeClass('disabled');
                             if (this.hasGamePrestige()) {
@@ -2087,6 +2091,8 @@ define([
                         break;
                     case 'phaseChoiceCrystal':
                         dojo.style($('phasechoice_panel'), 'display', 'block');
+                        this.current_phase_choices = args.args.phasechoices;
+                        this.updatePhaseChoices(args.args.phasechoices);
                         break;
                     case 'breedingTube':
                         if (this.isCurrentPlayerActive()) {
@@ -3290,21 +3296,46 @@ define([
             },
             addPhaseChoice: function(current, pending) {
                 const total_bonus = pending.bonus + (pending.cardbonus ? 10 : 0);
+                if (!current[pending.phase]) {
+                    current[pending.phase] = {};
+                }
                 if (pending.phase != 7 && this.player_id in current[pending.phase]) {
                     const number = parseInt(current[pending.phase][this.player_id]);
                     current[pending.phase][this.player_id] = this.combinePhaseBonus(
                         pending.phase, number, total_bonus).toString();
                 } else {
-                    current[pending.phase] = {[this.player_id]: total_bonus.toString()};
+                    // Only set our own entry - other players (e.g. an opponent who already
+                    // chose this same phase, visible post-reveal in phaseChoiceCrystal) must
+                    // keep their entry in the preview.
+                    current[pending.phase][this.player_id] = total_bonus.toString();
                 }
                 return current;
             },
             phaseSelectNeedsConfirm: function() {
                 return this.bga.userPreferences.get(9).toString() != '2';
             },
+            isPsiCrystalPlayer: function() {
+                return !!this.gamedatas.gamestate.args.crystalplayer;
+            },
+            // Is the choice about to be submitted the last one this player gets to make before
+            // control leaves them (i.e. should it go through the preview+confirm flow instead of
+            // being submitted right away)?
+            //
+            // Normally, in a 2-player game, each player picks 2 phases back-to-back in the same
+            // phaseChoice visit, so only the 2nd pick is final. But the Psi-Crystal World changes
+            // this for whoever holds it: they only get 1 pick in phaseChoice (the game immediately
+            // moves them on, revealing the opponent's choices, before letting them make their 2nd
+            // and final pick in the separate phaseChoiceCrystal state). So for that player, *every*
+            // pick - in either state - is final for the visit it happens in, same as in games with
+            // more than 2 players.
+            isFinalPhaseChoice: function() {
+                // phaseChoiceCrystal is only ever entered by the Psi-Crystal player, so
+                // isPsiCrystalPlayer() already covers that state without checking it explicitly.
+                return this.numberPlayers() > 2 || this.isPsiCrystalPlayer() || this.phases_chosen > 0;
+            },
             checkPhaseSelectArm: function() {
                 // if last phase to choose, check for confirmation
-                if (this.phaseSelectNeedsConfirm() && (this.numberPlayers() > 2 || this.phases_chosen > 0)) { // FIXME psi-crystal
+                if (this.phaseSelectNeedsConfirm() && this.isFinalPhaseChoice()) {
                     var choices;
                     try {
                         choices = structuredClone(this.current_phase_choices);
@@ -3317,7 +3348,7 @@ define([
                             throw e;
                         }
                     }
-                    this.updatePhaseChoices(this.addPhaseChoice(choices, this.pending_phase_choice));
+                    this.updatePhaseChoices(this.addPhaseChoice(choices, this.pending_phase_choice), true);
                 } else {
                     this.onPhaseSelectConfirm();
                 }
