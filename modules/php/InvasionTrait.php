@@ -119,10 +119,10 @@ trait InvasionTrait
                    );
 
         // Check available repair power
-        $phase_repair = self::getUniqueValueFromDB("SELECT player_tmp_gene_force FROM player WHERE player_id='$player_id'");
+        $phase_repair = self::getUniqueValueFromDB("SELECT player_repair_charges FROM player WHERE player_id='$player_id'");
 
         if ($phase_repair > 0) {
-            self::DbQuery("UPDATE player SET player_tmp_gene_force=player_tmp_gene_force-1 WHERE player_id='$player_id'");
+            self::DbQuery("UPDATE player SET player_repair_charges=player_repair_charges-1 WHERE player_id='$player_id'");
             $log = clienttranslate('${player_name} repairs ${world} with his Production: Repair phase bonus');
             $notifargs['repair_power'] = true;
         } else {
@@ -306,7 +306,7 @@ trait InvasionTrait
 
     function stInvasionGame()
     {
-        self::DbQuery("UPDATE player SET player_xeno_victory='0', player_tmp_gene_force='0'"); // Note : gene force used to store bunker usage
+        self::DbQuery("UPDATE player SET player_xeno_victory='0', player_bunker_used='0'");
 
         $this->resetCardStatus();
 

@@ -470,5 +470,21 @@ ADD `card_played_subphase` smallint(2) NOT NULL DEFAULT '-1';";
             $sql = "ALTER TABLE `DBPREFIX_player` ADD `player_boost_snapshot` TEXT NULL DEFAULT NULL;";
             self::applyDbUpgradeToAllDB($sql);
         }
+
+        if ($from_version <= 2607071751) {
+            // player_tmp_gene_force was abused to also store prestige special action card usage,
+            // Xeno invasion repair charges and bunker power usage; split those out
+            // into their own columns.
+            $sql = "ALTER TABLE `DBPREFIX_player`
+ADD `player_bonus_action_card_used` SMALLINT UNSIGNED NOT NULL DEFAULT '0',
+ADD `player_repair_charges` SMALLINT UNSIGNED NOT NULL DEFAULT '0',
+ADD `player_bunker_used` SMALLINT UNSIGNED NOT NULL DEFAULT '0';";
+            self::applyDbUpgradeToAllDB($sql);
+            $sql = "UPDATE `DBPREFIX_player`
+SET player_bonus_action_card_used=player_tmp_gene_force,
+player_repair_charges=player_tmp_gene_force,
+player_bunker_used=player_tmp_gene_force;";
+            self::applyDbUpgradeToAllDB($sql);
+        }
     }
 }

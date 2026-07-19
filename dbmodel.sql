@@ -47,11 +47,12 @@ ALTER TABLE `player` ADD `player_vp` INT UNSIGNED NOT NULL DEFAULT '0' COMMENT '
 ALTER TABLE `player` ADD `player_prestige` INT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'prestige tokens';
 ALTER TABLE `player` ADD `player_search` INT UNSIGNED NOT NULL DEFAULT '0' COMMENT '1=player chose Search';
 ALTER TABLE `player` ADD `player_milforce` INT NOT NULL DEFAULT '0' COMMENT 'permanent military force total';
-ALTER TABLE `player` ADD `player_tmp_milforce` SMALLINT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'temporary military for current settle',
-ADD `player_consumed_types` VARCHAR( 128 ) NULL DEFAULT NULL COMMENT 'track current active consume ability';
-ALTER TABLE `player` ADD  `player_takeover_target` INT UNSIGNED NULL DEFAULT NULL COMMENT 'a card_id';
-ALTER TABLE `player` ADD  `player_startworld` INT NULL DEFAULT NULL COMMENT 'number of start-world';
-ALTER TABLE `player` ADD  `player_defense_award` INT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'number of awards';
+ALTER TABLE `player` ADD `player_tmp_milforce` SMALLINT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'temporary military for current settle';
+ALTER TABLE `player` ADD `player_consumed_types` VARCHAR( 128 ) NULL DEFAULT NULL COMMENT 'track current active consume ability';
+ALTER TABLE `player` ADD `player_takeover_target` INT UNSIGNED NULL DEFAULT NULL COMMENT 'a card_id';
+ALTER TABLE `player` ADD `player_startworld` INT NULL DEFAULT NULL COMMENT 'number of start-world';
+ALTER TABLE `player` ADD `player_defense_award` INT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'number of awards';
+ALTER TABLE `player` ADD `player_bonus_action_card_used` SMALLINT UNSIGNED NOT NULL DEFAULT  '0' COMMENT 'prestige/search action done';
 -- JSON snapshot of resources at settle phase start for boost reset
 ALTER TABLE `player` ADD `player_boost_snapshot` TEXT NULL DEFAULT NULL COMMENT 'JSON for boost reset';
 
@@ -119,9 +120,7 @@ CREATE TABLE IF NOT EXISTS `orbteam` (
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 ALTER TABLE  `player` ADD  `player_orb_priority` SMALLINT UNSIGNED NULL DEFAULT NULL COMMENT 'Orb turn order (lower=higher priority)';
-ALTER TABLE  `player` ADD  `player_tmp_gene_force` SMALLINT UNSIGNED NOT NULL DEFAULT  '0' COMMENT 'abused for search and bunker';
-
-
+ALTER TABLE  `player` ADD  `player_tmp_gene_force` SMALLINT UNSIGNED NOT NULL DEFAULT  '0' COMMENT 'temporary military force for gene worlds';
 
 CREATE TABLE IF NOT EXISTS `artefact` (
   `card_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -147,6 +146,8 @@ ALTER TABLE  `player` ADD  `player_tmp_xenoforce` SMALLINT UNSIGNED NOT NULL DEF
 ADD  `player_xeno_milforce` SMALLINT NOT NULL DEFAULT  '0' COMMENT 'permanent military against Xenos',
 ADD  `player_xeno_milforce_tiebreak` SMALLINT NOT NULL DEFAULT  '0' COMMENT 'tiebreaker for Xeno track ranking',
 ADD  `player_effort` INT NOT NULL DEFAULT  '0' COMMENT 'war effort points contributed',
-ADD  `player_xeno_victory` TINYINT UNSIGNED NOT NULL DEFAULT  '0' COMMENT '1=player has achieved it';
+ADD  `player_xeno_victory` TINYINT UNSIGNED NOT NULL DEFAULT  '0' COMMENT '1=player has achieved it',
+ADD  `player_bunker_used` SMALLINT UNSIGNED NOT NULL DEFAULT  '0' COMMENT '1=used this round',
+ADD  `player_repair_charges` SMALLINT UNSIGNED NOT NULL DEFAULT  '0' COMMENT 'remaining Production: Repair charges';
 
 ALTER TABLE  `card` ADD  `card_damaged` INT UNSIGNED NOT NULL DEFAULT  '0' COMMENT 'damage tokens on this world; 0=undamaged';

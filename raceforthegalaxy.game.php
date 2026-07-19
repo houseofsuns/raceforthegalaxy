@@ -687,7 +687,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $result = array('players' => array());
 
         // Add players RFTG specific infos
-        $sql = "SELECT player_id id, player_score score, player_vp vp, player_milforce milforce, player_xeno_milforce xeno_milforce, player_effort effort, player_tmp_gene_force bunker_used, player_tmp_milforce tmpmilforce, player_tmp_xenoforce tmpxenomilforce ";
+        $sql = "SELECT player_id id, player_score score, player_vp vp, player_milforce milforce, player_xeno_milforce xeno_milforce, player_effort effort, player_bunker_used bunker_used, player_tmp_milforce tmpmilforce, player_tmp_xenoforce tmpxenomilforce ";
         if (self::getGameStateValue('expansion') == 4) {
             $sql .= ', player_prestige prestige, player_search prestige_search ';
         }
@@ -2529,7 +2529,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
         }
 
-        $player_repair = self::getCollectionFromDB("SELECT player_id, player_tmp_gene_force FROM player WHERE player_tmp_gene_force>0");
+        $player_repair = self::getCollectionFromDB("SELECT player_id, player_repair_charges FROM player WHERE player_repair_charges>0");
         foreach ($player_repair as $player_id => $repair) {
             $result[ $player_id ][] = array('type' => 'repair', 'reason' => 'repair');
             if ($repair > 1) {
@@ -4474,12 +4474,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         if ($bBonusCard) {
-            if (self::getUniqueValueFromDB("SELECT NOT player_search OR player_tmp_milforce OR player_tmp_gene_force FROM player WHERE player_id='".$player_id."'") == 1) {
+            if (self::getUniqueValueFromDB("SELECT NOT player_search OR player_tmp_milforce OR player_bonus_action_card_used FROM player WHERE player_id='".$player_id."'") == 1) {
                 throw new SystemException("You already used your prestige/search card");
             }
 
             if ($phase == 7) {
-                self::DbQuery("UPDATE player SET player_tmp_gene_force = 1 WHERE player_id=$player_id");
+                self::DbQuery("UPDATE player SET player_bonus_action_card_used = 1 WHERE player_id=$player_id");
             } else {
                 // We're not spending the prestige yet because if player cancel their action
                 // it's tricky to refund because of pending notifications
@@ -4543,7 +4543,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             $phase_choices = $this->getPhaseChoices($player_id);
             foreach ($phase_choices as $phase_choice) {
                 if (isset($phase_choice[ $player_id ]) && $phase_choice[ $player_id ] >= 10) {
-                    self::DbQuery("UPDATE player SET player_tmp_milforce=0, player_tmp_gene_force=0 WHERE player_id=$player_id");
+                    self::DbQuery("UPDATE player SET player_tmp_milforce=0, player_bonus_action_card_used=0 WHERE player_id=$player_id");
                     $this->notifyAllPlayers('prestige_search', '', array($player_id => 1));
                 }
             }
@@ -5876,11 +5876,11 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             throw new SystemException("This card is not in your hand");
         }
 
-        if (self::getUniqueValueFromDB("SELECT player_tmp_gene_force FROM player WHERE player_id=$player_id") >= 1) {
+        if (self::getUniqueValueFromDB("SELECT player_bunker_used FROM player WHERE player_id=$player_id") >= 1) {
             throw new UserException(self::_("Your bunker power can be used only once per turn"));
         }
 
-        $sql = "UPDATE player SET player_tmp_xenoforce=player_tmp_xenoforce+2, player_tmp_gene_force='1' WHERE player_id=$player_id";
+        $sql = "UPDATE player SET player_tmp_xenoforce=player_tmp_xenoforce+2, player_bunker_used='1' WHERE player_id=$player_id";
         self::DbQuery($sql);
         $tmpMilforce = self::getUniqueValueFromDB("SELECT player_tmp_milforce + player_tmp_xenoforce FROM player WHERE player_id=$player_id");
 
@@ -7646,7 +7646,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         return array(
-            'searchavail' => self::getCollectionFromDB("SELECT player_id, 1 FROM player WHERE player_search > 0 AND player_tmp_milforce = 0 AND player_tmp_gene_force = 0", true),
+            'searchavail' => self::getCollectionFromDB("SELECT player_id, 1 FROM player WHERE player_search > 0 AND player_tmp_milforce = 0 AND player_bonus_action_card_used = 0", true),
             'hasprestige' => self::getCollectionFromDB("SELECT player_id, player_prestige FROM player WHERE player_prestige > 0", true),
             'phasechoices' => $phasechoices,
             'crystalplayer' => $bCrystalPlayer
@@ -8084,7 +8084,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             return;
         }
 
-        $sql = "UPDATE player SET player_search=0, player_tmp_gene_force=0 WHERE player_id IN (";
+        $sql = "UPDATE player SET player_search=0, player_bonus_action_card_used=0 WHERE player_id IN (";
         $sql .= implode(',', array_keys($player_phases));
         $sql .= ")";
         self::DbQuery($sql);
@@ -8507,7 +8507,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         foreach ($players as $player_id => $player) {
             $this->updateMilforceIfNeeded($player_id);
         }
-        self::DbQuery("UPDATE player SET player_tmp_milforce=0, player_tmp_gene_force=0");
+        self::DbQuery("UPDATE player SET player_tmp_milforce=0, player_tmp_xenoforce=0, player_tmp_gene_force=0");
         $this->notifyAllPlayers('clearTmpMilforce', '', null);
         $this->checkGoals(3);
         self::DbQuery("UPDATE player SET player_just_played=NULL, player_previously_played=NULL");
@@ -9269,13 +9269,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         $expansion = self::getGameStateValue('expansion');
         if ($expansion == 7) {
                 $expansion = self::getGameStateValue('expansion');
-                self::DbQuery("UPDATE player SET player_tmp_gene_force='0' WHERE 1");
+                self::DbQuery("UPDATE player SET player_repair_charges='0' WHERE 1");
 
                 // Player with a "production: repair" gets 2 extra repairs
                 $phase_choices = $this->getPhaseChoice(5);
             foreach ($phase_choices as $player_id => $bonus) {
                 if ($bonus >= 2) {
-                    self::DbQuery("UPDATE player SET player_tmp_gene_force='2' WHERE player_id='$player_id'");
+                    self::DbQuery("UPDATE player SET player_repair_charges='2' WHERE player_id='$player_id'");
                 }
             }
             $this->gamestate->nextState("production_done_xeno");
