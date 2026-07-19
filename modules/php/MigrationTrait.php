@@ -486,5 +486,38 @@ player_repair_charges=player_tmp_gene_force,
 player_bunker_used=player_tmp_gene_force;";
             self::applyDbUpgradeToAllDB($sql);
         }
+
+        if ($from_version <= 2607071751) {
+            // Track whether the last settled world was conquered by military force, as opposed to
+            // paid for with a power like Contact Specialist, so Imperium Supply Convoy (which requires
+            // leftover military strength) cannot be triggered off a paid-for military world.
+            $sql = "ALTER TABLE `DBPREFIX_player`
+ADD `player_just_conquered` TINYINT UNSIGNED NOT NULL DEFAULT '0',
+ADD `player_previously_conquered` TINYINT UNSIGNED NOT NULL DEFAULT '0';";
+            self::applyDbUpgradeToAllDB($sql);
+
+            // The new columns default to 0, which is wrong for games caught mid-settle-phase by this
+            // upgrade. We cannot know how a given player_just_played/player_previously_played card was
+            // actually paid for, but a card that is itself a military world was most likely conquered by
+            // force (the alternative, paying via a power like Contact Specialist, is comparatively rare).
+            // Backfill those cases to 1 as a best-effort approximation; everything else stays 0.
+            $military_types = array();
+            foreach ($this->card_types as $card_type_id => $card_type) {
+                if (in_array('military', $card_type['category'])) {
+                    $military_types[] = $card_type_id;
+                }
+            }
+            if (count($military_types) > 0) {
+                $military_type_list = "'" . implode("','", $military_types) . "'";
+                self::applyDbUpgradeToAllDB("UPDATE DBPREFIX_player p
+INNER JOIN DBPREFIX_card c ON c.card_id = p.player_just_played
+SET p.player_just_conquered = 1
+WHERE c.card_type IN ($military_type_list)");
+                self::applyDbUpgradeToAllDB("UPDATE DBPREFIX_player p
+INNER JOIN DBPREFIX_card c ON c.card_id = p.player_previously_played
+SET p.player_previously_conquered = 1
+WHERE c.card_type IN ($military_type_list)");
+            }
+        }
     }
 }

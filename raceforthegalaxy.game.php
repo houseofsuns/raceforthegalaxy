@@ -5113,7 +5113,10 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         self::DbQuery("INSERT INTO tableau_order VALUES ($card_id)");
 
         // Signal card as "just played" in order the other player cannot retrieve it with "getalldatas"
-        $sql = "UPDATE player SET player_just_played='$card_id' WHERE player_id=$player_id";
+        // Also record whether this was settled by military force, as opposed to paid for (e.g. Contact
+        // Specialist), so Imperium Supply Convoy cannot be triggered off a paid-for military world.
+        $just_conquered = ($options['mode'] == 'military') ? 1 : 0;
+        $sql = "UPDATE player SET player_just_played='$card_id', player_just_conquered='$just_conquered' WHERE player_id=$player_id";
         self::DbQuery($sql);
 
         // Mark the card as active so that its power cannot be used in this phase
@@ -8335,12 +8338,12 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
             self::setGameStateValue('current_subphase', 1);
 
-            $sql = "UPDATE player SET player_just_played=NULL, player_takeover_target=NULL WHERE 1 ";
+            $sql = "UPDATE player SET player_just_played=NULL, player_just_conquered='0', player_takeover_target=NULL WHERE 1 ";
             self::DbQuery($sql);
 
             // Reset temporary military force
             // Note : temporary military is RESET when there are 2 consecutive settle phase in 2 players advanced games (read Tom Lehman answer here : https://boardgamegeek.com/thread/358370/qs-about-interactions-improved-logistics)
-            $sql = "UPDATE player SET player_tmp_milforce='0', player_tmp_gene_force='0', player_tmp_xenoforce='0', player_previously_played=NULL WHERE 1 ";
+            $sql = "UPDATE player SET player_tmp_milforce='0', player_tmp_gene_force='0', player_tmp_xenoforce='0', player_previously_played=NULL, player_previously_conquered='0' WHERE 1 ";
             self::DbQuery($sql);
 
             $this->resetCardStatus();
@@ -8416,9 +8419,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         if (self::getGameStateValue('improvedLogisticsPhase') == 0) {
             // Save what we played on the previous phase
-            self::DbQuery("UPDATE player SET player_previously_played = player_just_played WHERE 1");
+            self::DbQuery("UPDATE player SET player_previously_played = player_just_played, player_previously_conquered = player_just_conquered WHERE 1");
 
-            $sql = "UPDATE player SET player_just_played=NULL WHERE 1 ";
+            $sql = "UPDATE player SET player_just_played=NULL, player_just_conquered='0' WHERE 1 ";
             self::DbQuery($sql);
 
 
@@ -8510,7 +8513,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         self::DbQuery("UPDATE player SET player_tmp_milforce=0, player_tmp_xenoforce=0, player_tmp_gene_force=0");
         $this->notifyAllPlayers('clearTmpMilforce', '', null);
         $this->checkGoals(3);
-        self::DbQuery("UPDATE player SET player_just_played=NULL, player_previously_played=NULL");
+        self::DbQuery("UPDATE player SET player_just_played=NULL, player_just_conquered='0', player_previously_played=NULL, player_previously_conquered='0'");
         $this->moveJustDiscardedToDiscard();
         $this->notifyAllPlayers('updateSpecializedMilitary', '', $this->getSpecializedMilitary());
 
@@ -8914,20 +8917,13 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     }
     function playersThatMayUseImperiumSupplyConvoy()
     {
-        $res = array();
-        $players = self::getObjectListFromDB("SELECT convoy.card_location_arg player, previousplay.card_type type FROM card convoy
-                     INNER JOIN player ON player_id=convoy.card_location_arg AND player_previously_played IS NOT NULL
-                     INNER JOIN card previousplay ON previousplay.card_id=player_previously_played
-                     WHERE convoy.card_location='tableau' AND convoy.card_type='258'");
-
-        foreach ($players as $player) {
-            if (in_array('military', $this->card_types[ $player['type'] ]['category'])) {
-                // Conquer a military !
-                $res[] = $player['player'];
-            }
-        }
-
-        return $res;
+        // player_previously_conquered must be set: Imperium Supply Convoy uses leftover military
+        // strength, so it cannot be triggered off a world that was paid for (e.g. via Contact Specialist)
+        // rather than conquered by military force. (This includes powers conquering non-military worlds,
+        // e.g. Imperium Cloaking Technology [however no such cards exist in Alien Artifacts])
+        return self::getObjectListFromDB("SELECT convoy.card_location_arg FROM card convoy
+                     INNER JOIN player ON player_id=convoy.card_location_arg AND player_previously_played IS NOT NULL AND player_previously_conquered='1'
+                     WHERE convoy.card_location='tableau' AND convoy.card_type='258'", true);
     }
 
     // Return the players who did a prestige trade and haven't used the bonus yet

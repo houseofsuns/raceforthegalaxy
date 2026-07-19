@@ -42,7 +42,9 @@ CREATE TABLE IF NOT EXISTS `phase` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `player` ADD `player_just_played` INT UNSIGNED NULL DEFAULT NULL COMMENT 'a card_id';
-ALTER TABLE `player` ADD `player_previously_played` INT UNSIGNED NULL DEFAULT NULL COMMENT 'card_id played in the immediately preceding phase';
+ALTER TABLE `player` ADD `player_previously_played` INT UNSIGNED NULL DEFAULT NULL COMMENT 'card_id played in main settle sub-phase';
+ALTER TABLE `player` ADD `player_just_conquered` TINYINT UNSIGNED NOT NULL DEFAULT '0' COMMENT '1=player_just_played won by military force';
+ALTER TABLE `player` ADD `player_previously_conquered` TINYINT UNSIGNED NOT NULL DEFAULT '0' COMMENT '1=player_previously_played was won by military force';
 ALTER TABLE `player` ADD `player_vp` INT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'VP chips';
 ALTER TABLE `player` ADD `player_prestige` INT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'prestige tokens';
 ALTER TABLE `player` ADD `player_search` INT UNSIGNED NOT NULL DEFAULT '0' COMMENT '1=player chose Search';
