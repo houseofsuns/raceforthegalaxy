@@ -4823,7 +4823,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
 
             if ($card_type['cost'] < $to_replace_type['cost'] || $card_type['cost'] > ($to_replace_type['cost']+3)) {
-                throw new SystemException("You can only choose a world with a cost between +0 and +3");
+                throw new UserException(self::_("You can only choose a replacement with cost difference between +0 and +3"));
             }
 
             // Same kind
