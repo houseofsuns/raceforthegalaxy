@@ -47,14 +47,14 @@ ALTER TABLE `player` ADD `player_just_conquered` TINYINT UNSIGNED NOT NULL DEFAU
 ALTER TABLE `player` ADD `player_previously_conquered` TINYINT UNSIGNED NOT NULL DEFAULT '0' COMMENT '1=player_previously_played was won by military force';
 ALTER TABLE `player` ADD `player_vp` INT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'VP chips';
 ALTER TABLE `player` ADD `player_prestige` INT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'prestige tokens';
-ALTER TABLE `player` ADD `player_search` INT UNSIGNED NOT NULL DEFAULT '0' COMMENT '1=player chose Search';
+ALTER TABLE `player` ADD `player_search` INT UNSIGNED NOT NULL DEFAULT '0' COMMENT '1=player has bonus card, 0=bonus card spent';
 ALTER TABLE `player` ADD `player_milforce` INT NOT NULL DEFAULT '0' COMMENT 'permanent military force total';
 ALTER TABLE `player` ADD `player_tmp_milforce` SMALLINT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'temporary military for current settle';
 ALTER TABLE `player` ADD `player_consumed_types` VARCHAR( 128 ) NULL DEFAULT NULL COMMENT 'track current active consume ability';
 ALTER TABLE `player` ADD `player_takeover_target` INT UNSIGNED NULL DEFAULT NULL COMMENT 'a card_id';
 ALTER TABLE `player` ADD `player_startworld` INT NULL DEFAULT NULL COMMENT 'number of start-world';
 ALTER TABLE `player` ADD `player_defense_award` INT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'number of awards';
-ALTER TABLE `player` ADD `player_bonus_action_card_used` SMALLINT UNSIGNED NOT NULL DEFAULT  '0' COMMENT 'prestige/search action done';
+ALTER TABLE `player` ADD `player_bonus_action_card_used` SMALLINT UNSIGNED NOT NULL DEFAULT  '0' COMMENT 'prestige/search action activated';
 -- JSON snapshot of resources at settle phase start for boost reset
 ALTER TABLE `player` ADD `player_boost_snapshot` TEXT NULL DEFAULT NULL COMMENT 'JSON for boost reset';
 
