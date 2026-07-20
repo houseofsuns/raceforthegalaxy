@@ -2503,9 +2503,11 @@ define([
                                     $('pagemaintitletext').innerHTML = _("You must choose one card to save under Galactic Scavengers");
                                     dojo.style('action_nothing_to_play', 'display', 'none');
                                 }
-                                const preBoost = this.gamedatas.gamestate.args.preBoostTotal[this.player_id] || 0;
-                                if (this.myTmpMil > preBoost) {
-                                    this.addActionButton('action_reset_boosts', _("Reset Boosts"), 'onResetBoosts', null, false, 'red');
+                                if (stateName == 'settle') {
+                                    const preBoost = this.gamedatas.gamestate.args.preBoostTotal[this.player_id] || 0;
+                                    if (this.myTmpMil > preBoost) {
+                                        this.addActionButton('action_reset_boosts', _("Reset Boosts"), 'onResetBoosts', null, false, 'red');
+                                    }
                                 }
                             } else {
                                 if ((this.immediateAlternatives === null || this.immediateAlternatives.length === 0)
