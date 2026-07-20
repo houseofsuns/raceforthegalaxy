@@ -475,7 +475,7 @@ $machinestates = array(
         "action" => "stSettle",
         "args" => "argSettle",
         "type" => "multipleactiveplayer",
-        "possibleactions" => array("nothingToPlay","settle", "militaryboost", "resetBoosts","onlycivilnonalien"),
+        "possibleactions" => array("nothingToPlay","settle", "onlycivilnonalien"),
         "transitions" => array("phaseNotSelected" => 50, "phaseCleared" => 41)
    ),
     542 => array(
@@ -483,6 +483,7 @@ $machinestates = array(
         "description" => clienttranslate('Terraforming Engineers: some players may replace a world'),
         "descriptionmyturn" => clienttranslate('Terraforming Engineers: ${you} may replace a world'),
         "action" => "stSettle",
+        "args" => "argSettle",
         "type" => "multipleactiveplayer",
         "possibleactions" => array("nothingToPlay","replaceWorld"),
         "transitions" => array("phaseNotSelected" => 50, "phaseCleared" => 41)

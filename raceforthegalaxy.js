@@ -2504,12 +2504,7 @@ define([
                                     dojo.style('action_nothing_to_play', 'display', 'none');
                                 }
                                 if (stateName == 'settle') {
-                                    const pbtMap = this.gamedatas.gamestate.args.preBoostTotal;
-                                    var preBoost = this.myTmpMil;
-                                    if (pbtMap) {
-                                        preBoost = pbtMap[this.player_id];
-                                    }
-                                    if (this.myTmpMil > preBoost) {
+                                    if (this.myTmpMil > this.gamedatas.gamestate.args.preBoostTotal[this.player_id]) {
                                         this.addActionButton('action_reset_boosts', _("Reset Boosts"), 'onResetBoosts', null, false, 'red');
                                     }
                                 }
