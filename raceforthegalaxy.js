@@ -2505,7 +2505,10 @@ define([
                                 }
                                 if (stateName == 'settle') {
                                     const pbtMap = this.gamedatas.gamestate.args.preBoostTotal;
-                                    const preBoost = (pbtMap && pbtMap[this.player_id]) || 0;
+                                    var preBoost = this.myTmpMil;
+                                    if (pbtMap) {
+                                        preBoost = pbtMap[this.player_id];
+                                    }
                                     if (this.myTmpMil > preBoost) {
                                         this.addActionButton('action_reset_boosts', _("Reset Boosts"), 'onResetBoosts', null, false, 'red');
                                     }
