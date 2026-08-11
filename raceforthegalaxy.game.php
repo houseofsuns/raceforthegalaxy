@@ -7952,7 +7952,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     function stInitialDiscardHome()
     {
         // Everybody is playing
-        $this->armFrozenDisplayStateAndActivate();
+        $this->gamestate->setAllPlayersMultiactive();
         $this->setBeginnersNonMultiactive();
     }
 
@@ -7985,7 +7985,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         // Everybody is playing
-        $this->armFrozenDisplayStateAndActivate();
+        $this->gamestate->setAllPlayersMultiactive();
         $this->setBeginnersNonMultiactive();
     }
 
