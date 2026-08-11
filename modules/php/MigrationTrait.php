@@ -519,5 +519,11 @@ SET p.player_previously_conquered = 1
 WHERE c.card_type IN ($military_type_list)");
             }
         }
+
+        if ($from_version <= 2607202223) {
+            $sql = "ALTER TABLE `DBPREFIX_player`
+ADD `player_frozen_display_state` TEXT NULL DEFAULT NULL;";
+            self::applyDbUpgradeToAllDB($sql);
+        }
     }
 }
