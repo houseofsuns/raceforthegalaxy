@@ -834,6 +834,9 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
         // Player's hand
         $player_id = self::getCurrentPlayerId();
+        // Note: $player_id gets reused as a loop variable further down (e.g. the Orb-expansion
+        // block), so keep a stable reference to the viewer for the frozen-display substitution below.
+        $current_viewer_id = $player_id;
         $result['hand'] = $this->cards->getCardsInLocation('hand', $player_id);
 
         $result['hand_count'] = $this->cards->countCardsByLocationArgs('hand');
@@ -987,6 +990,54 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             'wave_remaining' => $this->getWaveRemaining()
        );
 
+        // Serve frozen (pre-action) data instead of live data for opponents currently mid an
+        // unresolved simultaneous phase, so a reload doesn't leak their in-progress actions.
+        // The viewer's own row is always live (matches normal BGA UX for one's own actions).
+        $frozen_states = self::getCollectionFromDB(
+            "SELECT player_id, player_frozen_display_state FROM player WHERE player_id!='$current_viewer_id' AND player_frozen_display_state IS NOT NULL",
+            true
+        );
+        if (count($frozen_states) > 0) {
+            $world_owner = self::getCollectionFromDB("SELECT card_id, card_location_arg FROM card WHERE card_location='tableau'", true);
+
+            foreach ($result['tableau'] as $idx => $card) {
+                if (isset($frozen_states[ $card['location_arg'] ])) {
+                    unset($result['tableau'][$idx]);
+                }
+            }
+            foreach ($result['good'] as $idx => $good) {
+                $owner = isset($world_owner[ $good['world_id'] ]) ? $world_owner[ $good['world_id'] ] : null;
+                if ($owner !== null && isset($frozen_states[$owner])) {
+                    unset($result['good'][$idx]);
+                }
+            }
+
+            foreach ($frozen_states as $frozen_player_id => $frozen_json) {
+                $frozen = json_decode($frozen_json, true);
+
+                foreach (array('score', 'vp', 'milforce', 'xeno_milforce', 'xeno_milforce_tiebreak', 'effort',
+                                'bunker_used', 'tmpmilforce', 'tmpxenomilforce', 'prestige', 'prestige_search',
+                                'defense_award') as $field) {
+                    if (isset($frozen[$field])) {
+                        $result['players'][$frozen_player_id][$field] = $frozen[$field];
+                    }
+                }
+
+                $result['specialized_military'][$frozen_player_id] = $frozen['specialized_military'];
+                $result['hand_count'][$frozen_player_id] = $frozen['hand_count'];
+
+                foreach ($frozen['tableau'] as $card) {
+                    $result['tableau'][] = $card;
+                }
+                foreach ($frozen['goods'] as $good) {
+                    $result['good'][] = $good;
+                }
+            }
+
+            $result['tableau'] = array_values($result['tableau']);
+            $result['good'] = array_values($result['good']);
+        }
+
         return $result;
     }
 
@@ -1101,6 +1152,23 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
         }
         $this->reset_defered_notif($notif_ref);
+
+        // Everything just flushed is now genuinely revealed: nothing left to hide behind a frozen snapshot.
+        self::DbQuery("UPDATE player SET player_frozen_display_state=NULL WHERE 1");
+    }
+
+    // Snapshot every player's opponent-visible state (so getAllDatas() can serve it instead of
+    // live data to other players) before opening a simultaneous-choice wait state to new actions.
+    // Must run to completion before setAllPlayersMultiactive() so no concurrent action from another
+    // player can be submitted against this wait state while the snapshot is still being written.
+    function armFrozenDisplayStateAndActivate()
+    {
+        $players = self::loadPlayersBasicInfos();
+        foreach (array_keys($players) as $player_id) {
+            $snapshot = $this->computePlayerDisplaySnapshot($player_id);
+            self::DbQuery("UPDATE player SET player_frozen_display_state='".addslashes(json_encode($snapshot))."' WHERE player_id='$player_id'");
+        }
+        $this->gamestate->setAllPlayersMultiactive();
     }
 
     function saveInitialSixCostDevPointsState()
@@ -2220,6 +2288,55 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             'contactspecialist_discount' => ($contactspecialist_discount + $contactspecialist_discount_bonus),
             'mercenaries' => $bSpaceMercenaries
        );
+    }
+
+    // Build the opponent-visible subset of $player_id's state, to be served by getAllDatas()
+    // to other players in place of live data while a simultaneous phase is unresolved.
+    function computePlayerDisplaySnapshot($player_id)
+    {
+        $expansion = self::getGameStateValue('expansion');
+
+        $sql = "SELECT player_score score, player_vp vp, player_milforce milforce, player_xeno_milforce xeno_milforce, ";
+        $sql .= "player_effort effort, player_bunker_used bunker_used, player_tmp_milforce tmpmilforce, player_tmp_xenoforce tmpxenomilforce ";
+        if ($expansion == 4) {
+            $sql .= ", player_prestige prestige, player_search prestige_search ";
+        }
+        if ($expansion == 7) {
+            $sql .= ", player_defense_award defense_award ";
+        }
+        $sql .= "FROM player WHERE player_id='$player_id'";
+        $snapshot = self::getObjectFromDB($sql);
+
+        $tiebreak = self::getUniqueValueFromDB("SELECT player_xeno_milforce_tiebreak FROM player WHERE player_id='$player_id'");
+        if ($tiebreak !== null) {
+            $snapshot['xeno_milforce_tiebreak'] = $tiebreak;
+        }
+
+        $specialized_military = $this->getSpecializedMilitary();
+        $snapshot['specialized_military'] = isset($specialized_military[$player_id]) ? $specialized_military[$player_id] : array();
+
+        $snapshot['hand_count'] = $this->cards->countCardInLocation('hand', $player_id);
+
+        $tableau = $this->cards->getCardsInLocation('tableau', $player_id);
+        $damaged_worlds = self::getCollectionFromDB("SELECT card_id, card_damaged FROM card WHERE card_damaged!='0' AND card_location='tableau' AND card_location_arg='$player_id'", true);
+        foreach ($damaged_worlds as $world_id => $damaged) {
+            if (isset($tableau[$world_id])) {
+                $tableau[$world_id]['damaged'] = $damaged;
+            }
+        }
+        $snapshot['tableau'] = array_values($tableau);
+
+        $goods = array();
+        $sql = "SELECT good.card_id good_id, good.card_location_arg world_id, good.card_status good_type FROM card good ";
+        $sql .= "INNER JOIN card world ON world.card_id=good.card_location_arg ";
+        $sql .= "WHERE good.card_location='good' AND world.card_location='tableau' AND world.card_location_arg='$player_id'";
+        $dbres = self::DbQuery($sql);
+        while ($row = mysql_fetch_assoc($dbres)) {
+            $goods[] = $row;
+        }
+        $snapshot['goods'] = $goods;
+
+        return $snapshot;
     }
 
     function getSpecializedMilitary($init = false)
@@ -7835,7 +7952,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     function stInitialDiscardHome()
     {
         // Everybody is playing
-        $this->gamestate->setAllPlayersMultiactive();
+        $this->armFrozenDisplayStateAndActivate();
         $this->setBeginnersNonMultiactive();
     }
 
@@ -7868,7 +7985,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         // Everybody is playing
-        $this->gamestate->setAllPlayersMultiactive();
+        $this->armFrozenDisplayStateAndActivate();
         $this->setBeginnersNonMultiactive();
     }
 
@@ -8032,7 +8149,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         }
 
         // Everybody is playing
-        $this->gamestate->setAllPlayersMultiactive();
+        $this->armFrozenDisplayStateAndActivate();
 
         self::incStat(1, 'turn_number');
         self::incGameStateValue('current_round', 1);
@@ -8271,7 +8388,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
 
     function stDevelopNewActive()
     {
-        $this->gamestate->setAllPlayersMultiactive();
+        $this->armFrozenDisplayStateAndActivate();
     }
 
     function stDevelopProcess()
@@ -8358,7 +8475,7 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 $this->saveSettleBoostSnapshot($pid);
             }
 
-            $this->gamestate->setAllPlayersMultiactive();
+            $this->armFrozenDisplayStateAndActivate();
         } elseif (self::getGameStateValue('improvedLogisticsPhase') == 1) {
             // Improved logistics phase
 

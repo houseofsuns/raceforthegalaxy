@@ -57,6 +57,9 @@ ALTER TABLE `player` ADD `player_defense_award` INT UNSIGNED NOT NULL DEFAULT '0
 ALTER TABLE `player` ADD `player_bonus_action_card_used` SMALLINT UNSIGNED NOT NULL DEFAULT  '0' COMMENT 'prestige/search action activated';
 -- JSON snapshot of resources at settle phase start for boost reset
 ALTER TABLE `player` ADD `player_boost_snapshot` TEXT NULL DEFAULT NULL COMMENT 'JSON for boost reset';
+-- JSON snapshot of this player's opponent-visible state, served to other players by getAllDatas()
+-- instead of live data while non-null, to avoid leaking in-progress simultaneous-phase actions on reload
+ALTER TABLE `player` ADD `player_frozen_display_state` TEXT NULL DEFAULT NULL COMMENT 'JSON for reload display freeze';
 
 CREATE TABLE `notification` (
 `notification_reference` INT UNSIGNED NOT NULL ,
