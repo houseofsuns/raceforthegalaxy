@@ -7761,18 +7761,16 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             } else {
                 $phasechoices = $this->getPhaseChoices();
             }
-            $bCrystalPlayer = (self::getCurrentPlayerId() == $this->getPsyCrystalPlayer());
             $crystalPlayerId = $this->getPsyCrystalPlayer();
         } catch (Exception $e) {
             $phasechoices = $this->getPhaseChoices();
-            $bCrystalPlayer = false;
+            $crystalPlayerId = null;
         }
 
         return array(
             'searchavail' => self::getCollectionFromDB("SELECT player_id, 1 FROM player WHERE player_search > 0 AND player_tmp_milforce = 0 AND player_bonus_action_card_used = 0", true),
             'hasprestige' => self::getCollectionFromDB("SELECT player_id, player_prestige FROM player WHERE player_prestige > 0", true),
             'phasechoices' => $phasechoices,
-            'crystalplayer' => $bCrystalPlayer, // TODO remove once no longer in use
             'crystalplayerid' => $crystalPlayerId
        );
     }
