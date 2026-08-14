@@ -1823,6 +1823,10 @@ define([
                                 }
                             }
                         }
+                        if  (this.isPhaseChoiceOver()) {
+                            // Fend off strange edge case where we are still a bit active after phase choice is done and before the framework realizes we should be set to inactive
+                            dojo.style('phasechoice_panel', 'display', 'none');
+                        }
                     } else {
                         dojo.style('phasechoice_panel', 'display', 'none');
                         // remaining buttons do not exist
@@ -3316,7 +3320,7 @@ define([
                 return this.bga.userPreferences.get(9).toString() != '2';
             },
             isPsiCrystalPlayer: function() {
-                return !!this.gamedatas.gamestate.args.crystalplayer;
+                return this.gamedatas.gamestate.args.crystalplayerid == this.bga.players.getCurrentPlayerId();
             },
             // Is the choice about to be submitted the last one this player gets to make before
             // control leaves them (i.e. should it go through the preview+confirm flow instead of
@@ -3333,6 +3337,21 @@ define([
                 // phaseChoiceCrystal is only ever entered by the Psi-Crystal player, so
                 // isPsiCrystalPlayer() already covers that state without checking it explicitly.
                 return this.numberPlayers() > 2 || this.isPsiCrystalPlayer() || this.phases_chosen > 0;
+            },
+            isPhaseChoiceOver: function() {
+                if (this.gamedatas.gamestate.name == "phaseChoice") {
+                    return this.phases_chosen > 1 || (this.phases_chosen > 0 && (this.numberPlayers() > 2
+                                                                                  || this.isPsiCrystalPlayer())) ;
+                } else if (this.gamedatas.gamestate.name == "phaseChoiceCrystal") {
+                    if (this.isPsiCrystalPlayer()) {
+                        return this.phases_chosen > 1 || (this.numberPlayers() > 2 && this.phases_chosen > 0) ;
+                    } else {
+                        return true;
+                    }
+                } else {
+                    console.log(`Unexpected state ${this.gamedatas.gamestate.name} for isPhaseChoiceOver`);
+                    return true;
+                }
             },
             checkPhaseSelectArm: function() {
                 // if last phase to choose, check for confirmation
