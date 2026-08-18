@@ -822,21 +822,23 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             }
         }
 
+        // Note: $player_id gets reused as a loop variable further down (e.g. the Orb-expansion
+        // block), so keep a stable reference to the viewer for the frozen-display substitution below.
+        $current_viewer_id = self::getCurrentPlayerId();
+        $frozen_opponent_snapshots = $this->getFrozenOpponentSnapshots($current_viewer_id);
+
         $goals = $this->cards->getCardsInLocation('obj_first') + $this->cards->getCardsInLocation('obj_most');
         foreach ($goals as $goal) {
             $goal_type = $this->goal_types[ $goal['type'] ];
             // Don't track progress of first goals already awarded
             if ($goal_type['type'] != 'first' || $goal['location_arg'] == 0) {
-                $progress = $this->getGoalProgress($goal_type);
+                $progress = $this->getGoalProgress($goal_type, $frozen_opponent_snapshots);
                 $result['goal_types'][$goal['type']]['progress'] = $this->getGoalProgressTooltip($goal_type, $progress);
             }
         }
 
         // Player's hand
-        $player_id = self::getCurrentPlayerId();
-        // Note: $player_id gets reused as a loop variable further down (e.g. the Orb-expansion
-        // block), so keep a stable reference to the viewer for the frozen-display substitution below.
-        $current_viewer_id = $player_id;
+        $player_id = $current_viewer_id;
         $result['hand'] = $this->cards->getCardsInLocation('hand', $player_id);
 
         $result['hand_count'] = $this->cards->countCardsByLocationArgs('hand');
@@ -993,28 +995,22 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
         // Serve frozen (pre-action) data instead of live data for opponents currently mid an
         // unresolved simultaneous phase, so a reload doesn't leak their in-progress actions.
         // The viewer's own row is always live (matches normal BGA UX for one's own actions).
-        $frozen_states = self::getCollectionFromDB(
-            "SELECT player_id, player_frozen_display_state FROM player WHERE player_id!='$current_viewer_id' AND player_frozen_display_state IS NOT NULL",
-            true
-        );
-        if (count($frozen_states) > 0) {
+        if (count($frozen_opponent_snapshots) > 0) {
             $world_owner = self::getCollectionFromDB("SELECT card_id, card_location_arg FROM card WHERE card_location='tableau'", true);
 
             foreach ($result['tableau'] as $idx => $card) {
-                if (isset($frozen_states[ $card['location_arg'] ])) {
+                if (isset($frozen_opponent_snapshots[ $card['location_arg'] ])) {
                     unset($result['tableau'][$idx]);
                 }
             }
             foreach ($result['good'] as $idx => $good) {
                 $owner = isset($world_owner[ $good['world_id'] ]) ? $world_owner[ $good['world_id'] ] : null;
-                if ($owner !== null && isset($frozen_states[$owner])) {
+                if ($owner !== null && isset($frozen_opponent_snapshots[$owner])) {
                     unset($result['good'][$idx]);
                 }
             }
 
-            foreach ($frozen_states as $frozen_player_id => $frozen_json) {
-                $frozen = json_decode($frozen_json, true);
-
+            foreach ($frozen_opponent_snapshots as $frozen_player_id => $frozen) {
                 foreach (array('score', 'vp', 'milforce', 'xeno_milforce', 'xeno_milforce_tiebreak', 'effort',
                                 'bunker_used', 'tmpmilforce', 'tmpxenomilforce', 'prestige', 'prestige_search',
                                 'defense_award') as $field) {
@@ -1169,6 +1165,20 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
             self::DbQuery("UPDATE player SET player_frozen_display_state='".addslashes(json_encode($snapshot))."' WHERE player_id='$player_id'");
         }
         $this->gamestate->setAllPlayersMultiactive();
+    }
+
+    // Decoded player_frozen_display_state for every opponent of $viewer_id that currently has one armed.
+    function getFrozenOpponentSnapshots($viewer_id)
+    {
+        $frozen_states = self::getCollectionFromDB(
+            "SELECT player_id, player_frozen_display_state FROM player WHERE player_id!='$viewer_id' AND player_frozen_display_state IS NOT NULL",
+            true
+        );
+        $snapshots = array();
+        foreach ($frozen_states as $player_id => $json) {
+            $snapshots[$player_id] = json_decode($json, true);
+        }
+        return $snapshots;
     }
 
     function saveInitialSixCostDevPointsState()

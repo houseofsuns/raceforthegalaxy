@@ -36,9 +36,27 @@ trait GoalsTrait
         return $tooltip;
     }
 
-    function getGoalProgress($goal)
+    // $frozen_overrides: decoded player_frozen_display_state snapshots (see
+    // Table::getFrozenOpponentSnapshots()) for opponents whose progress should be computed from
+    // their pre-reveal snapshot instead of live state, to avoid leaking in-progress actions on
+    // reload. Must stay empty for goal awarding (checkGoals()/getGoalWinners()) - only the
+    // reload display path in getAllDatas() may pass a non-empty override.
+    function getGoalProgress($goal, $frozen_overrides = array())
     {
         $tableaux = $this->cards->getCardsInLocation('tableau');
+        if (!empty($frozen_overrides)) {
+            foreach ($tableaux as $card_id => $card) {
+                if (isset($frozen_overrides[$card['location_arg']])) {
+                    unset($tableaux[$card_id]);
+                }
+            }
+            foreach ($frozen_overrides as $frozen) {
+                foreach ($frozen['tableau'] as $card) {
+                    $tableaux[$card['id']] = $card;
+                }
+            }
+        }
+
         $players = self::loadPlayersBasicInfos();
         $progress = array();
         foreach ($players as $player_id => $player) {
@@ -105,7 +123,9 @@ trait GoalsTrait
                 break;
 
             case 'Expansion Leader': // 8 cards in tableau
-                $progress = $this->cards->countCardsByLocationArgs('tableau');
+                foreach ($tableaux as $card) {
+                    ++$progress[ $card['location_arg'] ];
+                }
                 break;
 
             case 'Overlord Discoveries': // 3 alien cards
@@ -210,6 +230,31 @@ trait GoalsTrait
             default:
                 return null;
         }
+
+        // Tableau-based cases above already used the frozen-spliced $tableaux, so their $progress is
+        // already correct. The remaining cases queried player stats/goods directly and need the
+        // same frozen-player values substituted in here instead.
+        if (!empty($frozen_overrides)) {
+            $frozen_field = array(
+                'Galactic Standard of Living' => 'vp',
+                'Greatest Military' => 'milforce',
+                'Galactic Prestige' => 'prestige',
+                'Prestige leader' => 'prestige',
+            );
+            if (isset($frozen_field[$goal['name']])) {
+                $field = $frozen_field[$goal['name']];
+                foreach ($frozen_overrides as $player_id => $frozen) {
+                    if (isset($frozen[$field])) {
+                        $progress[$player_id] = $frozen[$field];
+                    }
+                }
+            } elseif ($goal['name'] == 'Galactic Riches') {
+                foreach ($frozen_overrides as $player_id => $frozen) {
+                    $progress[$player_id] = count($frozen['goods']);
+                }
+            }
+        }
+
         return $progress;
     }
 
