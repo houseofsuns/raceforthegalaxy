@@ -4686,18 +4686,21 @@ define([
                     } else if (card.type == 4) //  military boost gene
                     {
                         if (this.checkAction('militaryboost', false)) {
-                            // If a non-military Genes world is currently being paid for, a military
-                            // boost is impossible (it can only be conquered by card payment), so the
+                            // If a Genes world is currently being paid for, a military
+                            // boost is useless (it can only be played by card payment), so the
                             // artifact can only be used for the cost reduction: skip the pointless query.
-                            var payingNonMilitaryGenesWorld = false;
+                            // This also applies to military worlds. If they are conquered by force the
+                            // artefact must be activated before they move to the tableau. Instead they
+                            // must have been played via Contact Specialist or something similar.
+                            var payingGenesWorld = false;
                             if (this.nextCardToPlay) {
                                 var settleCardType = this.gamedatas.card_types[this.nextCardToPlay.type];
-                                if (settleCardType && settleCardType.type == 'world' && settleCardType.kind == 3 && !settleCardType.category.includes('military')) {
-                                    payingNonMilitaryGenesWorld = true;
+                                if (settleCardType && settleCardType.type == 'world' && settleCardType.kind == 3) {
+                                    payingGenesWorld = true;
                                 }
                             }
 
-                            if (!payingNonMilitaryGenesWorld) {
+                            if (!payingGenesWorld) {
                                 this.confirmationDialog(
                                     _("Do you want to consume this artifact to temporarly increase your military (say no if you want to use it for non-military world payment)?")
                                         + _("Note that this cannot be undone by resetting military boosts."),
