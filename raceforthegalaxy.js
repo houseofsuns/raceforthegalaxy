@@ -4686,17 +4686,29 @@ define([
                     } else if (card.type == 4) //  military boost gene
                     {
                         if (this.checkAction('militaryboost', false)) {
-                            this.confirmationDialog(_("Do you want to consume this artifact to temporarly increase your military (say no if you want to use it for non-military world payment)?"), dojo.hitch(this, function() {
+                            // If a non-military Genes world is currently being paid for, a military
+                            // boost is impossible (it can only be conquered by card payment), so the
+                            // artifact can only be used for the cost reduction: skip the pointless query.
+                            var payingNonMilitaryGenesWorld = false;
+                            if (this.nextCardToPlay) {
+                                var settleCardType = this.gamedatas.card_types[this.nextCardToPlay.type];
+                                if (settleCardType && settleCardType.type == 'world' && settleCardType.windfalltype == 3 && !settleCardType.category.includes('military')) {
+                                    payingNonMilitaryGenesWorld = true;
+                                }
+                            }
 
-                                this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/useArtefact.html", {
-                                    lock: true,
-                                    artifact: card.id,
-                                    reason: 'militaryboost'
-                                }, this, function() {
-                                    this.showMessage(_("You now have +2 for Gene worlds military until the end of the phase."), 'info');
-                                }, function() {});
-                            }));
+                            if (!payingNonMilitaryGenesWorld) {
+                                this.confirmationDialog(_("Do you want to consume this artifact to temporarly increase your military (say no if you want to use it for non-military world payment)?"), dojo.hitch(this, function() {
 
+                                    this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/useArtefact.html", {
+                                        lock: true,
+                                        artifact: card.id,
+                                        reason: 'militaryboost'
+                                    }, this, function() {
+                                        this.showMessage(_("You now have +2 for Gene worlds military until the end of the phase."), 'info');
+                                    }, function() {});
+                                }));
+                            }
                         }
                     } else if (card.type == 2 || card.type == 9) //  alien ress
                     {
