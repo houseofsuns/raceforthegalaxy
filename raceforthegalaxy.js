@@ -4692,7 +4692,7 @@ define([
                             var payingNonMilitaryGenesWorld = false;
                             if (this.nextCardToPlay) {
                                 var settleCardType = this.gamedatas.card_types[this.nextCardToPlay.type];
-                                if (settleCardType && settleCardType.type == 'world' && settleCardType.windfalltype == 3 && !settleCardType.category.includes('military')) {
+                                if (settleCardType && settleCardType.type == 'world' && settleCardType.kind == 3 && !settleCardType.category.includes('military')) {
                                     payingNonMilitaryGenesWorld = true;
                                 }
                             }
