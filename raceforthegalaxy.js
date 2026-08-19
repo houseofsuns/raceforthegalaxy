@@ -4698,7 +4698,10 @@ define([
                             }
 
                             if (!payingNonMilitaryGenesWorld) {
-                                this.confirmationDialog(_("Do you want to consume this artifact to temporarly increase your military (say no if you want to use it for non-military world payment)?"), dojo.hitch(this, function() {
+                                this.confirmationDialog(
+                                    _("Do you want to consume this artifact to temporarly increase your military (say no if you want to use it for non-military world payment)?")
+                                        + _("Note that this cannot be undone by resetting military boosts."),
+                                    dojo.hitch(this, function() {
 
                                     this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/useArtefact.html", {
                                         lock: true,
