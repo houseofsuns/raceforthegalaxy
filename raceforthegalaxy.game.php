@@ -7511,6 +7511,25 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
     function search($category)
     {
         self::checkAction('searchAction');
+
+        $category_names = array(
+            1 => self::_("Developments that provide +1 or +2 military"),
+            2 => self::_("1 or 2 defense military windfall worlds"),
+            3 => self::_("1 or 2 cost windfall worlds"),
+            4 => self::_("Worlds with a chromosome symbol"),
+            5 => self::_("Alien good worlds"),
+            6 => self::_("Cards with consume powers with 2+ goods"),
+            7 => self::_("Military worlds with 5+ defense"),
+            8 => self::_("6-cost &lt;?&gt; developments"),
+            9 => self::_("Cards with takeover powers"),
+        );
+
+        $this->notifyAllPlayers('simpleNote', clienttranslate('${player_name} searches for: ${category_name}'), array(
+            'i18n' => array('category_name'),
+            'player_name' => self::getActivePlayerName(),
+            'category_name' => $category_names[$category],
+        ));
+
         $this->doSearch($category);
     }
 
