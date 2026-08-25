@@ -1764,7 +1764,7 @@ define([
 
                         // Forced settle in turn 1 in XI
                         if (player_id == -1) {
-                            output = '<span/>';
+                            output += '<span class="phase_forced">' + _("INV") + '</span>';
                         } else {
                             var color = this.gamedatas.players[player_id].color;
                             output += '<span style="color:#' + color + '">' + symbol + '</span>';

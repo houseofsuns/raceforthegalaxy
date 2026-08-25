@@ -781,6 +781,9 @@ html[data-theme="dark"].new_design .player-board
 .phase_offset {
     width: 43px;
 }
+.phase_forced {
+    color: #666;
+}
 
 #phasechoice_panel {
     display: none;
