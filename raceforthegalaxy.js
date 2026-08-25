@@ -2087,12 +2087,14 @@ define([
                         dojo.addClass('hand_panel', 'paymentModeScavenger');
                         break;
                     case 'phaseChoice':
-                        dojo.style($('phasechoice_panel'), 'display', 'block');
+                        if (!this.isSpectator) {
+                            dojo.style($('phasechoice_panel'), 'display', 'block');
+                        }
                         dojo.query('.current_phase').removeClass('current_phase');
                         this.current_phase_choices = args.args.phasechoices;
                         this.updatePhaseChoices(args.args.phasechoices);
 
-                        if (this.gamedatas.expansion == 5) {
+                        if (this.gamedatas.expansion == 5 && !this.isSpectator) {
                             // Orb play
                             dojo.style('phasechoicebtn_8', 'display', 'inline');
                             dojo.addClass('phasechoice_panel', 'orbavail');
@@ -2100,7 +2102,9 @@ define([
 
                         break;
                     case 'phaseChoiceCrystal':
-                        dojo.style($('phasechoice_panel'), 'display', 'block');
+                        if (!this.isSpectator) {
+                            dojo.style($('phasechoice_panel'), 'display', 'block');
+                        }
                         this.current_phase_choices = args.args.phasechoices;
                         this.updatePhaseChoices(args.args.phasechoices);
                         break;
@@ -5292,7 +5296,7 @@ define([
                 console.log(notif);
                 this.current_phase_choices = notif.args;
                 this.updatePhaseChoices(notif.args);
-                if (this.phases_chosen === 0) {
+                if (this.phases_chosen === 0 && !this.isSpectator) {
                     dojo.style($('phasechoice_panel'), 'display', 'block');
                 }
             },
