@@ -3385,18 +3385,12 @@ define([
                 }
             },
             onPhaseSelectConfirm: function() {
-                var callback = function() {};
-                if (this.pending_phase_choice.phase === 7) {
-                    callback = function() {
-                        this.showMessage(_("Your search action has been registered"), 'info');
-                    }
-                }
                 this.ajaxcall("/raceforthegalaxy/raceforthegalaxy/choosePhase.html", {
                     lock: true,
                     phase: this.pending_phase_choice.phase,
                     bonus: this.pending_phase_choice.bonus,
                     cardbonus: this.pending_phase_choice.cardbonus,
-                }, this, function() {}, callback);
+                }, this, function() {}, function() {});
             },
 
             paymentNeedsConfirm: function() {
