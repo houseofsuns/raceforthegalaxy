@@ -7,6 +7,11 @@ https://stackoverflow.com/questions/24077725/mobile-safari-sometimes-does-not-tr
 -->
 
 <div id="phase_panel">
+    <div class="phase" id="search_phase" style="display:none;">
+        <div class="phase_icon" id="phase_icon_search"></div>
+        <div class="phase_content">{LB_SEARCH}</div>
+        <div class="phase_selected" id="phase_selected_7"></div>
+    </div>
     <div class="phase" id="explore_phase">
         <div class="phase_icon" id="phase_icon_explore"></div>
         <div class="phase_content">{LB_EXPLORE}</div>
@@ -36,6 +41,7 @@ https://stackoverflow.com/questions/24077725/mobile-safari-sometimes-does-not-tr
 
 <div id="phasechoice_panel">
     <br class="clear" />
+    <div class="phasechoice" id="search_phasechoice_spacer" style="display:none;"></div>
     <div class="phasechoice" >
         <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_1" role="button"><span class="normalbonus">+1 +1</span><span class="boosted">+7 +2 +{COMBINE}</span></a>
         <a href="#" class="bgabutton bgabutton_blue phasechoicebtn" id="phasechoicebtn_2" role="button"><span class="normalbonus">+5 +0</span><span class="boosted">+11 +1 +{COMBINE}</span></a>

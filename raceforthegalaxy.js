@@ -804,6 +804,7 @@ define([
                 this.addTooltipHtml('settle_phase', '<h3>' + _("Settle") + '</h3><hr/><div class="cardtooltip">' + _("Place a world card.") + '</div>', '');
                 this.addTooltipHtml('consume_phase', '<h3>' + _("Consume") + '</h3><hr/><div class="cardtooltip">' + _("Use your consume powers to discard goods for Victory points and/or card draws.") + '</div>', '');
                 this.addTooltipHtml('produce_phase', '<h3>' + _("Produce") + '</h3><hr/><div class="cardtooltip">' + _("Place a good on each Production world.") + '</div>', '');
+                this.addTooltipHtml('search_phase', '<h3>' + _("Search") + '</h3><hr/><div class="cardtooltip">' + _("Search the deck for a specific type of card.") + '</div>', '');
 
                 this.addTooltipOnPhaseButtons(false);
 
@@ -1662,13 +1663,12 @@ define([
                     2: 'develop',
                     3: 'settle',
                     4: 'consume',
-                    5: 'produce'
+                    5: 'produce',
+                    7: 'search'
                 };
                 this.phases_chosen = 0;
                 for (var phase_id in choices) {
-                    if (phase_id != 7) {
-                        dojo.empty('phase_selected_' + phase_id);
-                    }
+                    dojo.empty('phase_selected_' + phase_id);
 
                     var output = '<span class="phase_offset"></span>';
                     for (var player_id in choices[phase_id]) {
@@ -1758,12 +1758,14 @@ define([
                             if (bonus_id > 3) {
                                 symbol = 'X<i class="fa fa-wrench fa-lg" aria-hidden="true"></i>';
                             }
+                        } else if (phase_id == 7) {
+                            symbol = '?';
                         }
 
                         // Forced settle in turn 1 in XI
                         if (player_id == -1) {
                             output = '<span/>';
-                        } else if (phase_id != 7) {
+                        } else {
                             var color = this.gamedatas.players[player_id].color;
                             output += '<span style="color:#' + color + '">' + symbol + '</span>';
                         }
@@ -1773,13 +1775,17 @@ define([
                     }
                     if (output != '<span class="phase_offset"></span>') {
                         dojo.place(output, 'phase_selected_' + phase_id);
-                    } else if (phase_id != 7) {
+                    } else {
                         // This phase is unselected
                         console.log('set phase ' + phase_id + ' as unselected');
                         var phase_name = phasename[phase_id];
                         dojo.addClass($(phase_name + '_phase'), 'unselected_phase');
                     }
                 }
+
+                var searchChosen = !!(choices[7] && Object.keys(choices[7]).length);
+                dojo.style('search_phase', 'display', searchChosen ? '' : 'none');
+                dojo.style('search_phasechoice_spacer', 'display', searchChosen ? '' : 'none');
 
                 if ((this.gamedatas.gamestate.name == "phaseChoice"
                      || this.gamedatas.gamestate.name == "phaseChoiceCrystal")
@@ -2179,6 +2185,9 @@ define([
                         for (var i = 1; i <= 5; i++) {
                             dojo.empty('phase_selected_' + i);
                         }
+                        dojo.empty('phase_selected_7');
+                        dojo.style('search_phase', 'display', 'none');
+                        dojo.style('search_phasechoice_spacer', 'display', 'none');
 
                         break;
                     case 'orbActionMove':
@@ -2586,6 +2595,7 @@ define([
                         break;
 
                     case 'searchAction':
+                        this.setActivePhase('search');
                         if (this.isCurrentPlayerActive()) {
                             this.addActionButton('searchAction_1', _("Developments that provide +1 or +2 military"), 'onSearchActionChoose');
                             this.addActionButton('searchAction_2', _("1 or 2 defense military windfall worlds"), 'onSearchActionChoose');
@@ -2601,6 +2611,7 @@ define([
                         }
                         break;
                     case 'searchActionChoose':
+                        this.setActivePhase('search');
                         if (this.isCurrentPlayerActive()) {
                             this.addActionButton('searchActiok_1', _("Keep"), 'onSearchActionChooseK');
                             this.addActionButton('searchActiok_0', _("Discard"), 'onSearchActionChooseK');

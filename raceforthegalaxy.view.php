@@ -56,6 +56,7 @@ class view_raceforthegalaxy_raceforthegalaxy extends game_view
         $this->tpl['ORB'] = self::_("Orb");
         $this->tpl['LB_ORB_DECK'] = self::_("Remaining orb cards:");
         $this->tpl['LB_MY_ORB_HAND'] = self::_("My Orb hand");
+        $this->tpl['LB_SEARCH'] = self::_("Search");
 
         $this->tpl['PLAY_WITH_EXPANSIONS'] = self::_("Explore the Galaxy!");
         $this->tpl['EXPLORE_GALAXY'] = self::_("New cards, new powers, new play modes ...").' '.self::_("Discover Race for the Galaxy expansions here on Board Game Arena !");

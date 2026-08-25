@@ -759,6 +759,7 @@ html[data-theme="dark"].new_design .player-board
 #phase_icon_settle {   background-position: -70px 0px; }
 #phase_icon_consume {   background-position: -105px 0px; }
 #phase_icon_produce {   background-position: -140px 0px; }
+#phase_icon_search {   background-position: -175px 0px; }
 .phase_content {
     position: absolute;
     left: 43px;
