@@ -1784,8 +1784,13 @@ define([
                 }
 
                 var searchChosen = !!(choices[7] && Object.keys(choices[7]).length);
-                dojo.style('search_phase', 'display', searchChosen ? '' : 'none');
-                dojo.style('search_phasechoice_spacer', 'display', searchChosen ? '' : 'none');
+                try {
+                    dojo.style('search_phase', 'display', searchChosen ? '' : 'none');
+                    dojo.style('search_phasechoice_spacer', 'display', searchChosen ? '' : 'none');
+                } catch (e) {
+                    // strange cannot access style exception happening
+                    console.error(log,args,"Exception thrown", e.stack);
+                }
 
                 if ((this.gamedatas.gamestate.name == "phaseChoice"
                      || this.gamedatas.gamestate.name == "phaseChoiceCrystal")
