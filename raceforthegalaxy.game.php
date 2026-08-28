@@ -2334,7 +2334,18 @@ class RaceForTheGalaxy extends Bga\GameFramework\Table
                 $tableau[$world_id]['damaged'] = $damaged;
             }
         }
-        $snapshot['tableau'] = array_values($tableau);
+        $tableau_order = self::getObjectListFromDB("SELECT card_id FROM tableau_order", true);
+        $ordered_tableau = array();
+        foreach ($tableau_order as $card_id) {
+            if (isset($tableau[$card_id])) {
+                $ordered_tableau[] = $tableau[$card_id];
+                unset($tableau[$card_id]);
+            }
+        }
+        foreach ($tableau as $card) {
+            $ordered_tableau[] = $card;
+        }
+        $snapshot['tableau'] = $ordered_tableau;
 
         $goods = array();
         $sql = "SELECT good.card_id good_id, good.card_location_arg world_id, good.card_status good_type FROM card good ";
